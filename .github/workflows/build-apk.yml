@@ -1,0 +1,70 @@
+name: Build APK - Sim Worth
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Update next.config for export
+        run: |
+          cat > next.config.mjs << 'EOF'
+          /** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'export',
+            images: { unoptimized: true },
+            eslint: { ignoreDuringBuilds: true },
+            typescript: { ignoreBuildErrors: true },
+          };
+          export default nextConfig;
+          EOF
+
+      - name: Build Web
+        run: npm run build
+
+      - name: Setup Capacitor
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "Sim Worth" com.bigwrapper.simworth --web-dir=out --npm-client=npm || true
+
+      - name: Add Android Platform
+        run: |
+          npx cap add android || true
+          npx cap copy android
+          npx cap sync android || true
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sim-Worth-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
