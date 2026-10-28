@@ -9,9 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -67,21 +69,49 @@ jobs:
 
       - name: Fix Kotlin Version
         run: |
-          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.8.22"/' android/variables.gradle || true
+          echo "Before fix:"
+          cat android/variables.gradle
+          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.8.22"/' android/variables.gradle
+          echo ""
+          echo "After fix:"
           cat android/variables.gradle
 
-      - name: Fix Gradle Wrapper - CRITICAL FIX FOR 500 ERROR
+      - name: Fix Gradle Wrapper - FIX 500 ERROR
         run: |
           mkdir -p android/gradle/wrapper
           printf "distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists\n" > android/gradle/wrapper/gradle-wrapper.properties
           cat android/gradle/wrapper/gradle-wrapper.properties
 
+      - name: Fix Duplicate Kotlin Classes - CRITICAL
+        run: |
+          echo "Fixing duplicate class issue..."
+          # Remove old jdk7/jdk8 dependencies from app build
+          sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.8.22'/" android/app/build.gradle || true
+          
+          # Add exclude config if not exists
+          if ! grep -q "kotlin-stdlib-jdk7" android/app/build.gradle; then
+            echo "Adding exclude to android/app/build.gradle"
+            # Insert before android { block ends - add after dependencies
+            echo '
+          // FIX: Exclude duplicate kotlin stdlib
+          configurations {
+              implementation {
+                  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk7"
+                  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk8"
+              }
+          }
+          ' >> android/app/build.gradle
+          fi
+          
+          echo "Final app/build.gradle tail:"
+          tail -30 android/app/build.gradle
+
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew clean --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
