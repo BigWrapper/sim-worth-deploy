@@ -1,4 +1,4 @@
-name: Build APK - Sim Worth
+name: Build APK - Sim Worth Luxury
 
 on:
   push:
@@ -11,19 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: 20
+        with: { node-version: 20 }
       - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
+        with: { distribution: 'temurin', java-version: '21' }
 
       - name: Clean
-        run: |
-          rm -rf android out .next
+        run: rm -rf android out .next
 
       - name: Install
-        run: npm install
+        run: |
+          npm install
+          npm install @capacitor/assets --save-dev
 
       - name: Fix next.config
         run: |
@@ -39,24 +37,18 @@ jobs:
       - name: Capacitor Setup
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Sim Worth" com.bigwrapper.simworth --web-dir=out || true
+          npx cap init "SIM Banc" com.bigwrapper.simbanc --web-dir=out || true
           npx cap add android
 
-      - name: Fix Kotlin Duplicate
+      - name: Generate Icons & Splash
         run: |
-          echo "Fixing kotlin version conflict..."
-          # Force kotlin 1.8.22 everywhere
-          sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.8.22'/" android/variables.gradle
-          cat android/variables.gradle
-          # Add resolution strategy to app build.gradle
-          echo "
-          configurations.all {
-              resolutionStrategy {
-                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-              }
-          }" >> android/app/build.gradle
+          mkdir -p assets
+          if [ -f assets/icon.png ]; then
+            echo "Generating icons from assets/icon.png"
+            npx capacitor-assets generate --android --iconBackgroundColor "#000000" --splashBackgroundColor "#000000"
+          else
+            echo "No custom icon found, using default"
+          fi
 
       - name: Copy & Build APK
         run: |
@@ -69,5 +61,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Sim-Worth-APK
+          name: Sim-Worth-APK-Luxury
           path: android/app/build/outputs/apk/debug/app-debug.apk
