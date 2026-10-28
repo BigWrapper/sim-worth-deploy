@@ -3,8 +3,8 @@ import { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: '$IM Worth',
-    short_name: '$IM',
-    description: '$IM Ban¢ - Sim Worth',
+    short_name: '$IM Worth',
+    description: '$IM Ban¢ - SIM Worth',
     start_url: '/',
     display: 'standalone',
     background_color: '#000000',
