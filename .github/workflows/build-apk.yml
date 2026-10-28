@@ -35,6 +35,7 @@ jobs:
 
       - name: Capacitor Setup
         run: |
+          npm install -D @capacitor/cli @capacitor/core @capacitor/android @capacitor/assets
           npx cap init "SIM Worth" com.bigwrapper.simworth --web-dir=out || true
           npx cap add android || true
           npx cap copy android
