@@ -145,7 +145,7 @@ export default function FullApp() {
       </div>
 
       {/* Bottom Nav */}
-      <div style={{ position: "fixed", bottom: "0", left: "0", right: "0", background: "black", borderTop: "1px solid #D4AF37", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", padding: "6px 0" }}>
+      <div style={{ position: "fixed", bottom: "0", left: "0", right: "0", background: "black", borderTop: "1px solid #D4AF37", display: "flex", justifyContent: "space-around", padding: "10px", zIndex: 9999, pointerEvents: "auto" }}
         {[
           { icon: "🏠", label: "Home", action: () => setView("accounts") },
           { icon: "👥", label: "Accounts", active: true },
@@ -153,12 +153,25 @@ export default function FullApp() {
           { icon: "💬", label: "Messages" },
           { icon: "•••", label: "More" },
         ].map((b,i) => (
-          <div key={i} style={{ textAlign: "center", cursor: "pointer" }}>
-            <div style={{ fontSize: b.big ? "24px" : "20px", background: b.big ? "linear-gradient(#D4AF37,#AA871E)" : "none", width: b.big ? "40px" : "auto", height: b.big ? "40px" : "auto", borderRadius: b.big ? "50%" : "0", display: "flex", alignItems: "center", justifyContent: "center", margin: b.big ? "0 auto" : "0", color: b.big ? "black" : b.active ? "#D4AF37" : "#888", fontWeight: "900" }}>{b.icon}</div>
-            <div style={{ fontSize: "10px", color: b.active ? "#D4AF37" : "#888", marginTop: "2px" }}>{b.label}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+  <div 
+    key={i} 
+    onClick={() => {
+      if(b.action) b.action();
+      else if(b.label === "Messages") window.open("https://wa.me/27821234567?text=Hi","_blank");
+      else if(b.label === "Accounts") setView("accounts");
+      else if(b.label === "Home") setView("home");
+      else console.log(b.label + " clicked");
+    }}
+    style={{ 
+      textAlign: "center", 
+      cursor: "pointer",
+      pointerEvents: "auto",
+      zIndex: 9999,
+      padding: "5px 12px",
+      userSelect: "none"
+    }}
+  >
+    <div style={{ fontSize: b.big ? "24px" : "20px", background: b.big ? "linear-gradient(#D4AF37,#AA871E)" : "none", width: b.big ? "36px" : "auto", height: b.big ? "36px" : "auto", borderRadius: b.big ? "50%" : "0", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto" }}>{b.icon}</div>
+    <div style={{ fontSize: "10px", color: b.active ? "#D4AF37" : "#888", marginTop: "2px" }}>{b.label}</div>
+  </div>
+))
