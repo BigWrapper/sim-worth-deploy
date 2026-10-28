@@ -1,10 +1,8 @@
 name: Build APK - Sim Worth Luxury
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,7 +23,7 @@ jobs:
 
       - name: Fix next.config
         run: |
-          echo "const nextConfig = { output: 'export', images: { unoptimized: true }, eslint: { ignoreDuringBuilds: true }, typescript: { ignoreBuildErrors: true } }; export default nextConfig;" > next.config.mjs
+          echo "const nextConfig = { output: 'export', images: { unoptimized: true }, eslint: { ignoreDuringBuilds: true }, typescript: { ignoreBuildErrors: true } }; module.exports = nextConfig;" > next.config.mjs
 
       - name: Build Web
         run: npm run build
@@ -37,35 +35,38 @@ jobs:
       - name: Capacitor Setup
         run: |
           npx cap init "SIM Banc" com.bigwrapper.simbanc --web-dir=out || true
-          npx cap add android
+          npx cap add android || true
           npx cap copy android
 
-      - name: Generate Icons
+      - name: Generate Icons - FIXED LUXURY
         run: |
-          if [ -f assets/icon.png ]; then
-            npx capacitor-assets generate --android --iconBackgroundColor "#000000" --splashBackgroundColor "#000000" || true
-          fi
+          if [ ! -f assets/icon.png ]; then echo "ERROR: assets/icon.png MISSING! Upload it!"; exit 1; fi
+          # Try capacitor-assets
+          npx capacitor-assets generate --android --iconBackgroundColor "#000000" --splashBackgroundColor "#000000" || true
+          # FORCE COPY - ensures launcher works even if capacitor-assets fails
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p android/app/src/main/res/mipmap-${d}
+            cp -f assets/icon.png android/app/src/main/res/mipmap-${d}/ic_launcher.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-${d}/ic_launcher_round.png
+            echo "Copied to mipmap-${d}"
+          done
+          mkdir -p android/app/src/main/res/drawable
+          cp -f assets/icon.png android/app/src/main/res/drawable/splash.png || cp -f assets/icon.png android/app/src/main/res/drawable/ic_launcher.png
+          ls -lh android/app/src/main/res/mipmap-xxxhdpi/
+          ls -lh android/app/src/main/res/drawable/
 
-      - name: FIX Kotlin Duplicate FOR GOOD
+      - name: Fix Kotlin Version
         run: |
-          echo "=== Fixing Kotlin versions ==="
-          cat android/variables.gradle
-          
-          # Force kotlin 1.8.22 in variables.gradle
-          sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.8.22'/" android/variables.gradle
-          
-          # Remove jdk7/jdk8 from app/build.gradle - THE REAL FIX
-          echo "
-          configurations.all {
-              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
-              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
-              resolutionStrategy {
-                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-              }
+          sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.8.22'/" android/variables.gradle || true
+          echo "configurations.all {
+            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+            resolutionStrategy {
+              force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+              force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+              force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+            }
           }" >> android/app/build.gradle
-          
           echo "=== Fixed ==="
           cat android/variables.gradle
 
