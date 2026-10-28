@@ -27,20 +27,27 @@ export default function FullApp() {
   const [tab, setTab] = useState("All Accounts");
   const [authMode, setAuthMode] = useState("login");
 
-  // LOGIN SCREEN
-  if (!isLoggedIn) {
-    return (
-      <div style={{ background: "#000", minHeight: "100vh", color: "white", fontFamily: "system-ui", padding: "20px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", marginBottom: "30px" }}>
-          <div style={{ fontSize: "60px", fontWeight: "900", lineHeight: "0.9" }}>
-            <span style={{ color: "#D4AF37", textShadow: "0 0 20px #D4AF37" }}>$</span>IM<br/>
-            <span style={{ fontSize: "32px", color: "#D4AF37", letterSpacing: "4px" }}>WORTH</span>
-          </div>
-          <div style={{ fontSize: "10px", color: "#D4AF37", letterSpacing: "2px", marginTop: "10px" }}>REAL PEOPLE • REAL ACCOUNTS • REAL VALUE</div>
-        </div>
-
-        <div style={{ background: "linear-gradient(#1a1a1a,#000)", border: "1px solid #D4AF37", borderRadius: "20px", padding: "20px" }}>
-          <h2 style={{ textAlign: "center", color: "#D4AF37" }}>{authMode === "login" ? "Welcome Back" : "Create Account"}</h2>
+  <button 
+  type="button"
+  onClick={() => {
+    console.log("LOGIN CLICKED");
+    setLoggedIn(true);
+  }}
+  style={{ 
+    cursor: 'pointer', 
+    pointerEvents: 'auto', 
+    position: 'relative', 
+    zIndex: 9999,
+    width: '100%',
+    padding: '16px',
+    background: '#D4AF37',
+    color: 'black',
+    borderRadius: '999px',
+    fontWeight: 'bold'
+  }}
+>
+  TAP TO LOGIN
+</button>
           
           <input placeholder="Email" style={{ width: "100%", padding: "14px", marginTop: "16px", borderRadius: "12px", border: "1px solid #333", background: "#111", color: "white", boxSizing: "border-box" }} />
           <input placeholder="Password" type="password" style={{ width: "100%", padding: "14px", marginTop: "12px", borderRadius: "12px", border: "1px solid #333", background: "#111", color: "white", boxSizing: "border-box" }} />
