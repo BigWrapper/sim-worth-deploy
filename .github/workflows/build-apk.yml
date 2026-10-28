@@ -10,13 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Install
         run: npm install
@@ -32,7 +34,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key-for-build-only
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: dummy-key-for-build-only
 
-      - name: Capacitor
+      - name: Capacitor Setup
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "Sim Worth" com.bigwrapper.simworth --web-dir=out || true
