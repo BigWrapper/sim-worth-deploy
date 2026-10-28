@@ -34,7 +34,7 @@ jobs:
 
       - name: Capacitor Setup
         run: |
-          npx cap init "SIM Banc" com.bigwrapper.simbanc --web-dir=out || true
+          npx cap init "SIM Worth" com.bigwrapper.simbworth --web-dir=out || true
           npx cap add android || true
           npx cap copy android
 
