@@ -43,9 +43,12 @@ jobs:
       - name: Build Web
         run: npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: dummy-key
+                - name: Build Web
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Capacitor Setup
         run: |
