@@ -89,7 +89,7 @@ export default function FullApp() {
           <div style={{ textAlign: "right" }}><div style={{ fontSize: "10px", color: "#aaa" }}>NET WORTH</div><div style={{ color: "#00ff88", fontSize: "12px" }}>↑ +12.5% (24h)</div></div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", padding: "10px" }}>
+        <div key={i} onClick={() => window.open("https://wa.me/27821234567?text=Interested in "+p.price,"_blank")} style={{ background: "#111", borderRadius: "12px", overflow: "hidden", border: "1px solid #333", cursor: "pointer" }}>
           {PRODUCTS.map((p,i) => (
             <div key={i} onClick={() => window.open(`https://wa.me/27821234567?text=Hi, I want ${p.price} item`,"_blank")} style={{ background: "#111", borderRadius: "12px", overflow: "hidden", border: "1px solid #333", cursor: "pointer" }}>
               <img src={p.img} style={{ width: "100%", height: "100px", objectFit: "cover" }} />
@@ -98,11 +98,10 @@ export default function FullApp() {
           ))}
         </div>
 
-        <div style={{ position: "fixed", bottom: "0", left: "0", right: "0", background: "black", borderTop: "1px solid #D4AF37", padding: "10px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-          <div onClick={() => setView("messages")} style={{ background: "black", border: "1px solid #D4AF37", borderRadius: "30px", padding: "12px", textAlign: "center", fontWeight: "bold", color: "#D4AF37", cursor: "pointer" }}>💬 Message</div>
-<div onClick={() => window.open("https://wa.me/27821234567?text=Hi Dre","_blank")} style={{ background: "#00c851", borderRadius: "30px", padding: "12px", textAlign: "center", fontWeight: "bold", color: "white", cursor: "pointer" }}>📞 WhatsApp Call</div>
-        </div>
-      </div>
+        <div style={{ position: "fixed", bottom: "0", left: "0", right: "0", background: "black", borderTop: "1px solid #D4AF37", padding: "10px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", zIndex: 9999 }}>
+  <div onClick={() => setView("messages")} style={{ background: "black", border: "1px solid #D4AF37", borderRadius: "30px", padding: "12px", textAlign: "center", fontWeight: "bold", color: "#D4AF37", cursor: "pointer" }}>💬 Message</div>
+  <div onClick={() => window.open("https://wa.me/27821234567?text=Hi","_blank")} style={{ background: "#00c851", borderRadius: "30px", padding: "12px", textAlign: "center", fontWeight: "bold", color: "white", cursor: "pointer" }}>📞 WhatsApp Call</div>
+</div>
     );
   }
 
