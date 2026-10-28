@@ -1,4 +1,5 @@
-name: Build APK - Sim Worth Luxury
+name: Build APK - SIM Worth Luxury
+
 on:
   push:
     branches: [ main ]
@@ -7,48 +8,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
+          cache: 'npm'
 
-      - name: Clean
-        run: rm -rf android out .next
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Install
-        run: |
-          npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets --save-dev
-
-      - name: Fix next.config
-        run: |
-          cat > next.config.mjs << 'EOF'
-          /** @type {import('next').NextConfig} */
-          const nextConfig = {
-            output: 'export',
-            eslint: { ignoreDuringBuilds: true },
-            typescript: { ignoreBuildErrors: true },
-          };
-          export default nextConfig;
-          EOF
-          cat next.config.mjs
-
-      - name: Build Web
-        run: npm run build
-        env:
-                - name: Build Web
+      - name: Build Web - ONLINE
         run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Capacitor Setup
         run: |
@@ -56,68 +40,59 @@ jobs:
           npx cap add android || true
           npx cap copy android
 
-      - name: Generate Icons - FIXED LUXURY
+      - name: Generate Icons - FIXED
         run: |
-          if [ ! -f assets/icon.png ]; then echo "ERROR: assets/icon.png MISSING!"; exit 1; fi
-          npx capacitor-assets generate --android --iconBackgroundColor "#000000" --splashBackgroundColor "#000000" || true
-          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            mkdir -p android/app/src/main/res/mipmap-$d/
-            cp -f assets/icon.png android/app/src/main/res/mipmap-$d/ic_launcher.png
-            cp -f assets/icon.png android/app/src/main/res/mipmap-$d/ic_launcher_round.png
-          done
-          mkdir -p android/app/src/main/res/drawable
-          cp -f assets/icon.png android/app/src/main/res/drawable/splash.png
-          cp -f assets/splash.png android/app/src/main/res/drawable/splash.png || true
-          ls -lh android/app/src/main/res/mipmap-xxxhdpi/
-
-      - name: Fix Kotlin Version
-        run: |
-          echo "Before fix:"
-          cat android/variables.gradle
-          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.8.22"/' android/variables.gradle
-          echo ""
-          echo "After fix:"
-          cat android/variables.gradle
-
-      - name: Fix Gradle Wrapper - FIX 500 ERROR
-        run: |
-          mkdir -p android/gradle/wrapper
-          printf "distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists\n" > android/gradle/wrapper/gradle-wrapper.properties
-          cat android/gradle/wrapper/gradle-wrapper.properties
-
-      - name: Fix Duplicate Kotlin Classes - CRITICAL
-        run: |
-          echo "Fixing duplicate class issue..."
-          # Remove old jdk7/jdk8 dependencies from app build
-          sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.8.22'/" android/app/build.gradle || true
+          echo "=== ASSETS CHECK ==="
+          ls -la assets/ || echo "NO assets folder!"
+          ls -lh assets/icon.png || echo "icon.png NOT FOUND"
           
-          # Add exclude config if not exists
-          if ! grep -q "kotlin-stdlib-jdk7" android/app/build.gradle; then
-            echo "Adding exclude to android/app/build.gradle"
-            # Insert before android { block ends - add after dependencies
-            echo '
-          // FIX: Exclude duplicate kotlin stdlib
-          configurations {
-              implementation {
-                  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk7"
-                  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk8"
-              }
-          }
-          ' >> android/app/build.gradle
+          if [ ! -f assets/icon.png ]; then
+            echo "ERROR: assets/icon.png missing! Please upload it"
+            exit 1
           fi
           
-          echo "Final app/build.gradle tail:"
-          tail -30 android/app/build.gradle
+          # Generate with capacitor-assets
+          npm install -D @capacitor/assets || true
+          npx capacitor-assets generate --iconBackgroundColor "#000000" --splashBackgroundColor "#000000" --android || true
+          
+          echo "=== FORCE COPY ICONS ==="
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          mkdir -p android/app/src/main/res/drawable
+          
+          cp -f assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp -f assets/icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp -f assets/icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp -f assets/icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp -f assets/icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          
+          cp -f assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp -f assets/icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp -f assets/icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp -f assets/icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp -f assets/icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+          
+          cp -f assets/splash.png android/app/src/main/res/drawable/splash.png || cp -f assets/icon.png android/app/src/main/res/drawable/splash.png
+          
+          echo "Icons copied OK"
+          ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+
+      - name: Patch Kotlin Version
+        run: |
+          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.8.22"/' android/variables.gradle || true
+          cat android/variables.gradle
 
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean --no-daemon
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Sim-Worth-APK-Luxury
+          name: SIM-Worth-Luxury-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
