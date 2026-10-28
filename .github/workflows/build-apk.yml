@@ -21,9 +21,19 @@ jobs:
           npm install
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets --save-dev
 
-      - name: Fix next.config
+            - name: Fix next.config
         run: |
-          echo "const nextConfig = { output: 'export', images: { unoptimized: true }, eslint: { ignoreDuringBuilds: true }, typescript: { ignoreBuildErrors: true } }; module.exports = nextConfig;" > next.config.mjs
+          cat > next.config.mjs << 'EOF'
+          /** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'export',
+            images: { unoptimized: true },
+            eslint: { ignoreDuringBuilds: true },
+            typescript: { ignoreBuildErrors: true },
+          };
+          export default nextConfig;
+          EOF
+          cat next.config.mjs
 
       - name: Build Web
         run: npm run build
