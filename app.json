@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "$IM Worth",
+    "slug": "sim-worth-deploy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#000000",
+      "resizeMode": "contain"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.bigwrapper.simworth"
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    }
+  }
+}
