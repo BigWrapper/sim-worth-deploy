@@ -18,17 +18,14 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Clean Old Android
+      - name: Clean
         run: |
-          rm -rf android
-          rm -rf out
-          rm -rf .next
-          rm -rf node_modules/.cache
+          rm -rf android out .next
 
       - name: Install
         run: npm install
 
-      - name: Fix next.config for APK
+      - name: Fix next.config
         run: |
           echo "const nextConfig = { output: 'export', images: { unoptimized: true }, eslint: { ignoreDuringBuilds: true }, typescript: { ignoreBuildErrors: true } }; export default nextConfig;" > next.config.mjs
 
@@ -36,18 +33,34 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key-for-build-only
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: dummy-key-for-build-only
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: dummy-key
 
-      - name: Capacitor Fresh Setup
+      - name: Capacitor Setup
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "Sim Worth" com.bigwrapper.simworth --web-dir=out || true
           npx cap add android
-          npx cap copy android
 
-      - name: Build APK
+      - name: Fix Kotlin Duplicate
         run: |
+          echo "Fixing kotlin version conflict..."
+          # Force kotlin 1.8.22 everywhere
+          sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.8.22'/" android/variables.gradle
+          cat android/variables.gradle
+          # Add resolution strategy to app build.gradle
+          echo "
+          configurations.all {
+              resolutionStrategy {
+                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+              }
+          }" >> android/app/build.gradle
+
+      - name: Copy & Build APK
+        run: |
+          npx cap copy android
           cd android
           chmod +x gradlew
           ./gradlew clean
