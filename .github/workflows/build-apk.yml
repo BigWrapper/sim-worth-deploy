@@ -189,6 +189,42 @@ jobs:
             cp -f assets/splash.png android/app/src/main/res/drawable/splash.png || cp -f assets/icon.png android/app/src/main/res/drawable/splash.png
           fi
 
+          echo "=== FIX DUPLICATE KOTLIN - APPLY AFTER RECREATE ==="
+          cat android/variables.gradle || true
+          sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.9.22'/" android/variables.gradle || true
+          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.9.22"/' android/variables.gradle || true
+          
+          if ! grep -q "FIX DUPLICATE KOTLIN" android/build.gradle; then
+            cat >> android/build.gradle << 'EOF'
+
+          // FIX DUPLICATE KOTLIN - FORCE SINGLE VERSION
+          subprojects {
+              project.configurations.all {
+                  resolutionStrategy.eachDependency { details ->
+                      if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name.contains('kotlin-stdlib')) {
+                          details.useVersion "1.9.22"
+                      }
+                  }
+              }
+          }
+          EOF
+          fi
+
+          if ! grep -q "kotlin-stdlib-jdk7" android/app/build.gradle; then
+            cat >> android/app/build.gradle << 'EOF'
+
+          configurations.all {
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+          }
+          EOF
+          fi
+
+          ls -lh android/gradlew
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
           ls -lh android/gradlew
           cd android
           chmod +x gradlew
