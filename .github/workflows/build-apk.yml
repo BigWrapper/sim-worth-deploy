@@ -43,6 +43,11 @@ jobs:
 
       - name: Build APK
         run: |
+          if [ ! -f android/gradlew ]; then
+            echo "android folder missing - creating..."
+            npx cap add android
+            npx cap sync android
+          fi
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
