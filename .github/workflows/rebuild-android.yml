@@ -11,12 +11,14 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - name: Delete broken android
+        run: rm -rf android
       - run: npx cap add android
       - run: npx cap sync android
-      - run: |
+      - name: Commit fixed android
+        run: |
           git config user.name "BigWrapper"
           git config user.email "big@wrapper.com"
           git add -f android/
-          git status
-          git commit -m "Rebuild android folder correctly - force" || echo "nothing"
+          git commit -m "Rebuild android folder - full structure"
           git push
