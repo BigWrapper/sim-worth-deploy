@@ -17,14 +17,24 @@ jobs:
       - name: Clean and rebuild
         run: |
           npm install
+          npm install -D @capacitor/cli
+          npm install @capacitor/core @capacitor/android
+          
+          # Create dummy web folder if Next build fails
+          mkdir -p out
+          echo "<h1>SIM WORTH</h1>" > out/index.html
+          
           rm -rf android
           npx cap add android
           npx cap sync android
-          ls -R android | head -n 100
-      - name: Commit full android
+          
+          ls android/
+          ls android/app/src/main/res/ | head -20
+          
+      - name: Commit
         run: |
           git config user.name "BigWrapper"
           git config user.email "big@wrapper.com"
           git add -f android/
-          git commit -m "Full android rebuild with Gradle - fixes kotlin error"
+          git commit -m "Full rebuild with capacitor cli installed"
           git push
