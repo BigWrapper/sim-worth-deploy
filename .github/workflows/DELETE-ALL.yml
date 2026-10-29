@@ -1,0 +1,64 @@
+name: DELETE ALL Workflows and Runs
+on: workflow_dispatch
+jobs:
+  nuke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete all workflow RUNS (the green builds)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Deleting all runs except this one..."
+          CURRENT=${{ github.run_id }}
+          for id in $(gh api repos/${{ github.repository }}/actions/runs --paginate -q '.runs[] | select(.id != '${{ github.run_id }}') | .id'); do
+            echo "Deleting run $id"
+            gh api -X DELETE repos/${{ github.repository }}/actions/runs/$id --silent || true
+          done
+          echo "Runs deleted!"
+
+      - name: Delete all workflow FILES
+        run: |
+          echo "Deleting all workflow files..."
+          rm -rf .github/workflows/*.yml
+          # Keep this file until commit so it can push
+          mkdir -p .github/workflows
+          cat > .github/workflows/build-apk.yml <<'EOF'
+          name: Build APK
+          on:
+            push:
+              branches: [main]
+            workflow_dispatch:
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-node@v4
+                  with:
+                    node-version: 20
+                - uses: actions/setup-java@v4
+                  with:
+                    distribution: 'temurin'
+                    java-version: '17'
+                - run: npm install
+                - run: npx cap sync android
+                - name: Build APK
+                  run: |
+                    cd android
+                    chmod +x gradlew
+                    ./gradlew assembleDebug
+                - uses: actions/upload-artifact@v4
+                  with:
+                    name: sim-worth-apk
+                    path: android/app/build/outputs/apk/debug/app-debug.apk
+          EOF
+          git config user.name "BigWrapper"
+          git config user.email "big@wrapper.com"
+          git add -A
+          git commit -m "Nuke all temp workflows - keep only build-apk"
+          git push
+          echo "All workflows deleted, only build-apk.yml kept!"
