@@ -96,11 +96,35 @@ const doLogin = async ()=>{
 
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return;
-  const b64 = await toBase64(file); setAvatarPreview(b64);
-  localStorage.setItem(`im_avatar_${email}`, b64);
-  await syncProfile(email, totalWorth, b64);
-  await logActivity("updated avatar", "Changed profile photo");
-  loadFeed();
+  
+  // 1. Instant preview
+  const tempUrl = URL.createObjectURL(file);
+  setAvatarPreview(tempUrl);
+
+  try {
+    // 2. Upload to your avatars bucket
+    const fileName = `${email}/${Date.now()}.jpg`;
+    const { error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file, { upsert: true, contentType: file.type });
+
+    if(error) throw error;
+
+    // 3. Get public URL that never dies
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    const publicUrl = data.publicUrl;
+
+    // 4. Save forever in profiles + local
+    setAvatarPreview(publicUrl);
+    localStorage.setItem(`im_avatar_${email}`, publicUrl);
+    await syncProfile(email, totalWorth, publicUrl);
+    await logActivity("updated avatar", "Changed profile photo");
+    loadFeed();
+    
+    console.log("SAVED FOREVER:", publicUrl);
+  } catch(err:any){
+    alert("Upload failed: " + err.message);
+  }
 };
 
 const handleProductImageChange = async (e:any)=>{
