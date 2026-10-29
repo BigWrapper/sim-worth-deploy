@@ -43,11 +43,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Setup Java 17
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Capacitor Setup
         run: |
@@ -108,7 +108,7 @@ jobs:
 
       - name: Patch Kotlin Version
         run: |
-          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.8.22"/' android/variables.gradle || true
+          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.9.22"/' android/variables.gradle || true
           cat android/variables.gradle
 
       - name: Build APK
