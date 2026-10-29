@@ -24,14 +24,12 @@ jobs:
         run: |
           echo "=== Ensure Next.js exports static ==="
           cat next.config.js || cat next.config.mjs || echo "no config found"
-          # Force static export if not set
           if [ -f next.config.js ]; then
             grep -q "output" next.config.js || echo "NEED to add output export"
           fi
           npm run build
           echo "=== Check out folder ==="
           ls -la out || ls -la .next || echo "No out!"
-          # If out missing but .next exists, create out from .next workaround
           if [ ! -d "out" ] && [ -d ".next" ]; then
             echo "Creating out fallback..."
             mkdir -p out
@@ -77,7 +75,6 @@ jobs:
             exit 1
           fi
           
-          # Generate with capacitor-assets
           npm install -D @capacitor/assets || true
           npx capacitor-assets generate --iconBackgroundColor "#000000" --splashBackgroundColor "#000000" --android || true
           
@@ -108,12 +105,30 @@ jobs:
 
       - name: Patch Kotlin Version - FIX DUPLICATE FINAL
         run: |
+          echo "=== Checking variables.gradle ==="
+          if [ ! -f android/variables.gradle ]; then
+            echo "File missing - creating it"
+            mkdir -p android
+            cat > android/variables.gradle << 'EOF'
+          ext {
+              minSdkVersion = 22
+              compileSdkVersion = 34
+              targetSdkVersion = 34
+              androidxAppCompatVersion = '1.6.1'
+              androidxJunitVersion = '1.1.5'
+              androidxEspressoCoreVersion = '3.5.1'
+              junitVersion = '4.13.2'
+              kotlinVersion = '1.9.22'
+          }
+          EOF
+          fi
           cat android/variables.gradle
-          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.9.22"/' android/variables.gradle
+          sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.9.22'/" android/variables.gradle || true
+          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.9.22"/' android/variables.gradle || true
           
           echo "=== PATCHING BUILD.GRADLE ==="
-          # Add force resolution to android/build.gradle
-          cat >> android/build.gradle << 'EOF'
+          if ! grep -q "FIX DUPLICATE KOTLIN" android/build.gradle; then
+            cat >> android/build.gradle << 'EOF'
 
           // FIX DUPLICATE KOTLIN - FORCE SINGLE VERSION
           subprojects {
@@ -126,13 +141,18 @@ jobs:
               }
           }
           EOF
+          fi
 
-          # Also exclude old jdk7/jdk8 in app/build.gradle
-          echo "
+          echo "=== EXCLUDE OLD JDK7/JDK8 ==="
+          if ! grep -q "kotlin-stdlib-jdk7" android/app/build.gradle; then
+            cat >> android/app/build.gradle << 'EOF'
+
           configurations.all {
               exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
               exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
-          }" >> android/app/build.gradle
+          }
+          EOF
+          fi
           
           cat android/variables.gradle
 
