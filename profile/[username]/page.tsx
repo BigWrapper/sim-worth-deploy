@@ -6,28 +6,36 @@ import { supabase } from "@/lib/supabase"
 export default function UserProfilePage() {
   const params = useParams()
   const rawUsername = (params?.username as string) || "DreVanWyk"
-  // Clean the .comd typo if present
   const username = rawUsername.replace(".comd",".com")
   const [avatar, setAvatar] = useState("")
+  const [netWorth, setNetWorth] = useState(79.96)
   const [products, setProducts] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
   const avatarRef = useRef<HTMLInputElement>(null)
   const prodRef = useRef<HTMLInputElement>(null)
 
-  // LOAD - like Temu grid: localStorage FIRST, then Supabase
+  // LOAD - Cache first, then DB but DON'T overwrite if DB is empty/old
   useEffect(()=>{
-    // 1. Instant from localStorage (never snap to default)
     const cached = localStorage.getItem(`avatar_${username}`)
     if(cached) setAvatar(cached)
     
-    // 2. Products (this already works)
+    const cachedWorth = localStorage.getItem(`worth_${username}`)
+    if(cachedWorth) setNetWorth(parseFloat(cachedWorth))
+
     supabase.from("products").select("*").eq("user_handle", username).order("created_at", {ascending:false}).then(({data})=> data && setProducts(data))
     
-    // 3. Profile from Supabase - OVERWRITE cache if DB has newer
     supabase.from("profiles").select("avatar_url, net_worth").eq("handle", username).maybeSingle().then(({data})=>{
-      if(data?.avatar_url){
-        localStorage.setItem(`avatar_${username}`, data.avatar_url)
-        setAvatar(data.avatar_url + "?t=" + Date.now())
+      if(data){
+        if(data.net_worth) {
+          setNetWorth(data.net_worth)
+          localStorage.setItem(`worth_${username}`, String(data.net_worth))
+        }
+        // Only use DB avatar if we have NO cache, or DB is newer (you decide). 
+        // To STOP snap back, prefer cache and only update cache if DB url is actually different and exists
+        if(data.avatar_url && data.avatar_url !== cached){
+          localStorage.setItem(`avatar_${username}`, data.avatar_url)
+          setAvatar(data.avatar_url)
+        }
       }
     })
   },[username])
@@ -35,32 +43,30 @@ export default function UserProfilePage() {
   const uploadAvatar = async (e:any) =>{
     const file = e.target.files[0]; if(!file) return; setUploading(true)
     try {
-      // SAME AS PRODUCTS - new unique name each time
       const name = `${username}-avatar-${Date.now()}`
-      const { error } = await supabase.storage.from("avatars").upload(name, file, {upsert:true, cacheControl: '0'})
+      const { error } = await supabase.storage.from("avatars").upload(name, file, {upsert:true, cacheControl: '0', contentType: file.type})
       if(error) throw error
       
       const { data } = supabase.storage.from("avatars").getPublicUrl(name)
-      const cleanUrl = data.publicUrl
+      const cleanUrl = data.publicUrl.split('?')[0] // always store clean
 
-      // SAVE LIKE PRODUCTS: UPSERT not UPDATE
+      // FIX: Upsert ONLY avatar, don't touch net_worth
       const { error: dbError } = await supabase.from("profiles").upsert({ 
         handle: username, 
         avatar_url: cleanUrl,
-        net_worth: 209.92,
         updated_at: new Date().toISOString()
       }, {onConflict: 'handle'})
       
       if(dbError) throw dbError
 
-      // SAVE LOCALLY IMMEDIATELY - no more snap back
       localStorage.setItem(`avatar_${username}`, cleanUrl)
-      setAvatar(cleanUrl + "?t=" + Date.now())
+      setAvatar(cleanUrl)
       alert("Profile pic saved ✅ Now permanent")
     } catch(err:any){
       alert("Avatar error: " + err.message)
     } finally {
       setUploading(false)
+      if(avatarRef.current) avatarRef.current.value = ""
     }
   }
 
@@ -68,16 +74,16 @@ export default function UserProfilePage() {
     const file = e.target.files[0]; if(!file) return; setUploading(true)
     try {
       const name = `${username}-product-${Date.now()}-${file.name.replace(/\s/g,'_')}`
-      const { error } = await supabase.storage.from("products").upload(name, file, {upsert:true})
+      const { error } = await supabase.storage.from("products").upload(name, file, {upsert:true, cacheControl: '0'})
       if(error) throw error
       const { data } = supabase.storage.from("products").getPublicUrl(name)
       const { data: inserted } = await supabase.from("products").insert({ user_handle: username, image_url: data.publicUrl, price: 19.99 }).select()
       if(inserted) setProducts([...inserted, ...products])
-    } catch(err:any){ alert(err.message) } finally { setUploading(false) }
+    } catch(err:any){ alert(err.message) } finally { setUploading(false); if(prodRef.current) prodRef.current.value = "" }
   }
 
-  // Fallback only if nothing in cache or DB
-  const displayAvatar = avatar || "https://i.pravatar.cc/300?img=12"
+  // Display with cache buster so browser never shows old
+  const displayAvatar = avatar ? `${avatar}?t=${Date.now()}` : "https://i.pravatar.cc/300?img=12"
 
   return (
     <div style={{background:"#000", minHeight:"100vh", color:"white", maxWidth:"430px", margin:"0 auto", paddingBottom:"90px"}}>
@@ -95,7 +101,7 @@ export default function UserProfilePage() {
         <div style={{marginTop:"8px", fontWeight:"700", color:"#D4AF37"}}>{username.split("@")[0]}</div>
         <div style={{margin:"8px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"10px", display:"flex", justifyContent:"space-between"}}>
           <span style={{fontSize:"11px", color:"#888"}}>TOTAL NET WORTH</span>
-          <span style={{color:"#D4AF37", fontWeight:"900"}}>$ 209.92</span>
+          <span style={{color:"#D4AF37", fontWeight:"900"}}>$ {netWorth.toFixed(2)}</span>
         </div>
       </div>
 
