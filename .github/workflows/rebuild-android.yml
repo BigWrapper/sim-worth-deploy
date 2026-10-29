@@ -1,0 +1,26 @@
+name: Rebuild Android
+
+on: workflow_dispatch
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx cap add android || echo "android exists"
+      - run: npx cap sync android
+      - name: Fix icons
+        run: |
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          echo "android folder rebuilt"
+      - name: Commit
+        run: |
+          git config user.name "BigWrapper"
+          git config user.email "big@wrapper.com"
+          git add android
+          git commit -m "Rebuild android folder correctly" || echo "no changes"
+          git push
