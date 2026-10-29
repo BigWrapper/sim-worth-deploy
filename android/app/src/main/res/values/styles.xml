@@ -1,0 +1,1 @@
+<resources><style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen"><item name="windowNoTitle">true</item><item name="android:background">#000000</item></style></resources>
