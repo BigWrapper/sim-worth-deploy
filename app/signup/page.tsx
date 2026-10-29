@@ -30,7 +30,7 @@ export default function SignupPage(){
         localStorage.setItem("current_handle", username)
         localStorage.setItem("sb_user_id", data.user.id)
         alert("Account created ✅")
-        router.push(/profile/${username})
+        router.push(`/profile/${username}`)
       }
     }catch(err:any){ alert(err.message) } finally{ setLoading(false) }
   }
