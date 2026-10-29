@@ -13,30 +13,62 @@ export default function UserProfilePage() {
   const prodRef = useRef<HTMLInputElement>(null)
 
   useEffect(()=>{
+    // Load products
     supabase.from("products").select("*").eq("user_handle", username).then(({data})=> data && setProducts(data))
-    supabase.from("profiles").select("avatar_url").eq("handle", username).single().then(({data})=> data?.avatar_url && setAvatar(data.avatar_url))
+    // Load avatar - add cache buster only for display
+    supabase.from("profiles").select("avatar_url").eq("handle", username).single().then(({data})=> {
+      if(data?.avatar_url){
+        setAvatar(data.avatar_url + "?t=" + Date.now())
+      }
+    })
   },[username])
 
   const uploadAvatar = async (e:any) =>{
- const file = e.target.files[0]; if(!file) return; setUploading(true)
- const name = `${username}-avatar-${Date.now()}-${file.name}`
- const { error } = await supabase.storage.from("avatars").upload(name, file, {upsert:true, cacheControl: '0'})
- if(error){ alert(error.message); setUploading(false); return; }
- const { data } = supabase.storage.from("avatars").getPublicUrl(name)
- const freshUrl = data.publicUrl + "?t=" + Date.now()
- await supabase.from("profiles").update({ avatar_url: freshUrl }).eq("handle", username)
- setAvatar(freshUrl); setUploading(false); alert("Profile pic + Supabase avatars bucket ✅")
-}
+    const file = e.target.files[0]; if(!file) return; setUploading(true)
+    try {
+      // SAME NAME ALWAYS = overwrite, no bucket spam
+      const name = `${username}-avatar`
+      const { error } = await supabase.storage.from("avatars").upload(name, file, {upsert:true, cacheControl: '0'})
+      if(error) throw error
+      
+      const { data } = supabase.storage.from("avatars").getPublicUrl(name)
+      const cleanUrl = data.publicUrl // SAVE THIS TO DB - CLEAN!
+      const freshUrl = cleanUrl + "?t=" + Date.now() // SHOW THIS ON SCREEN
+
+      // Try update, if fails (no profile) then insert
+      const { error: updateError } = await supabase.from("profiles").update({ avatar_url: cleanUrl }).eq("handle", username)
+      if(updateError){
+        await supabase.from("profiles").insert({ handle: username, avatar_url: cleanUrl })
+      }
+      
+      setAvatar(freshUrl)
+      alert("Profile pic + Supabase avatars bucket ✅")
+    } catch(err:any){
+      alert(err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const uploadProduct = async (e:any) =>{
     const file = e.target.files[0]; if(!file) return; setUploading(true)
-    const name = `${username}-product-${Date.now()}-${file.name}`
-    const { error } = await supabase.storage.from("products").upload(name, file, {upsert:true, cacheControl: '0'})
-    if(error) { alert(error.message); setUploading(false); return }
-    const { data } = supabase.storage.from("products").getPublicUrl(name)
-    const { data: inserted } = await supabase.from("products").insert({ user_handle: username, image_url: data.publicUrl, price: 19.99, old_price: 62.99 }).select()
-    if(inserted) setProducts([...products, ...inserted])
-    setUploading(false); alert("Product + Supabase products bucket ✅")
+    try {
+      const name = `${username}-product-${Date.now()}-${file.name.replace(/\s/g,'_')}`
+      const { error } = await supabase.storage.from("products").upload(name, file, {upsert:true, cacheControl: '0'})
+      if(error) throw error
+
+      const { data } = supabase.storage.from("products").getPublicUrl(name)
+      const cleanUrl = data.publicUrl
+
+      const { data: inserted, error: insertError } = await supabase.from("products").insert({ user_handle: username, image_url: cleanUrl, price: 19.99, old_price: 62.99 }).select()
+      if(insertError) throw insertError
+      if(inserted) setProducts([...products, ...inserted])
+      alert("Product + Supabase products bucket ✅")
+    } catch(err:any){
+      alert(err.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -48,7 +80,6 @@ export default function UserProfilePage() {
           <div><div style={{fontSize:"13px", fontWeight:"700"}}>{username}</div><div style={{fontSize:"10px", color:"#777"}}>@{username}</div></div>
         </div>
         <div style={{textAlign:"center"}}>
-          {/* FIXED CLICKABLE AVATAR */}
           <div onClick={()=>avatarRef.current?.click()} style={{cursor:"pointer"}}>
             <img src={avatar} style={{width:"90px", height:"90px", borderRadius:"50%", border:"4px solid #D4AF37", boxShadow:"0 0 20px gold", objectFit:"cover"}}/>
             <div style={{fontSize:"10px", color:"#D4AF37", marginTop:"4px"}}>{uploading ? "Uploading..." : "Tap pic to change"}</div>
@@ -82,7 +113,7 @@ export default function UserProfilePage() {
 
       <div style={{position:"fixed", bottom:"0", left:"0", right:"0", background:"black", borderTop:"1px solid #D4AF37", display:"flex", padding:"8px", gap:"8px", maxWidth:"430px", margin:"0 auto"}}>
         <button onClick={()=>alert("DM page")} style={{flex:1, border:"1px solid #D4AF37", background:"black", color:"#D4AF37", borderRadius:"24px", padding:"12px"}}>💬 Message</button>
-        <button onClick={()=>window.open("https://wa.me/27821234567","_blank")} style={{flex:1, background:"#00C851", borderRadius:"24px", padding:"12px", border:"none", fontWeight:"900"}}>📞 WhatsApp Call</button>
+        <button onClick={()=>window.open("https://wa.me/27645263038","_blank")} style={{flex:1, background:"#00C851", borderRadius:"24px", padding:"12px", border:"none", fontWeight:"900"}}>📞 WhatsApp Call</button>
       </div>
     </div>
   )
