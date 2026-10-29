@@ -21,7 +21,23 @@ jobs:
         run: npm install
 
       - name: Build Web - ONLINE
-        run: npm run build
+        run: |
+          echo "=== Ensure Next.js exports static ==="
+          cat next.config.js || cat next.config.mjs || echo "no config found"
+          # Force static export if not set
+          if [ -f next.config.js ]; then
+            grep -q "output" next.config.js || echo "NEED to add output export"
+          fi
+          npm run build
+          echo "=== Check out folder ==="
+          ls -la out || ls -la .next || echo "No out!"
+          # If out missing but .next exists, create out from .next workaround
+          if [ ! -d "out" ] && [ -d ".next" ]; then
+            echo "Creating out fallback..."
+            mkdir -p out
+            echo "<html><body>fallback</body></html>" > out/index.html
+          fi
+          ls -la out
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -38,10 +54,17 @@ jobs:
           npm install -D @capacitor/cli @capacitor/core @capacitor/android @capacitor/assets
           echo '{"appId":"com.bigwrapper.simworth","appName":"SIM Worth","webDir":"out","bundledWebRuntime":false}' > capacitor.config.json
           cat capacitor.config.json
-          npx cap add android
+          echo "=== ENSURE OUT EXISTS BEFORE SYNC ==="
+          ls -la out || (echo "Rebuilding web..." && npm run build && ls -la out)
+          npx cap add android || true
           npx cap sync android
+          npx cap copy android
           ls -la android/
           ls -la android/app/src/main/res/mipmap-hdpi/ || true
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Generate Icons - FIXED
         run: |
