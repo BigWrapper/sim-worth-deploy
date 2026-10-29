@@ -34,6 +34,7 @@ jobs:
 
       - name: Capacitor Sync
         run: |
+          npm install -D @capacitor/cli @capacitor/core @capacitor/android
           npx cap sync android
           ls -la out || ls -la .next
         env:
