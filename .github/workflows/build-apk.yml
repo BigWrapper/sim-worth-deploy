@@ -163,11 +163,30 @@ jobs:
           ls -la android/gradlew || echo "gradlew missing - will recreate"
 
           if [ ! -f android/gradlew ]; then
-            echo "Recreating android platform..."
-            npm install -D @capacitor/cli @capacitor/core @capacitor/android
-            npx cap add android || true
+            echo "Recreating android platform - CLEAN REBUILD"
+            rm -rf android
+            npx cap add android
             npx cap sync android
             npx cap copy android
+            
+            echo "=== RESTORE ICONS AFTER RECREATE ==="
+            mkdir -p android/app/src/main/res/mipmap-hdpi
+            mkdir -p android/app/src/main/res/mipmap-mdpi
+            mkdir -p android/app/src/main/res/mipmap-xhdpi
+            mkdir -p android/app/src/main/res/mipmap-xxhdpi
+            mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+            mkdir -p android/app/src/main/res/drawable
+            cp -f assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+            cp -f assets/icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            cp -f assets/splash.png android/app/src/main/res/drawable/splash.png || cp -f assets/icon.png android/app/src/main/res/drawable/splash.png
           fi
 
           ls -lh android/gradlew
