@@ -106,7 +106,7 @@ jobs:
           echo "Icons copied OK"
           ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
 
-            - name: Patch Kotlin Version - FIX DUPLICATE
+      - name: Patch Kotlin Version - FIX DUPLICATE
         run: |
           echo "=== BEFORE ==="
           cat android/variables.gradle
