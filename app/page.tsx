@@ -49,17 +49,15 @@ useEffect(()=>{
 },[]);
 
 const loadMyData = async (em:string)=>{
+  // Products
   const { data } = await supabase.from("products").select("*").eq("owner_email", em);
-  if(data && data.length>0){
-    setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
-  } else {
-    const local = localStorage.getItem(`im_products_${em}`);
-    if(local) setProducts(JSON.parse(local));
+  if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
+
+  // Avatar - ONLY from Supabase DB, no localStorage smiley guy
+  const { data: prof } = await supabase.from("profiles").select("avatar").eq("email", em).maybeSingle();
+  if(prof?.avatar && prof.avatar.startsWith("http")){
+    setAvatarPreview(prof.avatar);
   }
-  const av = localStorage.getItem(`im_avatar_${em}`);
-  if(av) setAvatarPreview(av);
-  const { data: prof } = await supabase.from("profiles").select("*").eq("email", em).single();
-  if(prof?.avatar) setAvatarPreview(prof.avatar);
 };
 
 const toBase64 = (file:File):Promise<string> => new Promise((res,rej)=>{
@@ -97,30 +95,23 @@ const doLogin = async ()=>{
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return;
   
-  // 1. Instant preview
   const tempUrl = URL.createObjectURL(file);
   setAvatarPreview(tempUrl);
 
   try {
-    // 2. Upload to your avatars bucket
     const fileName = `${email}/${Date.now()}.jpg`;
-    const { error } = await supabase.storage
+    const { error: upErr } = await supabase.storage
       .from('avatars')
       .upload(fileName, file, { upsert: true, contentType: file.type });
+    if(upErr) throw upErr;
 
-    if(error) throw error;
-
-    // 3. Get public URL that never dies
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
     const publicUrl = data.publicUrl;
 
-    // 4. Save forever in profiles + local
     setAvatarPreview(publicUrl);
-    localStorage.setItem(`im_avatar_${email}`, publicUrl);
     await syncProfile(email, totalWorth, publicUrl);
     await logActivity("updated avatar", "Changed profile photo");
     loadFeed();
-    
     console.log("SAVED FOREVER:", publicUrl);
   } catch(err:any){
     alert("Upload failed: " + err.message);
