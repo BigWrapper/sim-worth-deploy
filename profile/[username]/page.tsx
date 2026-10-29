@@ -18,19 +18,20 @@ export default function UserProfilePage() {
   },[username])
 
   const uploadAvatar = async (e:any) =>{
-    const file = e.target.files[0]; if(!file) return; setUploading(true)
-    const name = `${username}-avatar-${Date.now()}-${file.name}`
-    const { error } = await supabase.storage.from("avatars").upload(name, file, {upsert:true})
-    if(error) { alert(error.message); setUploading(false); return }
-    const { data } = supabase.storage.from("avatars").getPublicUrl(name)
-    await supabase.from("profiles").upsert({ handle: username, avatar_url: data.publicUrl, net_worth: 248750 })
-    setAvatar(data.publicUrl); setUploading(false); alert("Profile pic + Supabase avatars bucket ✅")
-  }
+ const file = e.target.files[0]; if(!file) return; setUploading(true)
+ const name = `${username}-avatar-${Date.now()}-${file.name}`
+ const { error } = await supabase.storage.from("avatars").upload(name, file, {upsert:true, cacheControl: '0'})
+ if(error){ alert(error.message); setUploading(false); return; }
+ const { data } = supabase.storage.from("avatars").getPublicUrl(name)
+ const freshUrl = data.publicUrl + "?t=" + Date.now()
+ await supabase.from("profiles").update({ avatar_url: freshUrl }).eq("handle", username)
+ setAvatar(freshUrl); setUploading(false); alert("Profile pic + Supabase avatars bucket ✅")
+}
 
   const uploadProduct = async (e:any) =>{
     const file = e.target.files[0]; if(!file) return; setUploading(true)
     const name = `${username}-product-${Date.now()}-${file.name}`
-    const { error } = await supabase.storage.from("products").upload(name, file)
+    const { error } = await supabase.storage.from("products").upload(name, file, {upsert:true, cacheControl: '0'})
     if(error) { alert(error.message); setUploading(false); return }
     const { data } = supabase.storage.from("products").getPublicUrl(name)
     const { data: inserted } = await supabase.from("products").insert({ user_handle: username, image_url: data.publicUrl, price: 19.99, old_price: 62.99 }).select()
