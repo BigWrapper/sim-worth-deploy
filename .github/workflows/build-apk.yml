@@ -158,12 +158,19 @@ jobs:
 
       - name: Build APK
         run: |
+          echo "=== DEBUG ANDROID FOLDER ==="
+          ls -la android || echo "NO android folder!"
+          ls -la android/gradlew || echo "gradlew missing - will recreate"
+
+          if [ ! -f android/gradlew ]; then
+            echo "Recreating android platform..."
+            npm install -D @capacitor/cli @capacitor/core @capacitor/android
+            npx cap add android || true
+            npx cap sync android
+            npx cap copy android
+          fi
+
+          ls -lh android/gradlew
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: SIM-Worth-Luxury-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          ./gradlew assembleDebug --stacktrace
