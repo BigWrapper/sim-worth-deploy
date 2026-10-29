@@ -44,11 +44,17 @@ jobs:
       - name: Build APK
         run: |
           if [ ! -f android/gradlew ]; then
-            echo "android folder broken - recreating..."
             rm -rf android
             npx cap add android
           fi
           npx cap sync android
+          # Fix kotlin duplicate bug
+          sed -i "s/kotlin_version = .*/kotlin_version = '1.8.22'/" android/variables.gradle
+          echo "
+          configurations.all {
+            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+          }" >> android/app/build.gradle
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
