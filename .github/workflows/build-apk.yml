@@ -106,36 +106,35 @@ jobs:
           echo "Icons copied OK"
           ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
 
-      - name: Patch Kotlin Version - FIX DUPLICATE
+      - name: Patch Kotlin Version - FIX DUPLICATE FINAL
         run: |
-          echo "=== BEFORE ==="
           cat android/variables.gradle
-          
-          # Force ALL kotlin to same version 1.9.22
           sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.9.22"/' android/variables.gradle
-          sed -i 's/1\.6\.21/1.9.22/g' android/variables.gradle || true
-          sed -i 's/1\.8\.22/1.9.22/g' android/variables.gradle || true
           
-          # Also fix in app/build.gradle if it has kotlin versions
-          sed -i 's/1\.6\.21/1.9.22/g' android/app/build.gradle || true
-          sed -i 's/1\.8\.22/1.9.22/g' android/app/build.gradle || true
-          sed -i 's/1\.6\.21/1.9.22/g' android/build.gradle || true
-          sed -i 's/1\.8\.22/1.9.22/g' android/build.gradle || true
-          
-          echo "=== AFTER ==="
-          cat android/variables.gradle
-          
-          # Add resolution strategy to force single kotlin version
-          echo "
+          echo "=== PATCHING BUILD.GRADLE ==="
+          # Add force resolution to android/build.gradle
+          cat >> android/build.gradle << 'EOF'
+
+          // FIX DUPLICATE KOTLIN - FORCE SINGLE VERSION
           subprojects {
-            configurations.all {
-              resolutionStrategy {
-                force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'
-                force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22'
-                force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22'
+              project.configurations.all {
+                  resolutionStrategy.eachDependency { details ->
+                      if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name.contains('kotlin-stdlib')) {
+                          details.useVersion "1.9.22"
+                      }
+                  }
               }
-            }
+          }
+          EOF
+
+          # Also exclude old jdk7/jdk8 in app/build.gradle
+          echo "
+          configurations.all {
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
           }" >> android/app/build.gradle
+          
+          cat android/variables.gradle
 
       - name: Build APK
         run: |
