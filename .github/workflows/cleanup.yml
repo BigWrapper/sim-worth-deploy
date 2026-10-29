@@ -1,0 +1,19 @@
+name: Cleanup All Runs
+on: workflow_dispatch
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete all workflow runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Deleting all runs..."
+          # Get all run IDs and delete
+          for id in $(gh api repos/${{ github.repository }}/actions/runs --paginate -q '.runs[].id'); do
+            echo "Deleting $id"
+            gh api -X DELETE repos/${{ github.repository }}/actions/runs/$id || true
+          done
+          echo "DONE - all green builds deleted!"
