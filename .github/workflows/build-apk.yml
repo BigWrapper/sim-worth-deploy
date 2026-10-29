@@ -106,10 +106,36 @@ jobs:
           echo "Icons copied OK"
           ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
 
-      - name: Patch Kotlin Version
+            - name: Patch Kotlin Version - FIX DUPLICATE
         run: |
-          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.9.22"/' android/variables.gradle || true
+          echo "=== BEFORE ==="
           cat android/variables.gradle
+          
+          # Force ALL kotlin to same version 1.9.22
+          sed -i 's/kotlinVersion = ".*"/kotlinVersion = "1.9.22"/' android/variables.gradle
+          sed -i 's/1\.6\.21/1.9.22/g' android/variables.gradle || true
+          sed -i 's/1\.8\.22/1.9.22/g' android/variables.gradle || true
+          
+          # Also fix in app/build.gradle if it has kotlin versions
+          sed -i 's/1\.6\.21/1.9.22/g' android/app/build.gradle || true
+          sed -i 's/1\.8\.22/1.9.22/g' android/app/build.gradle || true
+          sed -i 's/1\.6\.21/1.9.22/g' android/build.gradle || true
+          sed -i 's/1\.8\.22/1.9.22/g' android/build.gradle || true
+          
+          echo "=== AFTER ==="
+          cat android/variables.gradle
+          
+          # Add resolution strategy to force single kotlin version
+          echo "
+          subprojects {
+            configurations.all {
+              resolutionStrategy {
+                force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22'
+                force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22'
+                force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22'
+              }
+            }
+          }" >> android/app/build.gradle
 
       - name: Build APK
         run: |
