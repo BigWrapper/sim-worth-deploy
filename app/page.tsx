@@ -29,10 +29,8 @@ const avatarInputRef = useRef<HTMLInputElement>(null);
 const productInputRef = useRef<HTMLInputElement>(null);
 const [activeProductId, setActiveProductId] = useState<string | null>(null);
 
-const wAlink = "https://wa.me/27821234567?text=Hi $IM Worth";
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 
-// LOAD FEED - ONLINE
 const loadFeed = async ()=>{
   const { data: profs } = await supabase.from("profiles").select("*").order("updated_at", {ascending:false}).limit(50);
   if(profs) setProfiles(profs);
@@ -49,23 +47,19 @@ useEffect(()=>{
 },[]);
 
 const loadMyData = async (em:string)=>{
-  // Products
   const { data } = await supabase.from("products").select("*").eq("owner_email", em);
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
 
-  // Avatar - ONLY from Supabase DB, no localStorage smiley guy
+  // FIXED: Only load real http avatar from DB, ignore smiley
   const { data: prof } = await supabase.from("profiles").select("avatar").eq("email", em).maybeSingle();
-  if(prof?.avatar && prof.avatar.startsWith("http")){
+  if(prof?.avatar && prof.avatar.startsWith("http") && !prof.avatar.includes("pravatar")){
     setAvatarPreview(prof.avatar);
   }
 };
 
-const toBase64 = (file:File):Promise<string> => new Promise((res,rej)=>{
-  const r = new FileReader(); r.onload=()=>res(r.result as string); r.onerror=rej; r.readAsDataURL(file);
-});
-
 const syncProfile = async (em:string, worth:number, av:string)=>{
-  await supabase.from("profiles").upsert({ email: em, name: em.split("@")[0], handle:"@"+em.split("@")[0], avatar: av, total_worth: worth, updated_at: new Date().toISOString() });
+  const { error } = await supabase.from("profiles").upsert({ email: em, name: em.split("@")[0], handle:"@"+em.split("@")[0], avatar: av, total_worth: worth, updated_at: new Date().toISOString() }, { onConflict: 'email' });
+  if(error) console.log("PROFILE ERROR:", error.message);
 };
 
 const logActivity = async (action:string, detail:string)=>{
@@ -92,27 +86,21 @@ const doLogin = async ()=>{
   }
 };
 
+// FIXED: Upload to Supabase Storage, not base64
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return;
-  
   const tempUrl = URL.createObjectURL(file);
   setAvatarPreview(tempUrl);
-
   try {
     const fileName = `${email}/${Date.now()}.jpg`;
-    const { error: upErr } = await supabase.storage
-      .from('avatars')
-      .upload(fileName, file, { upsert: true, contentType: file.type });
-    if(upErr) throw upErr;
-
+    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
+    if(error) throw error;
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
     const publicUrl = data.publicUrl;
-
     setAvatarPreview(publicUrl);
     await syncProfile(email, totalWorth, publicUrl);
     await logActivity("updated avatar", "Changed profile photo");
-    loadFeed();
-    console.log("SAVED FOREVER:", publicUrl);
+    await loadFeed();
   } catch(err:any){
     alert("Upload failed: " + err.message);
   }
@@ -120,10 +108,9 @@ const handleAvatarChange = async (e:any)=>{
 
 const handleProductImageChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file || !activeProductId) return;
-  const b64 = await toBase64(file);
+  const b64 = await new Promise<string>((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result as string); r.onerror=rej; r.readAsDataURL(file); });
   setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:b64} : p));
   await supabase.from("products").update({ img: b64 }).eq("id", activeProductId);
-  await logActivity("updated item", "Changed item photo");
 };
 
 const addProduct = async ()=>{
@@ -132,17 +119,12 @@ const addProduct = async ()=>{
   setProducts([...products, newItem]);
   const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice }).select().single();
   if(data) setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p));
-  await logActivity("added item", `Added item for $${newItem.price}`);
-  await syncProfile(email, totalWorth+19.99, avatarPreview);
-  loadFeed();
 };
 
 const updatePrice = async (id:string)=>{
   const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; }
   setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p));
   await supabase.from("products").update({ price: num }).eq("id", id);
-  await logActivity("price change", `Changed price to $${num}`);
-  await syncProfile(email, products.reduce((s,p)=> s + (p.id===id? num : Number(p.price)),0), avatarPreview);
   setEditingPriceId(null); loadFeed();
 };
 
@@ -167,29 +149,13 @@ return(
 <div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
 <div style={{padding:"15px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid #222"}}><h2 style={{color:"#D4AF37", margin:0}}>Live Feed 🌍</h2><div onClick={loadFeed} style={{color:"#D4AF37", cursor:"pointer"}}>↻ Refresh</div></div>
 <div style={{padding:"15px"}}>
-<div style={{color:"#888", fontSize:"12px", marginBottom:"10px"}}>Everyone using $IM Worth app right now:</div>
 {profiles.map((p:any)=>(
 <div key={p.email} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"8px", border:"1px solid #222"}}>
-<img src={p.avatar} style={{width:"44px", height:"44px", borderRadius:"50%"}}/>
+<img src={p.avatar} style={{width:"44px", height:"44px", borderRadius:"50%", objectFit:"cover"}}/>
 <div style={{flex:1}}><div style={{fontWeight:"bold", color:"#D4AF37"}}>{p.name}</div><div style={{fontSize:"11px", color:"#888"}}>{p.email}</div></div>
 <div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(p.total_worth||0).toFixed(2)}</div>
 </div>
 ))}
-<h3 style={{color:"#D4AF37", marginTop:"20px", fontSize:"14px"}}>Recent Activity</h3>
-{activity.map((a:any)=>(
-<div key={a.id} style={{fontSize:"12px", color:"#aaa", padding:"8px 0", borderBottom:"1px solid #111"}}><span style={{color:"#D4AF37"}}>{a.owner_email}</span> {a.action} — {a.detail} <span style={{color:"#555", marginLeft:"6px"}}>{new Date(a.created_at).toLocaleTimeString()}</span></div>
-))}
-<div style={{marginTop:"20px"}}>
-<h3 style={{color:"#D4AF37", fontSize:"14px"}}>All Items From Everyone (Temu Grid)</h3>
-<div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px", marginTop:"10px"}}>
-{feedProducts.map((p:any)=>(
-<div key={p.id} style={{background:"#111", borderRadius:"12px", overflow:"hidden", border:"1px solid #222"}}>
-<img src={p.img} style={{width:"100%", height:"100px", objectFit:"cover"}}/>
-<div style={{padding:"6px"}}><div style={{fontWeight:"bold"}}>${Number(p.price).toFixed(2)}</div><div style={{fontSize:"9px", color:"#666"}}>{p.owner_email}</div></div>
-</div>
-))}
-</div>
-</div>
 </div>
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
 <div onClick={()=>setView("accounts")} style={{color:"#888", cursor:"pointer"}}>👤 Accounts</div>
@@ -209,6 +175,7 @@ return(
 <div style={{padding:"20px", textAlign:"center"}}>
 <img src={avatarPreview} onClick={()=>avatarInputRef.current?.click()} style={{width:"90px", height:"90px", borderRadius:"50%", border:"2px solid #D4AF37", cursor:"pointer", objectFit:"cover"}}/>
 <div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"10px"}}>{email.split("@")[0]}</div>
+<div style={{color:"#666", fontSize:"11px", marginTop:"5px"}}>Tap pic to change — now saves forever</div>
 </div>
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>TOTAL NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"22px"}}>$ {totalWorth.toFixed(2)}</div></div>
@@ -245,7 +212,7 @@ return(
 <div style={{padding:"15px"}}>
 {profiles.map((u:any)=>(
 <div key={u.email} onClick={()=>{setEmail(u.email); setView("profile"); loadMyData(u.email);}} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border:"1px solid #333", cursor:"pointer"}}>
-<img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%"}}/>
+<img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%", objectFit:"cover"}}/>
 <div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name}</div><div style={{fontSize:"11px", color:"#888"}}>{u.email}</div></div>
 <div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(u.total_worth||0).toFixed(2)}</div>
 </div>
