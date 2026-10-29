@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "../../lib/supabase"
 import { useRouter } from "next/navigation"
 
 export default function SignupPage(){
@@ -30,7 +30,7 @@ export default function SignupPage(){
         localStorage.setItem("current_handle", username)
         localStorage.setItem("sb_user_id", data.user.id)
         alert("Account created ✅")
-        router.push(`/profile/${username}`)
+        router.push(/profile/${username})
       }
     }catch(err:any){ alert(err.message) } finally{ setLoading(false) }
   }
@@ -46,7 +46,7 @@ export default function SignupPage(){
         const { data: prof } = await supabase.from("profiles").select("handle").eq("id", data.user.id).single()
         const h = prof?.handle || username
         localStorage.setItem("current_handle", h)
-        router.push(`/profile/${h}`)
+        router.push(/profile/${username})
       }
     }catch(err:any){ alert(err.message) } finally{ setLoading(false) }
   }
