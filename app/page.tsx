@@ -40,17 +40,43 @@ const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [offerAmount, setOfferAmount] = useState("");
 
-// NEW - PAY ME & VISIT ME STATE
+// PAY ME & VISIT ME STATE + NEW MANUAL ADDRESS FOR SIM MAPS
 const [payMethod, setPayMethod] = useState("capitec");
 const [payHandle, setPayHandle] = useState("");
 const [payLink, setPayLink] = useState("");
 const [userLocation, setUserLocation] = useState("");
 const [userLat, setUserLat] = useState("");
 const [userLng, setUserLng] = useState("");
+const [streetAddress, setStreetAddress] = useState("");
+const [suburb, setSuburb] = useState("");
+const [city, setCity] = useState("Midrand");
 const [myId, setMyId] = useState("");
 
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
+
+// SIM MAPS HELPER - OPENS OFFLINE MAPS
+const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
+  let geoUrl = "";
+  if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){
+    // If we have coords - open exact pin in SIM Maps
+    geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`;
+  } else if(address){
+    // No coords - open by address search in SIM Maps (offline OSM search)
+    geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`;
+  } else {
+    alert("Add address first bro!");
+    return;
+  }
+  // Try to open SIM Maps app, fallback to browser OSM
+  window.location.href = geoUrl;
+  // Fallback for web - open OSM if app not installed
+  setTimeout(()=>{
+    if(address){
+      window.open(`https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`, '_blank');
+    }
+  }, 800);
+};
 
 const loadFeed = async ()=>{
   const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
@@ -97,7 +123,16 @@ const loadMyData = async (em:string)=>{
     if(prof.pay_method) setPayMethod(prof.pay_method);
     if(prof.pay_handle) setPayHandle(prof.pay_handle);
     if(prof.pay_link) setPayLink(prof.pay_link);
-    if(prof.location) setUserLocation(prof.location);
+    if(prof.location) {
+      setUserLocation(prof.location);
+      // Try to parse street/suburb from location if it contains comma
+      const parts = prof.location.split(',');
+      if(parts.length >= 2){
+        setStreetAddress(parts[0].trim());
+        setSuburb(parts[1].trim());
+        if(parts[2]) setCity(parts[2].trim());
+      }
+    }
     if(prof.latitude) setUserLat(prof.latitude.toString());
     if(prof.longitude) setUserLng(prof.longitude.toString());
     if(prof.id) setMyId(prof.id);
@@ -115,22 +150,25 @@ const syncProfile = async (em:string, worth:number, av:string)=>{
   if(!em || !em.includes("@")) return;
   const handle = "@" + em.split("@")[0].toLowerCase().trim();
   if(handle === "@" || handle.length < 3) return;
+  // Build full address from manual fields
+  const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
   const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
   if(existing){ 
-    await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: userLocation, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("id", existing.id); 
+    await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("id", existing.id); 
   }
   else { 
-    await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: userLocation, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }); 
+    await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }); 
   }
 };
 
 const saveBio = async ()=>{
+  const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
   await supabase.from("profiles").update({ 
     bio: bio, about: about,
     pay_method: payMethod, pay_handle: payHandle, pay_link: payLink,
-    location: userLocation, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null
+    location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null
   }).eq("handle", myHandle);
-  setEditingBio(false); loadFeed(); alert("Profile + Pay Me + Visit Me saved ✓");
+  setEditingBio(false); loadFeed(); alert("Profile + Pay Me + Visit Me + SIM Maps Address saved ✓");
 };
 
 const doLogin = async ()=>{
@@ -336,46 +374,12 @@ return(
 </div>
 <button onClick={()=>handleFollow(selectedUser.handle)} style={{marginTop:"12px", background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "white" : "black", fontWeight:"900", padding:"8px 20px", borderRadius:"20px", border:"none"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "Following ✓" : "Follow +"}</button>
 
-{/* PAY ME & VISIT ME FOR PUBLIC USERS TOO */}
-<div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"12px"}}>
+<div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"12px", flexWrap:"wrap"}}>
 {(selectedUser.pay_link || selectedUser.pay_handle) && (
 <button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>💰 Pay {selectedUser.handle}</button>
 )}
-{(selectedUser.location || selectedUser.latitude) && (
-<button onClick={()=>{
-  const btn = document.getElementById('locBtn');
-  if(btn) btn.innerText = '📍 Getting location...';
-  
-  if(!navigator.geolocation){
-    alert('Geolocation not supported on this device. Type South Africa manually!');
-    if(btn) btn.innerText = '📍 Use My Current Location';
-    return;
-  }
-
-  const options = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
-  
-  navigator.geolocation.getCurrentPosition(
-    (p)=>{
-      setUserLat(p.coords.latitude.toString());
-      setUserLng(p.coords.longitude.toString());
-      if(!userLocation) setUserLocation('My Current Location');
-      if(btn) btn.innerText = '✅ Location captured!';
-      setTimeout(()=>{ if(btn) btn.innerText = '📍 Use My Current Location'; }, 2000);
-      alert(`Location captured! Lat: ${p.coords.latitude.toFixed(5)}, Lng: ${p.coords.longitude.toFixed(5)} - Now click Save All ✓`);
-    },
-    (err)=>{
-      if(btn) btn.innerText = '📍 Use My Current Location';
-      if(err.code === 1){
-        alert('Location blocked! Go to Phone Settings > Apps > SIM Worth > Permissions > Allow Location, then try again!');
-      } else if(err.code === 2){
-        alert('No GPS signal! Turn on GPS / Location in phone and try outside!');
-      } else {
-        alert('Could not get location: ' + err.message + '. Just type South Africa or your area manually!');
-      }
-    },
-    options
-  );
-}} id="locBtn" style={{marginTop:"8px", width:"100%", background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900"}}>📍 Use My Current Location</button>
+{(selectedUser.location) && (
+<button onClick={()=> openInSimMaps(selectedUser.latitude, selectedUser.longitude, selectedUser.location)} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>🗺️ Visit in SIM Maps</button>
 )}
 </div>
 
@@ -452,7 +456,6 @@ return(
 <input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio - I'm Worth CEO" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About - Entrepreneur" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
 
-{/* PAY ME EDIT */}
 <div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup (SIM Banc)</div>
 <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
@@ -466,18 +469,37 @@ return(
 <input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://... (optional)" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
 
-{/* VISIT ME EDIT */}
-<div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"12px", background:"#0a0a0a"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>📍 Visit Me Setup (SIM Maps)</div>
-<input value={userLocation} onChange={e=>setUserLocation(e.target.value)} placeholder="Shop address e.g. Midrand Mall" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
-<div style={{display:"flex", gap:"8px"}}>
+<div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS (Manual + Offline)</div>
+
+<input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address e.g. 12 Riverview Road" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb e.g. Noordwyk" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={city} onChange={e=>setCity(e.target.value)} placeholder="City e.g. Midrand" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+
+<div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
 <input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat -26.02" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 <input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng 28.13" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
-<button onClick={()=>{ if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert("Location captured!"); }); } }} style={{marginTop:"8px", width:"100%", background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"8px", borderRadius:"8px"}}>📍 Use My Current Location</button>
+
+<button onClick={()=>{
+  if(!navigator.geolocation){ alert('Geolocation not supported'); return; }
+  navigator.geolocation.getCurrentPosition(p=>{ 
+    setUserLat(p.coords.latitude.toString()); 
+    setUserLng(p.coords.longitude.toString()); 
+    alert(`Location captured! ${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`); 
+  }, err=> alert('GPS Error: '+err.message), {enableHighAccuracy:true, timeout:15000});
+}} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Use My Current Location (GPS)</button>
+
+<button onClick={()=>{
+  const full = `${streetAddress}, ${suburb}, ${city}`;
+  if(!streetAddress || !suburb){ alert("Fill Street + Suburb first!"); return; }
+  openInSimMaps(userLat, userLng, full);
+}} style={{width:"100%", background:"#0a84ff", color:"white", padding:"12px", borderRadius:"8px", fontWeight:"900", border:"none", marginBottom:"8px"}}>🗺️ Open Address in SIM Maps (Offline)</button>
+
+<div style={{fontSize:"10px", color:"#888", textAlign:"center"}}>No GPS needed! SIM Maps opens offline with your typed address!</div>
 </div>
 
-<button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none", marginRight:"8px", width:"100%"}}>Save All ✓</button>
+<button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
 <button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
 </div>
 ) : (
@@ -487,6 +509,9 @@ return(
 <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
 {userLocation && <div style={{color:"#D4AF37", fontSize:"11px", marginTop:"6px"}}>📍 {userLocation}</div>}
 {(payHandle || payLink) && <div style={{color:"#00ff88", fontSize:"11px", marginTop:"4px"}}>💰 Pay: {payMethod} - {payHandle || payLink}</div>}
+{userLocation && (
+<button onClick={()=> openInSimMaps(userLat, userLng, userLocation)} style={{marginTop:"10px", width:"100%", background:"#0a84ff", color:"white", padding:"10px", borderRadius:"8px", fontWeight:"900", border:"none"}}>🗺️ View Me in SIM Maps</button>
+)}
 </div>
 )}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
