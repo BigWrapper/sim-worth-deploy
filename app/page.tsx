@@ -2,11 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; };
 
 export default function FullApp(){
@@ -20,6 +16,10 @@ const [err, setErr] = useState("");
 const [products, setProducts] = useState<Product[]>([]);
 const [profiles, setProfiles] = useState<any[]>([]);
 const [feedProducts, setFeedProducts] = useState<Product[]>([]);
+const [search, setSearch] = useState("");
+const [selectedUser, setSelectedUser] = useState<any>(null);
+const [selectedUserProducts, setSelectedUserProducts] = useState<Product[]>([]);
+const [follows, setFollows] = useState<any[]>([]);
 
 const [avatarPreview, setAvatarPreview] = useState("https://i.pravatar.cc/200?img=12");
 const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
@@ -29,19 +29,20 @@ const productInputRef = useRef<HTMLInputElement>(null);
 const [activeProductId, setActiveProductId] = useState<string | null>(null);
 
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
+const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
 
 const loadFeed = async ()=>{
-  const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(50);
+  const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
   if(profs) setProfiles(profs.map((p:any)=>({ 
-    id: p.id, 
-    email: p.handle,
-    handle: p.handle,
-    name: p.handle?.replace('@',''),
+    id: p.id, email: p.email || p.handle, handle: p.handle,
+    name: p.display_name || p.handle?.replace('@',''),
     avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12",
     total_worth: p.net_worth || 0
   })));
-  const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(50);
+  const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
   if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email})));
+  const { data: fl } = await supabase.from("follows").select("*");
+  if(fl) setFollows(fl);
 };
 
 useEffect(()=>{
@@ -53,108 +54,78 @@ useEffect(()=>{
 const loadMyData = async (em:string)=>{
   const { data } = await supabase.from("products").select("*").eq("owner_email", em).order("created_at", {ascending:false});
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
-  const handle = "@" + em.split("@")[0].toLowerCase();
+  const handle = "@" + em.split("@")[0].toLowerCase().trim();
   const { data: prof } = await supabase.from("profiles").select("*").eq("handle", handle).maybeSingle();
-  if(prof?.avatar_url){
-    setAvatarPreview(prof.avatar_url);
-  }
+  if(prof?.avatar_url) setAvatarPreview(prof.avatar_url);
+};
+
+const loadPublicUser = async (user:any)=>{
+  setSelectedUser(user);
+  const { data } = await supabase.from("products").select("*").eq("owner_email", user.email).order("created_at",{ascending:false});
+  if(data) setSelectedUserProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
+  setView("publicProfile");
 };
 
 const syncProfile = async (em:string, worth:number, av:string)=>{
-  const handle = "@" + em.split("@")[0].toLowerCase();
+  if(!em || !em.includes("@")) return;
+  const handle = "@" + em.split("@")[0].toLowerCase().trim();
+  if(handle === "@" || handle.length < 3) return;
   const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
   if(existing){
-    await supabase.from("profiles").update({ avatar_url: av, net_worth: worth }).eq("id", existing.id);
+    await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em }).eq("id", existing.id);
   } else {
-    await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth });
+    await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em });
   }
 };
 
 const doLogin = async ()=>{
   setErr("");
   if(!email.includes("@") || password.length < 3){ setErr("Valid email + 3 chars"); return; }
-  
   const handle = "@" + email.split("@")[0].toLowerCase().trim();
   const key = `im_user_${email}`;
   const saved = localStorage.getItem(key);
-
-  // Always check Supabase for real account existence
   const { data: existingProfile } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
-
   if(authMode==="signup"){
-    // If exists in phone OR in Supabase -> don't create again
-    if(saved || existingProfile){
-      setErr("Account already exists - please LOGIN"); 
-      setAuthMode("login"); 
-      return; 
-    }
-    // New account
+    if(saved || existingProfile){ setErr("Account already exists - LOGIN"); setAuthMode("login"); return; }
     localStorage.setItem(key, password);
     localStorage.setItem("im_session", email);
     await syncProfile(email, 0, avatarPreview);
-    setLoggedIn(true); 
-    await loadMyData(email);
-    await loadFeed();
-    
+    setLoggedIn(true); await loadMyData(email); await loadFeed();
   } else {
-    // LOGIN MODE
-    if(saved){
-      // Has local password, check it
-      if(saved!==password){ setErr("Wrong password"); return; }
-    } else {
-      // No local password (reinstall / new phone) - but check if profile exists in Supabase
-      if(!existingProfile){ 
-        setErr("No account found - please SIGN UP"); 
-        setAuthMode("signup");
-        return; 
-      }
-      // Profile exists in cloud, let them in and recreate local password
-      localStorage.setItem(key, password);
-    }
-    
+    if(saved){ if(saved!==password){ setErr("Wrong password"); return; } }
+    else { if(!existingProfile){ setErr("No account - SIGN UP"); setAuthMode("signup"); return; } localStorage.setItem(key, password); }
     localStorage.setItem("im_session", email);
-    await loadMyData(email);
-    setLoggedIn(true); 
-    await loadFeed();
+    await loadMyData(email); setLoggedIn(true); await loadFeed();
   }
 };
 
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return;
-  const tempUrl = URL.createObjectURL(file);
-  setAvatarPreview(tempUrl);
+  setAvatarPreview(URL.createObjectURL(file));
   try {
     const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
     const fileName = `${safeEmail}/${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
-    if(error) throw error;
+    await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
     const publicUrl = data.publicUrl + `?t=${Date.now()}`;
     setAvatarPreview(publicUrl);
     await syncProfile(email, totalWorth, publicUrl);
     await loadFeed();
-  } catch(err:any){
-    alert("Avatar upload failed: " + err.message);
-  }
+  } catch(err:any){ alert("Upload failed: " + err.message); }
 };
 
-// FIXED GRID: Upload to storage, not base64
 const handleProductImageChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file || !activeProductId) return;
   try {
     const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
     const fileName = `${safeEmail}/product_${activeProductId}_${Date.now()}.jpg`;
-    // Use avatars bucket too, so you don't need new bucket
-    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
-    if(error) throw error;
+    await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
     const publicUrl = data.publicUrl + `?t=${Date.now()}`;
     setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p));
     await supabase.from("products").update({ img: publicUrl }).eq("id", activeProductId);
     await loadFeed();
-  } catch(err:any){
-    alert("Product image failed: " + err.message);
-  }
+  } catch(err:any){ alert("Product image failed: " + err.message); }
 };
 
 const addProduct = async ()=>{
@@ -165,14 +136,28 @@ const addProduct = async ()=>{
   if(data) setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p));
   await loadFeed();
 };
-
 const updatePrice = async (id:string)=>{
   const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; }
   setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p));
   await supabase.from("products").update({ price: num }).eq("id", id);
-  setEditingPriceId(null); 
+  setEditingPriceId(null); loadFeed();
+};
+
+const handleFollow = async (targetHandle:string)=>{
+  if(myHandle === targetHandle) return;
+  const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle);
+  if(existing){
+    await supabase.from("follows").delete().eq("id", existing.id);
+  } else {
+    await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle });
+  }
   loadFeed();
 };
+
+const filteredProfiles = profiles.filter(p=> 
+  p.handle.toLowerCase().includes(search.toLowerCase()) || 
+  p.name.toLowerCase().includes(search.toLowerCase())
+);
 
 if(!loggedIn){
 return(
@@ -185,6 +170,36 @@ return(
 <input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"20px"}}/>
 <button onClick={doLogin} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"14px", borderRadius:"12px", border:"none"}}>{authMode==="signup"?"SIGN UP →":"LOGIN →"}</button>
 <div style={{textAlign:"center", color:"#666", fontSize:"13px", marginTop:"16px"}} onClick={()=>setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Have account? Login":"No account? Sign Up"}</div>
+</div>
+</div>
+);
+}
+
+if(view==="publicProfile" && selectedUser){
+const isFollowing = follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle);
+const followersCount = follows.filter(f=> f.following_handle===selectedUser.handle).length;
+return(
+<div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"90px"}}>
+<div style={{display:"flex", alignItems:"center", gap:"10px", padding:"15px", borderBottom:"1px solid #222"}}><div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div><div style={{color:"#D4AF37", fontWeight:"bold"}}>{selectedUser.handle}</div></div>
+<div style={{padding:"20px", textAlign:"center"}}>
+<img src={selectedUser.avatar} style={{width:"90px", height:"90px", borderRadius:"50%", border:"2px solid #D4AF37", objectFit:"cover"}}/>
+<div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"10px"}}>{selectedUser.name}</div>
+<div style={{color:"#888", fontSize:"12px"}}>{followersCount} followers • ${selectedUser.total_worth.toFixed(2)} worth</div>
+<button onClick={()=>handleFollow(selectedUser.handle)} style={{marginTop:"12px", background: isFollowing ? "#222" : "#D4AF37", color: isFollowing ? "white" : "black", fontWeight:"900", padding:"8px 20px", borderRadius:"20px", border:"none"}}>{isFollowing ? "Following ✓" : "Follow +"}</button>
+<div style={{color:"#666", fontSize:"11px", marginTop:"8px"}}>Read-only profile - can't edit</div>
+</div>
+<div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
+{selectedUserProducts.map((p)=>(
+<div key={p.id} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a"}}>
+<img src={p.img} style={{width:"100%", height:"120px", objectFit:"cover"}}/>
+<div style={{padding:"8px", fontWeight:"900"}}>$ {Number(p.price).toFixed(2)}</div>
+</div>
+))}
+</div>
+<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
+<div onClick={()=>setView("accounts")} style={{color:"#888"}}>👤 Search</div>
+<div onClick={()=>setView("feed")} style={{color:"#888"}}>🌍 Feed</div>
+<div onClick={()=>setView("profile")} style={{color:"#D4AF37"}}>💎 My Profile</div>
 </div>
 </div>
 );
@@ -203,9 +218,9 @@ return(
 ))}
 </div>
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
-<div onClick={()=>setView("accounts")} style={{color:"#888", cursor:"pointer"}}>👤 Accounts</div>
-<div onClick={()=>setView("feed")} style={{color:"#D4AF37", fontWeight:"bold", cursor:"pointer"}}>🌍 Feed</div>
-<div onClick={()=>setView("profile")} style={{color:"#888", cursor:"pointer"}}>💎 Profile</div>
+<div onClick={()=>setView("accounts")} style={{color:"#888"}}>👤 Search</div>
+<div onClick={()=>setView("feed")} style={{color:"#D4AF37", fontWeight:"bold"}}>🌍 Feed</div>
+<div onClick={()=>setView("profile")} style={{color:"#888"}}>💎 Profile</div>
 </div>
 </div>
 );
@@ -216,15 +231,15 @@ return(
 <div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"90px"}}>
 <input ref={avatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleAvatarChange}/>
 <input ref={productInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleProductImageChange}/>
-<div style={{display:"flex", alignItems:"center", gap:"10px", padding:"15px", borderBottom:"1px solid #222"}}><div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div><div style={{color:"#D4AF37", fontWeight:"bold"}}>{email}</div></div>
+<div style={{display:"flex", alignItems:"center", gap:"10px", padding:"15px", borderBottom:"1px solid #222"}}><div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div><div style={{color:"#D4AF37", fontWeight:"bold"}}>My Profile (Private)</div></div>
 <div style={{padding:"20px", textAlign:"center"}}>
 <img src={avatarPreview} onClick={()=>avatarInputRef.current?.click()} style={{width:"90px", height:"90px", borderRadius:"50%", border:"2px solid #D4AF37", cursor:"pointer", objectFit:"cover"}}/>
 <div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"10px"}}>{email.split("@")[0]}</div>
-<div style={{color:"#666", fontSize:"11px", marginTop:"5px"}}>Tap pic to change</div>
+<div style={{color:"#666", fontSize:"11px"}}>Tap pic to change - Only you can edit this</div>
 </div>
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>TOTAL NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"22px"}}>$ {totalWorth.toFixed(2)}</div></div>
-<div style={{color:"#00A651", fontSize:"12px"}}>Synced ✓</div>
+<div style={{color:"#00A651", fontSize:"12px"}}>Private ✓</div>
 </div>
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {products.map((p)=>(
@@ -243,7 +258,7 @@ return(
 <div onClick={addProduct} style={{background:"#0a0a0a", border:"2px dashed #D4AF37", borderRadius:"14px", height:"120px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer"}}>+ Add</div>
 </div>
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
-<div onClick={()=>setView("accounts")} style={{color:"#888"}}>👤 Accounts</div>
+<div onClick={()=>setView("accounts")} style={{color:"#888"}}>👤 Search</div>
 <div onClick={()=>setView("feed")} style={{color:"#888"}}>🌍 Feed</div>
 <div onClick={()=>setView("profile")} style={{color:"#D4AF37", fontWeight:"bold"}}>💎 Profile</div>
 </div>
@@ -253,20 +268,24 @@ return(
 
 return(
 <div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
-<div style={{padding:"15px"}}><h2 style={{color:"#D4AF37", margin:0}}>Accounts • Live: {profiles.length} users</h2></div>
 <div style={{padding:"15px"}}>
-{profiles.map((u:any)=>(
-<div key={u.email} onClick={()=>{setEmail(u.handle.replace('@','')+'@gmail.com'); setView("profile"); loadMyData(u.handle.replace('@','')+'@gmail.com');}} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border:"1px solid #333", cursor:"pointer"}}>
+<h2 style={{color:"#D4AF37", margin:0}}>SIM WORTH Users 🔍</h2>
+<input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"12px"}}/>
+<div style={{color:"#666", fontSize:"11px", marginTop:"6px"}}>Private mode: you can only edit YOUR profile</div>
+</div>
+<div style={{padding:"15px"}}>
+{filteredProfiles.map((u:any)=>(
+<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{display:"flex", gap:"10px", background: u.handle===myHandle ? "#1a1a0a" : "#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border: u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #333", cursor:"pointer"}}>
 <img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%", objectFit:"cover"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle}</div></div>
+<div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name} {u.handle===myHandle && "(You)"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {follows.filter(f=>f.following_handle===u.handle).length} followers</div></div>
 <div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(u.total_worth||0).toFixed(2)}</div>
 </div>
 ))}
 </div>
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
-<div onClick={()=>setView("accounts")} style={{color:"#D4AF37", fontWeight:"bold"}}>👤 Accounts</div>
-<div onClick={()=>setView("feed")} style={{color:"#888", cursor:"pointer"}}>🌍 Feed</div>
-<div onClick={()=>setView("profile")} style={{color:"#888", cursor:"pointer"}}>💎 Profile</div>
+<div onClick={()=>setView("accounts")} style={{color:"#D4AF37", fontWeight:"bold"}}>👤 Search</div>
+<div onClick={()=>setView("feed")} style={{color:"#888"}}>🌍 Feed</div>
+<div onClick={()=>setView("profile")} style={{color:"#888"}}>💎 Profile</div>
 <div onClick={()=>{localStorage.removeItem("im_session"); setLoggedIn(false);}} style={{color:"#888"}}>Logout</div>
 </div>
 </div>
