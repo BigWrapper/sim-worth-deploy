@@ -342,7 +342,40 @@ return(
 <button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>💰 Pay {selectedUser.handle}</button>
 )}
 {(selectedUser.location || selectedUser.latitude) && (
-<button onClick={()=> window.location.href = selectedUser.latitude ? `geo:${selectedUser.latitude},${selectedUser.longitude}?q=${selectedUser.latitude},${selectedUser.longitude}(${selectedUser.handle})` : `geo:0,0?q=${encodeURIComponent(selectedUser.location)}`} style={{background:"black", color:"#D4AF37", border:"1px solid #D4AF37", padding:"8px 16px", borderRadius:"20px"}}>📍 Visit</button>
+<button onClick={()=>{
+  const btn = document.getElementById('locBtn');
+  if(btn) btn.innerText = '📍 Getting location...';
+  
+  if(!navigator.geolocation){
+    alert('Geolocation not supported on this device. Type South Africa manually!');
+    if(btn) btn.innerText = '📍 Use My Current Location';
+    return;
+  }
+
+  const options = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+  
+  navigator.geolocation.getCurrentPosition(
+    (p)=>{
+      setUserLat(p.coords.latitude.toString());
+      setUserLng(p.coords.longitude.toString());
+      if(!userLocation) setUserLocation('My Current Location');
+      if(btn) btn.innerText = '✅ Location captured!';
+      setTimeout(()=>{ if(btn) btn.innerText = '📍 Use My Current Location'; }, 2000);
+      alert(`Location captured! Lat: ${p.coords.latitude.toFixed(5)}, Lng: ${p.coords.longitude.toFixed(5)} - Now click Save All ✓`);
+    },
+    (err)=>{
+      if(btn) btn.innerText = '📍 Use My Current Location';
+      if(err.code === 1){
+        alert('Location blocked! Go to Phone Settings > Apps > SIM Worth > Permissions > Allow Location, then try again!');
+      } else if(err.code === 2){
+        alert('No GPS signal! Turn on GPS / Location in phone and try outside!');
+      } else {
+        alert('Could not get location: ' + err.message + '. Just type South Africa or your area manually!');
+      }
+    },
+    options
+  );
+}} id="locBtn" style={{marginTop:"8px", width:"100%", background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900"}}>📍 Use My Current Location</button>
 )}
 </div>
 
