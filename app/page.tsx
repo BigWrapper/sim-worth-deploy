@@ -59,9 +59,18 @@ const loadFeed = async ()=>{
 };
 
 useEffect(()=>{
-  const session = localStorage.getItem("im_session");
-  if(session){ setEmail(session); setLoggedIn(true); loadMyData(session); }
-  loadFeed();
+  const checkSession = async ()=>{
+    const { data } = await supabase.auth.getSession();
+    if(data.session?.user?.email_confirmed_at){
+      const em = data.session.user.email!;
+      setEmail(em); setLoggedIn(true); loadMyData(em);
+    } else {
+      const old = localStorage.getItem("im_session");
+      if(old) { setEmail(old); setLoggedIn(true); loadMyData(old); } // keep old accounts for now
+    }
+    loadFeed();
+  };
+  checkSession();
 },[]);
 
 const loadMyData = async (em:string)=>{
@@ -95,21 +104,53 @@ const saveBio = async ()=>{
 
 const doLogin = async ()=>{
   setErr("");
-  if(!email.includes("@") || password.length < 3){ setErr("Valid email + 3 chars"); return; }
-  const handle = "@" + email.split("@")[0].toLowerCase().trim();
-  const key = `im_user_${email}`;
-  const saved = localStorage.getItem(key);
-  const { data: existingProfile } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
-  if(authMode==="signup"){
-    if(saved || existingProfile){ setErr("Account exists - LOGIN"); setAuthMode("login"); return; }
-    localStorage.setItem(key, password); localStorage.setItem("im_session", email);
-    await syncProfile(email, 0, avatarPreview);
-    setLoggedIn(true); await loadMyData(email); await loadFeed();
-  } else {
-    if(saved){ if(saved!==password){ setErr("Wrong password"); return; } }
-    else { if(!existingProfile){ setErr("No account - SIGN UP"); setAuthMode("signup"); return; } localStorage.setItem(key, password); }
-    localStorage.setItem("im_session", email);
-    await loadMyData(email); setLoggedIn(true); await loadFeed();
+  if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
+
+  try {
+    if(authMode==="signup"){
+      // REAL SIGNUP WITH EMAIL CONFIRMATION
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password: password,
+        options: {
+          data: { handle: "@" + email.split("@")[0].toLowerCase() }
+        }
+      });
+      if(error) throw error;
+
+      // If email confirmation is ON, Supabase returns no session
+      if(!data.session){
+        setErr("✅ Verification email sent! Check your inbox & spam to confirm, then LOGIN.");
+        setAuthMode("login");
+        return;
+      }
+      
+      // If auto-confirm OFF (for testing), create profile
+      localStorage.setItem("im_session", email);
+      await syncProfile(email, 0, avatarPreview);
+      setLoggedIn(true); await loadMyData(email); await loadFeed();
+      
+    } else {
+      // REAL LOGIN - WILL FAIL IF NOT CONFIRMED
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password
+      });
+      if(error) throw error;
+      
+      if(!data.user?.email_confirmed_at){
+        setErr("⚠️ Email not verified. Check your inbox for confirmation link.");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      localStorage.setItem("im_session", email);
+      await loadMyData(email); 
+      setLoggedIn(true); 
+      await loadFeed();
+    }
+  } catch(e:any){
+    setErr(e.message);
   }
 };
 
