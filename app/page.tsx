@@ -396,7 +396,7 @@ return(
 
 {view==="profile" && (
 <div>
-<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} onAvatarClick={()=>openImageModal(avatarPreview, {handle: myHandle, bio: bio, isMine:true})} />
+<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={user?.id || ""} myHandle={email.split("@")[0]} onAvatarClick={()=>openImageModal(avatarPreview, {handle: myHandle, bio: bio, isMine:true})} />
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
 {editingBio ? (
 <div>
