@@ -32,8 +32,15 @@ const [activeProductId, setActiveProductId] = useState<string | null>(null);
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 
 const loadFeed = async ()=>{
-  const { data: profs } = await supabase.from("profiles").select("*").order("updated_at", {ascending:false}).limit(50);
-  if(profs) setProfiles(profs);
+  const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(50);
+  if(profs) setProfiles(profs.map((p:any)=>({ 
+    id: p.id, 
+    email: p.handle, // we use handle as email for display
+    handle: p.handle,
+    name: p.handle?.replace('@','') || 'user',
+    avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12",
+    total_worth: p.net_worth || 0
+  })));
   const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(50);
   if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email})));
   const { data: acts } = await supabase.from("activity").select("*").order("created_at",{ascending:false}).limit(30);
@@ -57,30 +64,43 @@ const loadMyData = async (em:string)=>{
   const { data } = await supabase.from("products").select("*").eq("owner_email", em);
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
 
-  // FIXED: Load ANY avatar from DB, not filtering pravatar
-  const { data: prof } = await supabase.from("profiles").select("*").eq("email", em).maybeSingle();
-  if(prof?.avatar){
-    setAvatarPreview(prof.avatar);
+  // FIXED: Use handle and avatar_url - the REAL columns
+  const handle = "@" + em.split("@")[0].toLowerCase();
+  const { data: prof } = await supabase.from("profiles").select("*").eq("handle", handle).maybeSingle();
+  if(prof?.avatar_url){
+    setAvatarPreview(prof.avatar_url);
   }
 };
 
 const syncProfile = async (em:string, worth:number, av:string)=>{
-  // FIXED: Safe filename, handle upsert properly
-  const { error } = await supabase.from("profiles").upsert({ 
-    email: em, 
-    name: em.split("@")[0], 
-    handle:"@"+em.split("@")[0], 
-    avatar: av, 
-    total_worth: worth, 
-    updated_at: new Date().toISOString() 
-  }, { onConflict: 'email' });
-  if(error){
-    console.log("PROFILE ERROR:", error.message);
-    // Fallback if no unique constraint on email - try update then insert
-    const { error: updateErr } = await supabase.from("profiles").update({ avatar: av, total_worth: worth, updated_at: new Date().toISOString() }).eq("email", em);
-    if(updateErr){
-      await supabase.from("profiles").insert({ email: em, name: em.split("@")[0], handle:"@"+em.split("@")[0], avatar: av, total_worth: worth });
-    }
+  const handle = "@" + em.split("@")[0].toLowerCase();
+  // Try update first
+  const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
+  if(existing){
+    await supabase.from("profiles").update({ avatar_url: av, net_worth: worth }).eq("id", existing.id);
+  } else {
+    // if not exists, insert
+    await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth });
+  }
+  await loadFeed();
+};
+
+const handleAvatarChange = async (e:any)=>{
+  const file = e.target.files?.[0]; if(!file) return;
+  const tempUrl = URL.createObjectURL(file);
+  setAvatarPreview(tempUrl);
+  try {
+    const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
+    const fileName = `${safeEmail}/${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
+    if(error) throw error;
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    const publicUrl = data.publicUrl + `?t=${Date.now()}`;
+    setAvatarPreview(publicUrl);
+    await syncProfile(email, totalWorth, publicUrl);
+    await logActivity("updated avatar", "Changed profile photo");
+  } catch(err:any){
+    alert("Upload failed: " + err.message);
   }
 };
 
