@@ -19,6 +19,7 @@ const [err, setErr] = useState("");
 
 const [products, setProducts] = useState<Product[]>([]);
 const [profiles, setProfiles] = useState<any[]>([]);
+const [feedProducts, setFeedProducts] = useState<Product[]>([]);
 
 const [avatarPreview, setAvatarPreview] = useState("https://i.pravatar.cc/200?img=12");
 const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
@@ -39,6 +40,8 @@ const loadFeed = async ()=>{
     avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12",
     total_worth: p.net_worth || 0
   })));
+  const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(50);
+  if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email})));
 };
 
 useEffect(()=>{
@@ -47,14 +50,8 @@ useEffect(()=>{
   loadFeed();
 },[]);
 
-useEffect(()=>{
-  if(loggedIn && email){
-    syncProfile(email, totalWorth, avatarPreview);
-  }
-},[totalWorth]);
-
 const loadMyData = async (em:string)=>{
-  const { data } = await supabase.from("products").select("*").eq("owner_email", em);
+  const { data } = await supabase.from("products").select("*").eq("owner_email", em).order("created_at", {ascending:false});
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
   const handle = "@" + em.split("@")[0].toLowerCase();
   const { data: prof } = await supabase.from("profiles").select("*").eq("handle", handle).maybeSingle();
@@ -111,23 +108,36 @@ const handleAvatarChange = async (e:any)=>{
     await syncProfile(email, totalWorth, publicUrl);
     await loadFeed();
   } catch(err:any){
-    alert("Upload failed: " + err.message);
+    alert("Avatar upload failed: " + err.message);
   }
 };
 
+// FIXED GRID: Upload to storage, not base64
 const handleProductImageChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file || !activeProductId) return;
-  const b64 = await new Promise<string>((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result as string); r.onerror=rej; r.readAsDataURL(file); });
-  setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:b64} : p));
-  await supabase.from("products").update({ img: b64 }).eq("id", activeProductId);
+  try {
+    const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
+    const fileName = `${safeEmail}/product_${activeProductId}_${Date.now()}.jpg`;
+    // Use avatars bucket too, so you don't need new bucket
+    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
+    if(error) throw error;
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    const publicUrl = data.publicUrl + `?t=${Date.now()}`;
+    setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p));
+    await supabase.from("products").update({ img: publicUrl }).eq("id", activeProductId);
+    await loadFeed();
+  } catch(err:any){
+    alert("Product image failed: " + err.message);
+  }
 };
 
 const addProduct = async ()=>{
   const newId = Date.now().toString();
   const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99 };
-  setProducts([...products, newItem]);
+  setProducts([newItem, ...products]);
   const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice }).select().single();
   if(data) setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p));
+  await loadFeed();
 };
 
 const updatePrice = async (id:string)=>{
@@ -154,6 +164,27 @@ return(
 );
 }
 
+if(view==="feed"){
+return(
+<div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
+<div style={{padding:"15px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid #222"}}><h2 style={{color:"#D4AF37", margin:0}}>Live Feed 🌍</h2><div onClick={loadFeed} style={{color:"#D4AF37", cursor:"pointer"}}>↻ Refresh</div></div>
+<div style={{padding:"15px"}}>
+{feedProducts.map((p:any)=>(
+<div key={p.id} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"8px", border:"1px solid #222"}}>
+<img src={p.img} style={{width:"60px", height:"60px", borderRadius:"8px", objectFit:"cover"}}/>
+<div style={{flex:1}}><div style={{fontWeight:"bold", color:"#D4AF37"}}>${p.price}</div><div style={{fontSize:"11px", color:"#888"}}>{p.owner_email}</div></div>
+</div>
+))}
+</div>
+<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
+<div onClick={()=>setView("accounts")} style={{color:"#888", cursor:"pointer"}}>👤 Accounts</div>
+<div onClick={()=>setView("feed")} style={{color:"#D4AF37", fontWeight:"bold", cursor:"pointer"}}>🌍 Feed</div>
+<div onClick={()=>setView("profile")} style={{color:"#888", cursor:"pointer"}}>💎 Profile</div>
+</div>
+</div>
+);
+}
+
 if(view==="profile"){
 return(
 <div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"90px"}}>
@@ -163,11 +194,11 @@ return(
 <div style={{padding:"20px", textAlign:"center"}}>
 <img src={avatarPreview} onClick={()=>avatarInputRef.current?.click()} style={{width:"90px", height:"90px", borderRadius:"50%", border:"2px solid #D4AF37", cursor:"pointer", objectFit:"cover"}}/>
 <div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"10px"}}>{email.split("@")[0]}</div>
-<div style={{color:"#666", fontSize:"11px", marginTop:"5px"}}>Tap pic to change — now saves forever</div>
+<div style={{color:"#666", fontSize:"11px", marginTop:"5px"}}>Tap pic to change</div>
 </div>
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>TOTAL NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"22px"}}>$ {totalWorth.toFixed(2)}</div></div>
-<div style={{color:"#00A651", fontSize:"12px"}}>Online Synced ✓</div>
+<div style={{color:"#00A651", fontSize:"12px"}}>Synced ✓</div>
 </div>
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {products.map((p)=>(
@@ -199,9 +230,9 @@ return(
 <div style={{padding:"15px"}}><h2 style={{color:"#D4AF37", margin:0}}>Accounts • Live: {profiles.length} users</h2></div>
 <div style={{padding:"15px"}}>
 {profiles.map((u:any)=>(
-<div key={u.email} onClick={()=>{setEmail(u.email); setView("profile"); loadMyData(u.email);}} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border:"1px solid #333", cursor:"pointer"}}>
+<div key={u.email} onClick={()=>{setEmail(u.handle.replace('@','')+'@gmail.com'); setView("profile"); loadMyData(u.handle.replace('@','')+'@gmail.com');}} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border:"1px solid #333", cursor:"pointer"}}>
 <img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%", objectFit:"cover"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name}</div><div style={{fontSize:"11px", color:"#888"}}>{u.email}</div></div>
+<div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle}</div></div>
 <div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(u.total_worth||0).toFixed(2)}</div>
 </div>
 ))}
