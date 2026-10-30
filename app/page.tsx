@@ -32,7 +32,7 @@ const avatarInputRef = useRef<HTMLInputElement>(null);
 const productInputRef = useRef<HTMLInputElement>(null);
 const [activeProductId, setActiveProductId] = useState<string | null>(null);
 
-const [bio, setBio] = useState("I'm Worth CEO 🚀");
+const [bio, setBio] = useState("Im Totally Worthed!");
 const [about, setAbout] = useState("Entrepreneur");
 const [editingBio, setEditingBio] = useState(false);
 const [showImageModal, setShowImageModal] = useState(false);
@@ -49,7 +49,7 @@ const [userLat, setUserLat] = useState("");
 const [userLng, setUserLng] = useState("");
 const [streetAddress, setStreetAddress] = useState("");
 const [suburb, setSuburb] = useState("");
-const [city, setCity] = useState("Midrand");
+const [city, setCity] = useState("Uptize");
 const [myId, setMyId] = useState("");
 
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
@@ -159,7 +159,7 @@ const saveBio = async ()=>{
     pay_method: payMethod, pay_handle: payHandle, pay_link: payLink,
     location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null
   }).eq("handle", myHandle);
-  setEditingBio(false); loadFeed(); alert("Profile + Pay Me + Visit Me + SIM Maps Address saved ✓");
+  setEditingBio(false); loadFeed(); alert("Profile Saved Successfully ✓");
 };
 
 const doLogin = async ()=>{
@@ -389,10 +389,10 @@ return(
 {view==="feed" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 FORBES LIST • IM WORTH</h2>
-<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live ranking • Most followers on top → Highest worth</div>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 SIM Worth 💵 INVESTORS 🏆</h2>
+<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀 • Most Buyers💰 → Highest Worth👑</div>
 <div style={{display:"flex", gap:"10px", marginTop:"10px"}}>
-<div style={{background:"#111", padding:"6px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px"}}>👑 {profiles.length} Moguls</div>
+<div style={{background:"#111", padding:"6px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px"}}>👑 {profiles.length} Hustlers</div>
 <div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh Rank</div>
 </div>
 </div>
@@ -461,11 +461,11 @@ return(
 </div>
 
 <div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS (Manual + Offline)</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS (Offline)</div>
 
-<input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address e.g. 12 Riverview Road" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb e.g. Noordwyk" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={city} onChange={e=>setCity(e.target.value)} placeholder="City e.g. Midrand" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address e.g. 29 Hans Cloete Street" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb e.g. Rosedale" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={city} onChange={e=>setCity(e.target.value)} placeholder="City e.g. Upington" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 
 <div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
 <input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat -26.02" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
@@ -479,7 +479,7 @@ return(
     setUserLng(p.coords.longitude.toString()); 
     alert(`Location captured! ${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`); 
   }, err=> alert('GPS Error: '+err.message), {enableHighAccuracy:true, timeout:15000});
-}} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Use My Current Location (GPS)</button>
+}} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
 
 <button onClick={()=>{
   const full = `${streetAddress}, ${suburb}, ${city}`;
@@ -487,7 +487,7 @@ return(
   openInSimMaps(userLat, userLng, full);
 }} style={{width:"100%", background:"#0a84ff", color:"white", padding:"12px", borderRadius:"8px", fontWeight:"900", border:"none", marginBottom:"8px"}}>🗺️ Open Address in SIM Maps (Offline)</button>
 
-<div style={{fontSize:"10px", color:"#888", textAlign:"center"}}>No GPS needed! SIM Maps opens offline with your typed address!</div>
+<div style={{fontSize:"10px", color:"#888", textAlign:"center"}}>No data needed! SIM Maps opens offline with your typed address!</div>
 </div>
 
 <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
@@ -542,7 +542,7 @@ return(
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px"}}>
-<h2 style={{color:"#D4AF37", margin:0}}>SIM WORTH Users 🔍</h2>
+<h2 style={{color:"#D4AF37", margin:0}}>SIM Worth List 🔍</h2>
 <input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"10px", display:"flex", gap:"10px"}}>
 <div style={{background:"#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #333", fontSize:"12px"}}>👥 {myFollowers} Followers LIVE</div>
@@ -563,7 +563,7 @@ return(
 
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
 <div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#D4AF37" : "#888", cursor:"pointer"}}>👤 Search</div>
-<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "normal"}}>🏆 Forbes</div>
+<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "normal"}}>👑 Worth</div>
 <div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile ({myFollowers})</div>
 <div onClick={()=>{localStorage.removeItem("im_session"); setLoggedIn(false);}} style={{color:"#888", cursor:"pointer"}}>Logout</div>
 </div>
