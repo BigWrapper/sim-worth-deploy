@@ -396,11 +396,7 @@ return(
 
 {view==="profile" && (
 <div>
-<div style={{display:"flex", alignItems:"center", gap:"10px", padding:"15px", borderBottom:"1px solid #222"}}><div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div><div style={{color:"#D4AF37", fontWeight:"bold"}}>My Profile (Private) • {myFollowers} Followers LIVE</div></div>
-<div style={{padding:"20px", textAlign:"center"}}>
-<img src={avatarPreview} onClick={()=>openImageModal(avatarPreview, {handle: myHandle, bio: bio, isMine:true})} style={{width:"90px", height:"90px", borderRadius:"50%", border:"2px solid #D4AF37", cursor:"pointer", objectFit:"cover"}}/>
-<div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"10px"}}>{email.split("@")[0]}</div>
-</div>
+<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} onAvatarClick={()=>openImageModal(avatarPreview, {handle: myHandle, bio: bio, isMine:true})} />
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
 {editingBio ? (
 <div>
