@@ -40,6 +40,15 @@ const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [offerAmount, setOfferAmount] = useState("");
 
+// NEW - PAY ME & VISIT ME STATE
+const [payMethod, setPayMethod] = useState("capitec");
+const [payHandle, setPayHandle] = useState("");
+const [payLink, setPayLink] = useState("");
+const [userLocation, setUserLocation] = useState("");
+const [userLat, setUserLat] = useState("");
+const [userLng, setUserLng] = useState("");
+const [myId, setMyId] = useState("");
+
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
 
@@ -49,7 +58,9 @@ const loadFeed = async ()=>{
     id: p.id, email: p.email || p.handle, handle: p.handle,
     name: p.display_name || p.handle?.replace('@',''),
     avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12",
-    total_worth: p.net_worth || 0, bio: p.bio, about: p.about
+    total_worth: p.net_worth || 0, bio: p.bio, about: p.about,
+    location: p.location, latitude: p.latitude, longitude: p.longitude,
+    pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link
   })));
   const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
   if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item"})));
@@ -64,10 +75,10 @@ useEffect(()=>{
     const { data } = await supabase.auth.getSession();
     if(data.session?.user?.email_confirmed_at){
       const em = data.session.user.email!;
-      setEmail(em); setLoggedIn(true); loadMyData(em);
+      setEmail(em); setMyId(data.session.user.id); setLoggedIn(true); loadMyData(em);
     } else {
       const old = localStorage.getItem("im_session");
-      if(old) { setEmail(old); setLoggedIn(true); loadMyData(old); } // keep old accounts for now
+      if(old) { setEmail(old); setLoggedIn(true); loadMyData(old); }
     }
     loadFeed();
   };
@@ -79,7 +90,18 @@ const loadMyData = async (em:string)=>{
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, title:p.title || "My Item"})));
   const handle = "@" + em.split("@")[0].toLowerCase().trim();
   const { data: prof } = await supabase.from("profiles").select("*").eq("handle", handle).maybeSingle();
-  if(prof){ if(prof.avatar_url) setAvatarPreview(prof.avatar_url); if(prof.bio) setBio(prof.bio); if(prof.about) setAbout(prof.about); }
+  if(prof){ 
+    if(prof.avatar_url) setAvatarPreview(prof.avatar_url); 
+    if(prof.bio) setBio(prof.bio); 
+    if(prof.about) setAbout(prof.about);
+    if(prof.pay_method) setPayMethod(prof.pay_method);
+    if(prof.pay_handle) setPayHandle(prof.pay_handle);
+    if(prof.pay_link) setPayLink(prof.pay_link);
+    if(prof.location) setUserLocation(prof.location);
+    if(prof.latitude) setUserLat(prof.latitude.toString());
+    if(prof.longitude) setUserLng(prof.longitude.toString());
+    if(prof.id) setMyId(prof.id);
+  }
 };
 
 const loadPublicUser = async (user:any)=>{
@@ -94,58 +116,55 @@ const syncProfile = async (em:string, worth:number, av:string)=>{
   const handle = "@" + em.split("@")[0].toLowerCase().trim();
   if(handle === "@" || handle.length < 3) return;
   const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
-  if(existing){ await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about }).eq("id", existing.id); }
-  else { await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about }); }
+  if(existing){ 
+    await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: userLocation, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("id", existing.id); 
+  }
+  else { 
+    await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: userLocation, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }); 
+  }
 };
 
 const saveBio = async ()=>{
-  await supabase.from("profiles").update({ bio: bio, about: about }).eq("handle", myHandle);
-  setEditingBio(false); loadFeed(); alert("Bio saved ✓");
+  await supabase.from("profiles").update({ 
+    bio: bio, about: about,
+    pay_method: payMethod, pay_handle: payHandle, pay_link: payLink,
+    location: userLocation, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null
+  }).eq("handle", myHandle);
+  setEditingBio(false); loadFeed(); alert("Profile + Pay Me + Visit Me saved ✓");
 };
 
 const doLogin = async ()=>{
   setErr("");
   if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
-
   try {
     if(authMode==="signup"){
-      // REAL SIGNUP WITH EMAIL CONFIRMATION
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password: password,
-        options: {
-          data: { handle: "@" + email.split("@")[0].toLowerCase() }
-        }
+        options: { data: { handle: "@" + email.split("@")[0].toLowerCase() } }
       });
       if(error) throw error;
-
-      // If email confirmation is ON, Supabase returns no session
       if(!data.session){
         setErr("✅ Verification email sent! Check your inbox & spam to confirm, then LOGIN.");
         setAuthMode("login");
         return;
       }
-      
-      // If auto-confirm OFF (for testing), create profile
       localStorage.setItem("im_session", email);
       await syncProfile(email, 0, avatarPreview);
       setLoggedIn(true); await loadMyData(email); await loadFeed();
-      
     } else {
-      // REAL LOGIN - WILL FAIL IF NOT CONFIRMED
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password: password
       });
       if(error) throw error;
-      
       if(!data.user?.email_confirmed_at){
         setErr("⚠️ Email not verified. Check your inbox for confirmation link.");
         await supabase.auth.signOut();
         return;
       }
-
       localStorage.setItem("im_session", email);
+      setMyId(data.user.id);
       await loadMyData(email); 
       setLoggedIn(true); 
       await loadFeed();
@@ -316,6 +335,17 @@ return(
 <div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.follower_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Following</span></div>
 </div>
 <button onClick={()=>handleFollow(selectedUser.handle)} style={{marginTop:"12px", background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "white" : "black", fontWeight:"900", padding:"8px 20px", borderRadius:"20px", border:"none"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "Following ✓" : "Follow +"}</button>
+
+{/* PAY ME & VISIT ME FOR PUBLIC USERS TOO */}
+<div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"12px"}}>
+{(selectedUser.pay_link || selectedUser.pay_handle) && (
+<button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>💰 Pay {selectedUser.handle}</button>
+)}
+{(selectedUser.location || selectedUser.latitude) && (
+<button onClick={()=> window.location.href = selectedUser.latitude ? `geo:${selectedUser.latitude},${selectedUser.longitude}?q=${selectedUser.latitude},${selectedUser.longitude}(${selectedUser.handle})` : `geo:0,0?q=${encodeURIComponent(selectedUser.location)}`} style={{background:"black", color:"#D4AF37", border:"1px solid #D4AF37", padding:"8px 16px", borderRadius:"20px"}}>📍 Visit</button>
+)}
+</div>
+
 </div>
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
@@ -362,15 +392,12 @@ return(
 }}>
 {i===0 ? "👑" : `#${i+1}`}
 </div>
-
 <img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%", objectFit:"cover", border: i===0 ? "2px solid #D4AF37" : "1px solid #333"}}/>
-
 <div style={{flex:1}}>
 <div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"} {i===0 && "• TOP"}</div>
 <div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers • {u.followingCount} following</div>
 <div style={{fontSize:"10px", color: i<=2 ? "#D4AF37" : "#666", marginTop:"2px"}}>{u.bio?.substring(0,35) || "Building empire"}</div>
 </div>
-
 <div style={{textAlign:"right"}}>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div>
 <div style={{fontSize:"10px", color:"#888"}}>WORTH</div>
@@ -379,37 +406,54 @@ return(
 </div>
 ))}
 </div>
-
-<div style={{padding:"0 15px 15px 15px"}}>
-<div style={{background:"#111", border:"1px solid #222", borderRadius:"12px", padding:"12px"}}>
-<div style={{color:"#D4AF37", fontSize:"12px", fontWeight:"bold"}}>HOW RANKING WORKS (Supabase Auto)</div>
-<div style={{color:"#888", fontSize:"11px", marginTop:"6px", lineHeight:"1.4"}}>
-1. Count followers from <code>follows</code> table<br/>
-2. Sort: Most followers → Top<br/>
-3. Tie-breaker: Highest $ worth → Higher<br/>
-4. Updates LIVE every refresh
-</div>
-</div>
-</div>
 </div>
 )}
 
 {view==="profile" && (
 <div>
-<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={""} myHandle={email?.split("@")[0] || "user"} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true})} />
+<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true})} />
+
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
 {editingBio ? (
 <div>
-<input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"8px 16px", borderRadius:"8px", border:"none", marginRight:"8px"}}>Save</button>
-<button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333"}}>Cancel</button>
+<input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio - I'm Worth CEO" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About - Entrepreneur" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
+
+{/* PAY ME EDIT */}
+<div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup (SIM Banc)</div>
+<select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
+<option value="capitec">Capitec Pay</option>
+<option value="payshap">PayShap ID (Phone)</option>
+<option value="bank">Bank EFT</option>
+<option value="paypal">PayPal / Link</option>
+<option value="custom">Custom Link</option>
+</select>
+<input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="PayShap 082... or Capitec ID" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://... (optional)" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+</div>
+
+{/* VISIT ME EDIT */}
+<div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"12px", background:"#0a0a0a"}}>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>📍 Visit Me Setup (SIM Maps)</div>
+<input value={userLocation} onChange={e=>setUserLocation(e.target.value)} placeholder="Shop address e.g. Midrand Mall" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
+<div style={{display:"flex", gap:"8px"}}>
+<input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat -26.02" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+<input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng 28.13" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+</div>
+<button onClick={()=>{ if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert("Location captured!"); }); } }} style={{marginTop:"8px", width:"100%", background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"8px", borderRadius:"8px"}}>📍 Use My Current Location</button>
+</div>
+
+<button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none", marginRight:"8px", width:"100%"}}>Save All ✓</button>
+<button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
 </div>
 ) : (
 <div>
-<div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer"}}>Edit ✏️</div></div>
-<div style={{color:"white", fontSize:"13px", marginTop:"6px"}}>{bio}</div>
+<div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div></div>
+<div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
 <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
+{userLocation && <div style={{color:"#D4AF37", fontSize:"11px", marginTop:"6px"}}>📍 {userLocation}</div>}
+{(payHandle || payLink) && <div style={{color:"#00ff88", fontSize:"11px", marginTop:"4px"}}>💰 Pay: {payMethod} - {payHandle || payLink}</div>}
 </div>
 )}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
