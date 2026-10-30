@@ -55,27 +55,18 @@ const [myId, setMyId] = useState("");
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
 
-// SIM MAPS HELPER - OPENS OFFLINE MAPS
+// SIM MAPS HELPER - OPENS OFFLINE MAPS ONLY (NO CHROME)
 const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
   let geoUrl = "";
   if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){
-    // If we have coords - open exact pin in SIM Maps
     geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`;
   } else if(address){
-    // No coords - open by address search in SIM Maps (offline OSM search)
     geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`;
   } else {
     alert("Add address first bro!");
     return;
   }
-  // Try to open SIM Maps app, fallback to browser OSM
   window.location.href = geoUrl;
-  // Fallback for web - open OSM if app not installed
-  setTimeout(()=>{
-    if(address){
-      window.open(`https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`, '_blank');
-    }
-  }, 800);
 };
 
 const loadFeed = async ()=>{
