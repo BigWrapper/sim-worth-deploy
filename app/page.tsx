@@ -18,9 +18,7 @@ const [authMode, setAuthMode] = useState("login");
 const [err, setErr] = useState("");
 
 const [products, setProducts] = useState<Product[]>([]);
-const [feedProducts, setFeedProducts] = useState<Product[]>([]);
 const [profiles, setProfiles] = useState<any[]>([]);
-const [activity, setActivity] = useState<any[]>([]);
 
 const [avatarPreview, setAvatarPreview] = useState("https://i.pravatar.cc/200?img=12");
 const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
@@ -35,16 +33,12 @@ const loadFeed = async ()=>{
   const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(50);
   if(profs) setProfiles(profs.map((p:any)=>({ 
     id: p.id, 
-    email: p.handle, // we use handle as email for display
+    email: p.handle,
     handle: p.handle,
-    name: p.handle?.replace('@','') || 'user',
+    name: p.handle?.replace('@',''),
     avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12",
     total_worth: p.net_worth || 0
   })));
-  const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(50);
-  if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email})));
-  const { data: acts } = await supabase.from("activity").select("*").order("created_at",{ascending:false}).limit(30);
-  if(acts) setActivity(acts);
 };
 
 useEffect(()=>{
@@ -53,7 +47,6 @@ useEffect(()=>{
   loadFeed();
 },[]);
 
-// NEW: Auto sync worth whenever products change
 useEffect(()=>{
   if(loggedIn && email){
     syncProfile(email, totalWorth, avatarPreview);
@@ -63,8 +56,6 @@ useEffect(()=>{
 const loadMyData = async (em:string)=>{
   const { data } = await supabase.from("products").select("*").eq("owner_email", em);
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
-
-  // FIXED: Use handle and avatar_url - the REAL columns
   const handle = "@" + em.split("@")[0].toLowerCase();
   const { data: prof } = await supabase.from("profiles").select("*").eq("handle", handle).maybeSingle();
   if(prof?.avatar_url){
@@ -74,38 +65,12 @@ const loadMyData = async (em:string)=>{
 
 const syncProfile = async (em:string, worth:number, av:string)=>{
   const handle = "@" + em.split("@")[0].toLowerCase();
-  // Try update first
   const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
   if(existing){
     await supabase.from("profiles").update({ avatar_url: av, net_worth: worth }).eq("id", existing.id);
   } else {
-    // if not exists, insert
     await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth });
   }
-  await loadFeed();
-};
-
-const handleAvatarChange = async (e:any)=>{
-  const file = e.target.files?.[0]; if(!file) return;
-  const tempUrl = URL.createObjectURL(file);
-  setAvatarPreview(tempUrl);
-  try {
-    const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
-    const fileName = `${safeEmail}/${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
-    if(error) throw error;
-    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    const publicUrl = data.publicUrl + `?t=${Date.now()}`;
-    setAvatarPreview(publicUrl);
-    await syncProfile(email, totalWorth, publicUrl);
-    await logActivity("updated avatar", "Changed profile photo");
-  } catch(err:any){
-    alert("Upload failed: " + err.message);
-  }
-};
-
-const logActivity = async (action:string, detail:string)=>{
-  await supabase.from("activity").insert({ owner_email: email, action, detail });
 };
 
 const doLogin = async ()=>{
@@ -131,7 +96,6 @@ const doLogin = async ()=>{
   }
 };
 
-// FIXED: Upload to Supabase Storage properly
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return;
   const tempUrl = URL.createObjectURL(file);
@@ -139,16 +103,15 @@ const handleAvatarChange = async (e:any)=>{
   try {
     const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
     const fileName = `${safeEmail}/${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
+    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
     if(error) throw error;
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    const publicUrl = data.publicUrl + `?t=${Date.now()}`; // cache bust
+    const publicUrl = data.publicUrl + `?t=${Date.now()}`;
     setAvatarPreview(publicUrl);
     await syncProfile(email, totalWorth, publicUrl);
-    await logActivity("updated avatar", "Changed profile photo");
     await loadFeed();
   } catch(err:any){
-    alert("Upload failed: " + err.message + " - Make sure 'avatars' bucket is PUBLIC in Supabase Dashboard > Storage");
+    alert("Upload failed: " + err.message);
   }
 };
 
@@ -186,28 +149,6 @@ return(
 <input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"20px"}}/>
 <button onClick={doLogin} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"14px", borderRadius:"12px", border:"none"}}>{authMode==="signup"?"SIGN UP →":"LOGIN →"}</button>
 <div style={{textAlign:"center", color:"#666", fontSize:"13px", marginTop:"16px"}} onClick={()=>setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Have account? Login":"No account? Sign Up"}</div>
-</div>
-</div>
-);
-}
-
-if(view==="feed"){
-return(
-<div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
-<div style={{padding:"15px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid #222"}}><h2 style={{color:"#D4AF37", margin:0}}>Live Feed 🌍</h2><div onClick={loadFeed} style={{color:"#D4AF37", cursor:"pointer"}}>↻ Refresh</div></div>
-<div style={{padding:"15px"}}>
-{profiles.map((p:any)=>(
-<div key={p.email} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"8px", border:"1px solid #222"}}>
-<img src={p.avatar} style={{width:"44px", height:"44px", borderRadius:"50%", objectFit:"cover"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"bold", color:"#D4AF37"}}>{p.name}</div><div style={{fontSize:"11px", color:"#888"}}>{p.email}</div></div>
-<div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(p.total_worth||0).toFixed(2)}</div>
-</div>
-))}
-</div>
-<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
-<div onClick={()=>setView("accounts")} style={{color:"#888", cursor:"pointer"}}>👤 Accounts</div>
-<div onClick={()=>setView("feed")} style={{color:"#D4AF37", fontWeight:"bold", cursor:"pointer"}}>🌍 Feed</div>
-<div onClick={()=>setView("profile")} style={{color:"#888", cursor:"pointer"}}>💎 Profile</div>
 </div>
 </div>
 );
