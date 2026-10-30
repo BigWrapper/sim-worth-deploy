@@ -12,19 +12,21 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
     <div style={{background:"black", padding:"10px"}}>
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
         
-        {/* TOP LEFT - $IM BANC */}
         <div style={{textAlign:"center"}}>
-          <img src="/sim_banc.png" alt="$IM Banc" style={{width:"85px", height:"85px", objectFit:"contain", filter:"drop-shadow(0 0 12px gold)"}}/>
+          <img 
+            src="/sim_banc.png" 
+            alt="$IM Banc"
+            onError={(e:any)=>{ e.currentTarget.src="/sim_banc.jpg"; }}
+            style={{width:"85px", height:"85px", objectFit:"contain", filter:"drop-shadow(0 0 12px gold)"}}
+          />
           <div style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px"}}>🪙 Pay Me ›</div>
         </div>
 
-        {/* CENTER - PROFILE */}
         <div style={{textAlign:"center"}}>
           <div style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900"}}>👑 SIM Worth Account</div>
           <img src={avatarPreview} onClick={onAvatarClick} style={{width:"85px", height:"85px", borderRadius:"50%", border:"3px solid gold", marginTop:"6px", objectFit:"cover", boxShadow:"0 0 15px gold", cursor:"pointer"}}/>
         </div>
 
-        {/* TOP RIGHT - $IM MAPS */}
         <div style={{textAlign:"center"}}>
           <img src="/sim_maps.png" alt="$IM MAPS" style={{width:"85px", height:"85px", objectFit:"contain", filter:"drop-shadow(0 0 12px gold)"}}/>
           <div style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px"}}>📍 Visit Me ›</div>
