@@ -73,19 +73,45 @@ const syncProfile = async (em:string, worth:number, av:string)=>{
 const doLogin = async ()=>{
   setErr("");
   if(!email.includes("@") || password.length < 3){ setErr("Valid email + 3 chars"); return; }
+  
+  const handle = "@" + email.split("@")[0].toLowerCase().trim();
   const key = `im_user_${email}`;
   const saved = localStorage.getItem(key);
+
+  // Always check Supabase for real account existence
+  const { data: existingProfile } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
+
   if(authMode==="signup"){
-    if(saved){ setErr("Exists, login"); setAuthMode("login"); return; }
+    // If exists in phone OR in Supabase -> don't create again
+    if(saved || existingProfile){
+      setErr("Account already exists - please LOGIN"); 
+      setAuthMode("login"); 
+      return; 
+    }
+    // New account
     localStorage.setItem(key, password);
     localStorage.setItem("im_session", email);
     await syncProfile(email, 0, avatarPreview);
     setLoggedIn(true); 
     await loadMyData(email);
     await loadFeed();
+    
   } else {
-    if(!saved){ setErr("No account, sign up"); return; }
-    if(saved!==password){ setErr("Wrong password"); return; }
+    // LOGIN MODE
+    if(saved){
+      // Has local password, check it
+      if(saved!==password){ setErr("Wrong password"); return; }
+    } else {
+      // No local password (reinstall / new phone) - but check if profile exists in Supabase
+      if(!existingProfile){ 
+        setErr("No account found - please SIGN UP"); 
+        setAuthMode("signup");
+        return; 
+      }
+      // Profile exists in cloud, let them in and recreate local password
+      localStorage.setItem(key, password);
+    }
+    
     localStorage.setItem("im_session", email);
     await loadMyData(email);
     setLoggedIn(true); 
