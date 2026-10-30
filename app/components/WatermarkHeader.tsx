@@ -14,7 +14,7 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
         
         {/* TOP LEFT - $IM BANC */}
         <div style={{textAlign:"center"}}>
-          <img src="/sim-banc.png" alt="$IM Banc" style={{width:"85px", height:"85px", objectFit:"contain", filter:"drop-shadow(0 0 12px gold)"}}/>
+          <img src="/sim_banc.png" alt="$IM Banc" style={{width:"85px", height:"85px", objectFit:"contain", filter:"drop-shadow(0 0 12px gold)"}}/>
           <div style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px"}}>🪙 Pay Me ›</div>
         </div>
 
@@ -26,7 +26,7 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
 
         {/* TOP RIGHT - $IM MAPS */}
         <div style={{textAlign:"center"}}>
-          <img src="/sim-maps.png" alt="$IM MAPS" style={{width:"85px", height:"85px", objectFit:"contain", filter:"drop-shadow(0 0 12px gold)"}}/>
+          <img src="/sim_maps.png" alt="$IM MAPS" style={{width:"85px", height:"85px", objectFit:"contain", filter:"drop-shadow(0 0 12px gold)"}}/>
           <div style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px"}}>📍 Visit Me ›</div>
         </div>
       </div>
