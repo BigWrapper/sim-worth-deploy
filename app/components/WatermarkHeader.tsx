@@ -10,12 +10,15 @@ type Props = {
   userLocation?: string;
   userLat?: string;
   userLng?: string;
+  streetAddress?: string;
+  suburb?: string;
+  city?: string;
   payLink?: string;
   payHandle?: string;
   payMethod?: string;
 };
 
-export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, payLink, payHandle, payMethod }: Props) {
+export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod }: Props) {
 
   const handlePayMe = () => {
     if (payLink && payLink.startsWith("http")) {
@@ -24,7 +27,6 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
     }
     if (payHandle) {
       if (payMethod === "capitec" || payMethod === "payshap") {
-        // Capitec PayShap deep link - will open Capitec or SIM Banc if installed
         window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank');
       } else if (payMethod === "bank") {
         alert(`Bank: ${payHandle} - Copy to pay`);
@@ -38,15 +40,27 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
 
   const handleVisitMe = () => {
     const label = myHandle || "SIM Worth User";
+    // Build full manual address if available
+    const manualFull = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city || 'South Africa'}` : null;
+    const finalAddress = manualFull || userLocation;
+
     if (userLat && userLng && userLat !== "" && userLng !== "") {
-      // This geo: link opens directly in SIM Maps (Organic Maps fork) if installed!
-      const geoUri = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(label)})`;
+      // Has GPS coords - open pin with address label in SIM Maps offline
+      const geoUri = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || label)})`;
       window.location.href = geoUri;
-    } else if (userLocation) {
-      const geoUri = `geo:0,0?q=${encodeURIComponent(userLocation)}`;
+      // Fallback to OSM after 1s if SIM Maps not installed
+      setTimeout(()=> {
+        window.open(`https://www.openstreetmap.org/?mlat=${userLat}&mlon=${userLng}#map=16/${userLat}/${userLng}`, '_blank');
+      }, 1000);
+    } else if (finalAddress) {
+      // No GPS - open by manual address search in SIM Maps offline (works without internet!)
+      const geoUri = `geo:0,0?q=${encodeURIComponent(finalAddress)}`;
       window.location.href = geoUri;
+      setTimeout(()=> {
+        window.open(`https://www.openstreetmap.org/search?query=${encodeURIComponent(finalAddress)}`, '_blank');
+      }, 1000);
     } else {
-      alert("Set location first in Edit Profile!");
+      alert("Set your address first! Go to Edit Profile > Visit Me Setup > Add Street + Suburb");
     }
   };
 
@@ -63,10 +77,12 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
         </div>
         <div style={{textAlign:"center"}}>
           <img src="/sim_maps.png" onClick={handleVisitMe} style={{width:"85px", height:"85px", objectFit:"contain", cursor:"pointer"}} alt="maps"/>
-          <div onClick={handleVisitMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: userLocation || userLat ? "#1a1a00" : "black"}}>Visit Me</div>
+          <div onClick={handleVisitMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: userLocation || streetAddress ? "#1a1a00" : "black"}}>Visit Me</div>
         </div>
       </div>
-      <div style={{textAlign:"center", marginTop:"10px"}}><div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div></div>
+      <div style={{textAlign:"center", marginTop:"10px"}}><div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div>
+      {(streetAddress || userLocation) && <div style={{color:"#888", fontSize:"10px", marginTop:"2px"}}>📍 {streetAddress ? `${streetAddress}, ${suburb}` : userLocation}</div>}
+      </div>
       <div style={{display:"flex", justifyContent:"center", gap:"40px", marginTop:"8px"}}>
         <div style={{textAlign:"center"}}><div style={{color:"white", fontWeight:"900", fontSize:"18px"}}>0</div><div style={{color:"#888", fontSize:"11px"}}>Followers</div></div>
         <div style={{textAlign:"center"}}><div style={{color:"white", fontWeight:"900", fontSize:"18px"}}>0</div><div style={{color:"#888", fontSize:"11px"}}>Following</div></div>
