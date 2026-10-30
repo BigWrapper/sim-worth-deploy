@@ -38,27 +38,17 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
     alert("Go to Edit Profile > Setup Pay Me to add your Capitec PayShap ID!");
   };
 
-  const handleVisitMe = () => {
+    const handleVisitMe = () => {
     const label = myHandle || "SIM Worth User";
-    // Build full manual address if available
     const manualFull = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city || 'South Africa'}` : null;
     const finalAddress = manualFull || userLocation;
 
     if (userLat && userLng && userLat !== "" && userLng !== "") {
-      // Has GPS coords - open pin with address label in SIM Maps offline
       const geoUri = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || label)})`;
       window.location.href = geoUri;
-      // Fallback to OSM after 1s if SIM Maps not installed
-      setTimeout(()=> {
-        window.open(`https://www.openstreetmap.org/?mlat=${userLat}&mlon=${userLng}#map=16/${userLat}/${userLng}`, '_blank');
-      }, 1000);
     } else if (finalAddress) {
-      // No GPS - open by manual address search in SIM Maps offline (works without internet!)
       const geoUri = `geo:0,0?q=${encodeURIComponent(finalAddress)}`;
       window.location.href = geoUri;
-      setTimeout(()=> {
-        window.open(`https://www.openstreetmap.org/search?query=${encodeURIComponent(finalAddress)}`, '_blank');
-      }, 1000);
     } else {
       alert("Set your address first! Go to Edit Profile > Visit Me Setup > Add Street + Suburb");
     }
