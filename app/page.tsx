@@ -46,20 +46,42 @@ useEffect(()=>{
   loadFeed();
 },[]);
 
+// NEW: Auto sync worth whenever products change
+useEffect(()=>{
+  if(loggedIn && email){
+    syncProfile(email, totalWorth, avatarPreview);
+  }
+},[totalWorth]);
+
 const loadMyData = async (em:string)=>{
   const { data } = await supabase.from("products").select("*").eq("owner_email", em);
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price})));
 
-  // FIXED: Only load real http avatar from DB, ignore smiley
-  const { data: prof } = await supabase.from("profiles").select("avatar").eq("email", em).maybeSingle();
-  if(prof?.avatar && prof.avatar.startsWith("http") && !prof.avatar.includes("pravatar")){
+  // FIXED: Load ANY avatar from DB, not filtering pravatar
+  const { data: prof } = await supabase.from("profiles").select("*").eq("email", em).maybeSingle();
+  if(prof?.avatar){
     setAvatarPreview(prof.avatar);
   }
 };
 
 const syncProfile = async (em:string, worth:number, av:string)=>{
-  const { error } = await supabase.from("profiles").upsert({ email: em, name: em.split("@")[0], handle:"@"+em.split("@")[0], avatar: av, total_worth: worth, updated_at: new Date().toISOString() }, { onConflict: 'email' });
-  if(error) console.log("PROFILE ERROR:", error.message);
+  // FIXED: Safe filename, handle upsert properly
+  const { error } = await supabase.from("profiles").upsert({ 
+    email: em, 
+    name: em.split("@")[0], 
+    handle:"@"+em.split("@")[0], 
+    avatar: av, 
+    total_worth: worth, 
+    updated_at: new Date().toISOString() 
+  }, { onConflict: 'email' });
+  if(error){
+    console.log("PROFILE ERROR:", error.message);
+    // Fallback if no unique constraint on email - try update then insert
+    const { error: updateErr } = await supabase.from("profiles").update({ avatar: av, total_worth: worth, updated_at: new Date().toISOString() }).eq("email", em);
+    if(updateErr){
+      await supabase.from("profiles").insert({ email: em, name: em.split("@")[0], handle:"@"+em.split("@")[0], avatar: av, total_worth: worth });
+    }
+  }
 };
 
 const logActivity = async (action:string, detail:string)=>{
@@ -76,33 +98,37 @@ const doLogin = async ()=>{
     localStorage.setItem(key, password);
     localStorage.setItem("im_session", email);
     await syncProfile(email, 0, avatarPreview);
-    setLoggedIn(true); loadFeed();
+    setLoggedIn(true); 
+    await loadMyData(email);
+    await loadFeed();
   } else {
     if(!saved){ setErr("No account, sign up"); return; }
     if(saved!==password){ setErr("Wrong password"); return; }
     localStorage.setItem("im_session", email);
     await loadMyData(email);
-    setLoggedIn(true); loadFeed();
+    setLoggedIn(true); 
+    await loadFeed();
   }
 };
 
-// FIXED: Upload to Supabase Storage, not base64
+// FIXED: Upload to Supabase Storage properly
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return;
   const tempUrl = URL.createObjectURL(file);
   setAvatarPreview(tempUrl);
   try {
-    const fileName = `${email}/${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
+    const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
+    const fileName = `${safeEmail}/${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
     if(error) throw error;
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    const publicUrl = data.publicUrl;
+    const publicUrl = data.publicUrl + `?t=${Date.now()}`; // cache bust
     setAvatarPreview(publicUrl);
     await syncProfile(email, totalWorth, publicUrl);
     await logActivity("updated avatar", "Changed profile photo");
     await loadFeed();
   } catch(err:any){
-    alert("Upload failed: " + err.message);
+    alert("Upload failed: " + err.message + " - Make sure 'avatars' bucket is PUBLIC in Supabase Dashboard > Storage");
   }
 };
 
@@ -125,7 +151,8 @@ const updatePrice = async (id:string)=>{
   const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; }
   setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p));
   await supabase.from("products").update({ price: num }).eq("id", id);
-  setEditingPriceId(null); loadFeed();
+  setEditingPriceId(null); 
+  loadFeed();
 };
 
 if(!loggedIn){
