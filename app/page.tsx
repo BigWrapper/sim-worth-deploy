@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
+import WatermarkHeader from "./components/WatermarkHeader";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; };
