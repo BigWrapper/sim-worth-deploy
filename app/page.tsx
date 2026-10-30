@@ -226,7 +226,6 @@ return(
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 <div style={{fontWeight:"bold", color:"#D4AF37"}}>{modalInfo?.title || "Item"} - ${modalInfo?.price || modalInfo?.total_worth || ""}</div>
 <div style={{fontSize:"11px", color:"#888"}}>{modalInfo?.email || modalInfo?.handle || ""}</div>
-{/* OWN ITEM EDIT */}
 {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
 <div style={{marginTop:"10px"}}>
 <div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>YOUR ITEM - EDIT</div>
@@ -250,7 +249,7 @@ return(
 <input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/>
 <button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button>
 </div>
-<div style={{fontSize:"10px", color:"#666", marginTop:"6px"}}>Owner will see your bid in offers</div>
+<div style={{fontSize:"10px", color:"#666", marginTop:"6px"}}>Owner will see your bid</div>
 </div>
 )}
 </div>
@@ -289,15 +288,66 @@ return(
 
 {view==="feed" && (
 <div>
-<div style={{padding:"15px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid #222"}}><h2 style={{color:"#D4AF37", margin:0}}>Live Feed 🌍</h2><div onClick={loadFeed} style={{color:"#D4AF37", cursor:"pointer"}}>↻</div></div>
-<div style={{padding:"15px"}}>
-{feedProducts.map((p:any)=>(
-<div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, isMine: p.owner_email===email})} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"8px", border:"1px solid #222", cursor:"pointer"}}>
-<img src={p.img} style={{width:"60px", height:"60px", borderRadius:"8px", objectFit:"cover"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"bold", fontSize:"12px"}}>{p.title}</div><div style={{fontWeight:"bold", color:"#D4AF37"}}>${p.price}</div><div style={{fontSize:"11px", color:"#888"}}>{p.owner_email}</div></div>
-<div style={{color:"#D4AF37", fontSize:"12px"}}>💰 Offer</div>
+<div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 FORBES LIST • IM WORTH</h2>
+<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live ranking • Most followers on top → Highest worth</div>
+<div style={{display:"flex", gap:"10px", marginTop:"10px"}}>
+<div style={{background:"#111", padding:"6px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px"}}>👑 {profiles.length} Moguls</div>
+<div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh Rank</div>
+</div>
+</div>
+
+<div style={{padding:"12px"}}>
+{profiles.map(p=>({
+  ...p,
+  followersCount: follows.filter(f=> f.following_handle===p.handle).length,
+  followingCount: follows.filter(f=> f.follower_handle===p.handle).length,
+})).sort((a:any,b:any)=>{
+  if(b.followersCount !== a.followersCount) return b.followersCount - a.followersCount;
+  return b.total_worth - a.total_worth;
+}).map((u:any, i:number)=>(
+<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{
+  display:"flex", gap:"12px", 
+  background: i===0 ? "#1a1a00" : u.handle===myHandle ? "#111" : "#0f0f0f",
+  padding:"14px", borderRadius:"14px", marginBottom:"10px", 
+  border: i===0 ? "2px solid #D4AF37" : u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #222",
+  cursor:"pointer", alignItems:"center"
+}}>
+<div style={{
+  width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center",
+  background: i===0 ? "#D4AF37" : i===1 ? "#C0C0C0" : i===2 ? "#CD7F32" : "#222",
+  color: i<=2 ? "black" : "white", fontWeight:"900", fontSize:"13px"
+}}>
+{i===0 ? "👑" : `#${i+1}`}
+</div>
+
+<img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%", objectFit:"cover", border: i===0 ? "2px solid #D4AF37" : "1px solid #333"}}/>
+
+<div style={{flex:1}}>
+<div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"} {i===0 && "• TOP"}</div>
+<div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers • {u.followingCount} following</div>
+<div style={{fontSize:"10px", color: i<=2 ? "#D4AF37" : "#666", marginTop:"2px"}}>{u.bio?.substring(0,35) || "Building empire"}</div>
+</div>
+
+<div style={{textAlign:"right"}}>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div>
+<div style={{fontSize:"10px", color:"#888"}}>WORTH</div>
+<div style={{fontSize:"10px", color: u.followersCount>0 ? "#00ff88" : "#666", marginTop:"2px"}}>{u.followersCount} 👥</div>
+</div>
 </div>
 ))}
+</div>
+
+<div style={{padding:"0 15px 15px 15px"}}>
+<div style={{background:"#111", border:"1px solid #222", borderRadius:"12px", padding:"12px"}}>
+<div style={{color:"#D4AF37", fontSize:"12px", fontWeight:"bold"}}>HOW RANKING WORKS (Supabase Auto)</div>
+<div style={{color:"#888", fontSize:"11px", marginTop:"6px", lineHeight:"1.4"}}>
+1. Count followers from <code>follows</code> table<br/>
+2. Sort: Most followers → Top<br/>
+3. Tie-breaker: Highest $ worth → Higher<br/>
+4. Updates LIVE every refresh
+</div>
+</div>
 </div>
 </div>
 )}
@@ -382,7 +432,7 @@ return(
 
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
 <div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#D4AF37" : "#888", cursor:"pointer"}}>👤 Search</div>
-<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer"}}>🌍 Feed</div>
+<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "normal"}}>🏆 Forbes</div>
 <div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile ({myFollowers})</div>
 <div onClick={()=>{localStorage.removeItem("im_session"); setLoggedIn(false);}} style={{color:"#888", cursor:"pointer"}}>Logout</div>
 </div>
