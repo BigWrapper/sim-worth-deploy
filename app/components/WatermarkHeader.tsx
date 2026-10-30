@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -10,7 +11,7 @@ type Props = {
   avatarPreview: string;
   totalWorth: number;
   onAvatarClick: () => void;
-  myUserId: string; // <-- your auth user id
+  myUserId: string;
   myHandle: string;
 };
 
@@ -19,39 +20,10 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
   const [following, setFollowing] = useState(0);
 
   useEffect(() => {
-    if (!myUserId) return;
-
-    const fetchCounts = async () => {
-      // Followers: how many people follow ME
-      const { count: fCount } = await supabase
-        .from("follows")
-        .select("*", { count: "exact", head: true })
-        .eq("following_id", myUserId);
-      
-      // Following: how many I follow
-      const { count: fgCount } = await supabase
-        .from("follows")
-        .select("*", { count: "exact", head: true })
-        .eq("follower_id", myUserId);
-
-      setFollowers(fCount || 0);
-      setFollowing(fgCount || 0);
-    };
-
-    fetchCounts();
-
-    // LIVE real-time update
-    const channel = supabase
-      .channel('follows-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'follows' }, () => {
-        fetchCounts();
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [myUserId]);
-
-  return (
+    if (!myUserId || myUserId === "") {
+      // No user yet, show 0, don't crash
+      return;
+    }
     <div style={{background:"black", padding:"10px"}}>
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
         <div style={{textAlign:"center"}}>
