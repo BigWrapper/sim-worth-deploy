@@ -36,7 +36,7 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
           <div onClick={handlePayMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: payHandle || payLink ? "#1a1a00" : "black"}}>Pay Me</div>
         </div>
         <div style={{textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", position:"relative"}}>
-          <div style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px"}}>SIM Worth</div>
+          <div style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px"}}>$IM Worth</div>
           <div style={{position:"relative"}}>
             <img src={avatarPreview} onClick={onAvatarClick} style={{width:"95px", height:"95px", borderRadius:"50%", border:"3px solid gold", objectFit:"cover", cursor:"pointer", filter: profileStatus==="sold" ? "grayscale(60%)" : "none"}} alt="avatar"/>
             <div style={{position:"absolute", bottom:"-8px", left:"50%", transform:"translateX(-50%)", background: badge.bg, color: badge.color, fontSize:"7px", fontWeight:"900", padding:"3px 8px", borderRadius:"12px", whiteSpace:"nowrap", border:"1px solid #222"}}>{badge.text}</div>
@@ -108,22 +108,13 @@ const [offersTab, setOffersTab] = useState("received");
 const [modalEditingTitle, setModalEditingTitle] = useState(false);
 const [profileStatus, setProfileStatus] = useState("for_sale");
 
-// OFFLINE BLUETOOTH FEATURE
-const [showOfflineModal, setShowOfflineModal] = useState(false);
-const [offlinePairedUser, setOfflinePairedUser] = useState<any>(null);
-const [offlineMessages, setOfflineMessages] = useState<any[]>([]);
-const [offlineText, setOfflineText] = useState("");
-const [bluetoothDevice, setBluetoothDevice] = useState<any>(null);
-const [isScanning, setIsScanning] = useState(false);
-const [isOfflineMode, setIsOfflineMode] = useState(false);
-
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
 
 const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
   let geoUrl = ""; if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; } else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; } else { alert("Add address first bro!"); return; } window.location.href = geoUrl;
 };
-const handleLogout = async ()=>{ if(!confirm("Logout bro?")) return; await supabase.auth.signOut(); localStorage.removeItem("im_session"); setLoggedIn(false); setEmail(""); setPassword(""); setView("accounts"); };
+const handleLogout = async ()=>{ if(!confirm("Confirm Logout")) return; await supabase.auth.signOut(); localStorage.removeItem("im_session"); setLoggedIn(false); setEmail(""); setPassword(""); setView("accounts"); };
 
 const loadFeed = async ()=>{
   const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
@@ -133,9 +124,6 @@ const loadFeed = async ()=>{
   const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
   const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
   const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(500); if(ms) setMessages(ms);
-  // Load offline chats from local storage
-  const offline = localStorage.getItem(`offline_chats_${myHandle}`);
-  if(offline){ try{ setOfflineMessages(JSON.parse(offline)); }catch{} }
 };
 
 useEffect(()=>{
@@ -147,9 +135,6 @@ useEffect(()=>{
   };
   checkSession();
   const channel = supabase.channel('live-messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, ()=>{ loadFeed(); }).subscribe();
-  setIsOfflineMode(!navigator.onLine);
-  window.addEventListener('online', ()=>setIsOfflineMode(false));
-  window.addEventListener('offline', ()=>setIsOfflineMode(true));
   return ()=>{ supabase.removeChannel(channel); };
 },[]);
 
@@ -259,64 +244,6 @@ const sendChatMessage = async ()=>{
   await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, text: msg });
 };
 
-// OFFLINE BLUETOOTH FUNCTIONS
-const handleBluetoothPair = async (user:any = null)=>{
-  setIsScanning(true);
-  try{
-    if((navigator as any).bluetooth){
-      const device = await (navigator as any).bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['battery_service'] });
-      setBluetoothDevice(device);
-      alert(`✅ Paired via Bluetooth: ${device.name || 'SIM Worth Device'}! Now you can chat offline bro!`);
-    } else {
-      // Fallback - WiFi Direct / QR simulation
-      setBluetoothDevice({ name: user?.handle || "Nearby Seller", id: "sim-worth-wifi" });
-      alert(`✅ Paired via WiFi Direct with ${user?.handle || 'nearby device'}! Offline chat ready!`);
-    }
-    if(user) setOfflinePairedUser(user);
-    else setOfflinePairedUser(selectedUser || { handle: "@nearby_seller", avatar: "https://i.pravatar.cc/200?img=12", name: "Nearby Seller" });
-    setShowOfflineModal(true);
-  } catch(e:any){
-    if(e.name!=="NotFoundError") alert("Bluetooth pairing: "+e.message+" - Using WiFi fallback");
-    setBluetoothDevice({ name: "WiFi-Direct", id: "wifi" });
-    setOfflinePairedUser(user || selectedUser || { handle: "@nearby_seller", avatar: "https://i.pravatar.cc/200?img=12" });
-    setShowOfflineModal(true);
-  }
-  setIsScanning(false);
-};
-
-const sendOfflineMessage = async ()=>{
-  if(!offlineText.trim() || !offlinePairedUser) return;
-  const newMsg = { id: Date.now().toString(), from_handle: myHandle, to_handle: offlinePairedUser.handle, text: offlineText, created_at: new Date().toISOString(), offline: true, bluetooth: bluetoothDevice?.name || "Bluetooth" };
-  const updated = [...offlineMessages, newMsg];
-  setOfflineMessages(updated);
-  localStorage.setItem(`offline_chats_${myHandle}`, JSON.stringify(updated));
-  setOfflineText("");
-  // Try sync if online
-  if(navigator.onLine){
-    try{ await supabase.from("messages").insert({ from_handle: myHandle, to_handle: offlinePairedUser.handle, text: `[OFFLINE BT] ${newMsg.text}` }); }catch{}
-  }
-};
-
-const syncOfflineChats = async ()=>{
-  if(offlineMessages.length===0){ alert("No offline messages to sync"); return; }
-  if(!navigator.onLine){ alert("Go online to sync bro!"); return; }
-  for(const m of offlineMessages){
-    if(!m.synced){
-      try{ await supabase.from("messages").insert({ from_handle: m.from_handle, to_handle: m.to_handle, text: m.text }); }catch{}
-    }
-  }
-  const synced = offlineMessages.map(m=> ({...m, synced:true}));
-  setOfflineMessages(synced);
-  localStorage.setItem(`offline_chats_${myHandle}`, JSON.stringify(synced));
-  alert(`✅ Synced ${offlineMessages.length} offline messages to online inbox!`);
-};
-
-const deleteOfflineMessage = (id:string)=>{
-  const updated = offlineMessages.filter(m=> m.id!==id);
-  setOfflineMessages(updated);
-  localStorage.setItem(`offline_chats_${myHandle}`, JSON.stringify(updated));
-};
-
 const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); };
 const savePhoto = ()=>{ const link = document.createElement('a'); link.href = modalImage; link.download = `imworth-${Date.now()}.jpg`; link.target = "_blank"; link.click(); };
 const filteredProfiles = profiles.filter(p=> p.handle.toLowerCase().includes(search.toLowerCase()) || p.name.toLowerCase().includes(search.toLowerCase()));
@@ -352,49 +279,13 @@ return(
 
 return(
 <div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
-
-{/* OFFLINE BLUETOOTH CHAT MODAL */}
-{showOfflineModal && offlinePairedUser && (
-<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10001, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
-<div style={{padding:"12px", borderBottom:"1px solid #222", background:"#0a0a0a", display:"flex", alignItems:"center", gap:"10px"}}>
-<div onClick={()=>setShowOfflineModal(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
-<img src={offlinePairedUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%", border:"2px solid #00ff88"}}/>
-<div style={{flex:1}}>
-<div style={{fontWeight:"900", fontSize:"14px", display:"flex", gap:"6px", alignItems:"center"}}>{offlinePairedUser.handle} <span style={{background:"#00ff88", color:"black", fontSize:"8px", padding:"2px 6px", borderRadius:"10px", fontWeight:"900"}}>📡 ᛒT PAIRED</span></div>
-<div style={{fontSize:"11px", color:"#00ff88"}}>● {bluetoothDevice?.name || "Bluetooth"} • Offline Chat • No data needed ✓</div>
-</div>
-<button onClick={syncOfflineChats} style={{background:"#D4AF37", color:"black", border:"none", padding:"6px 10px", borderRadius:"20px", fontWeight:"900", fontSize:"10px"}}>↻ Sync</button>
-</div>
-
-<div style={{padding:"10px", background:"#001a0f", borderBottom:"1px solid #00ff88", display:"flex", gap:"8px", alignItems:"center"}}>
-<div style={{width:"8px", height:"8px", background:"#00ff88", borderRadius:"50%", boxShadow:"0 0 8px #00ff88"}}></div>
-<div style={{fontSize:"11px", color:"#00ff88", fontWeight:"900"}}>OFFLINE MODE - Bluetooth/WiFi Direct - Messages saved locally - Will sync when online</div>
-</div>
-
-<div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px", background:"#050505"}}>
-{offlineMessages.filter(m=> (m.from_handle===myHandle && m.to_handle===offlinePairedUser.handle) || (m.from_handle===offlinePairedUser.handle && m.to_handle===myHandle)).map((m:any)=>(
-<div key={m.id} style={{alignSelf: m.from_handle===myHandle ? "flex-end" : "flex-start", background: m.from_handle===myHandle ? "#00ff88" : "#222", color: m.from_handle===myHandle ? "black" : "white", padding:"10px 14px", borderRadius: m.from_handle===myHandle ? "18px 18px 4px 18px" : "18px 18px 18px 4px", maxWidth:"75%", fontSize:"13px", position:"relative"}}>
-<div>{m.text}</div>
-<div style={{fontSize:"9px", opacity:0.6, marginTop:"4px", display:"flex", justifyContent:"space-between", gap:"8px"}}><span>📡 {m.bluetooth || "BT"} • {new Date(m.created_at).toLocaleTimeString()} {m.synced ? "✓ Synced" : "📴 Offline"}</span><span onClick={()=>deleteOfflineMessage(m.id)} style={{color:"#ff4444", fontWeight:"900", cursor:"pointer"}}>✕</span></div>
-</div>
-))}
-{offlineMessages.filter(m=> (m.from_handle===myHandle && m.to_handle===offlinePairedUser.handle) || (m.from_handle===offlinePairedUser.handle && m.to_handle===myHandle)).length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px", fontSize:"12px"}}>📡 Bluetooth Paired!<br/>Start chatting offline bro!<br/>No internet needed when you meet!</div>}
-</div>
-
-<div style={{padding:"10px", borderTop:"1px solid #222", display:"flex", gap:"8px", background:"#0a0a0a"}}>
-<input value={offlineText} onChange={e=>setOfflineText(e.target.value)} onKeyDown={e=> e.key==="Enter" && sendOfflineMessage()} placeholder={`Offline to ${offlinePairedUser.handle} via BT...`} style={{flex:1, background:"#111", border:"1px solid #00ff88", color:"white", padding:"12px", borderRadius:"24px"}}/>
-<button onClick={sendOfflineMessage} style={{background:"#00ff88", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"24px", border:"none"}}>Send 📡</button>
-</div>
-</div>
-)}
-
 {showChat && chatUser && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
 <div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
 <div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
 <img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%"}}/>
 <div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{chatUser.handle}</div><div style={{fontSize:"11px", color:"#00ff88"}}>● Online - Live ✓</div></div>
-<button onClick={()=>handleBluetoothPair(chatUser)} style={{background:"#00ff88", color:"black", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>📡 Bluetooth</button>
+<button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from $IM Worth!`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
 </div>
 <div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px"}}>
 {offers.filter(o=> (o.from_handle===myHandle && o.to_handle===chatUser.handle) || (o.from_handle===chatUser.handle && o.to_handle===myHandle)).map((o:any)=>(
@@ -455,7 +346,7 @@ return(
 <div style={{marginTop:"10px"}}>
 {modalInfo?.status==="sold" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 SOLD OUT</div>
 : modalInfo?.status==="not_for_sale" ? <div style={{background:"#333", color:"#888", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>💎 NOT FOR SALE</div>
-: <div><div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>PLACE AN OFFER</div><div style={{display:"flex", gap:"6px", marginTop:"8px"}}><input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/><button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button></div><button onClick={()=>handleBluetoothPair({handle: modalInfo.owner_handle, avatar: "https://i.pravatar.cc/200"})} style={{width:"100%", marginTop:"8px", background:"#00ff88", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>📡 Pair via Bluetooth - Chat Offline</button></div>}
+: <div><div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>PLACE AN OFFER</div><div style={{display:"flex", gap:"6px", marginTop:"8px"}}><input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/><button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button></div></div>}
 </div>
 )}
 </>
@@ -467,8 +358,8 @@ return(
 )}
 </div>
 <div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
-<button onClick={savePhoto} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>⬇ Save</button>
-<button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close ✕</button>
+<button onClick={savePhoto} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
+<button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
 </div>
 </div>
 )}
@@ -477,34 +368,20 @@ return(
 
 {view==="offers" && (
 <div>
-<div style={{padding:"15px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", flexWrap:"wrap"}}>
+<div style={{padding:"15px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px"}}>
 <div onClick={()=>setView("profile")} style={{cursor:"pointer", fontSize:"20px"}}>←</div>
-<div style={{flex:1}}><h2 style={{color:"#00ff88", margin:0, fontSize:"18px"}}>Chat offline via Bluetooth! {isOfflineMode && "📴"}</h2><div style={{color:"#888", fontSize:"11px"}}>{conversations.length} chats • {myOffersCount} offers received • Live {offlineMessages.length>0 && `• ${offlineMessages.length} offline`} {isOfflineMode ? "• Offline Mode" : "• Online"}</div></div>
-<div style={{display:"flex", gap:"6px"}}>
-<button onClick={()=>{ setOfflinePairedUser({handle:"@nearby", avatar:"https://i.pravatar.cc/200", name:"Nearby"}); setShowOfflineModal(true); }} style={{background:"#00ff88", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>📡 ᛒluetooth</button>
+<div style={{flex:1}}><h2 style={{color:"#D4AF37", margin:0, fontSize:"18px"}}>Chat offline via ᛒluetooth!</h2><div style={{color:"#888", fontSize:"11px"}}>{conversations.length} chats • {myOffersCount} offers received • Live</div></div>
 <div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh</div>
-</div>
 </div>
 <div style={{display:"flex", padding:"10px", gap:"8px"}}>
 <button onClick={()=>setOffersTab("received")} style={{flex:1, background: offersTab==="received" ? "#D4AF37" : "#111", color: offersTab==="received" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>Received ({myOffersReceived.length})</button>
 <button onClick={()=>setOffersTab("sent")} style={{flex:1, background: offersTab==="sent" ? "#D4AF37" : "#111", color: offersTab==="sent" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>Sent ({myOffersSent.length})</button>
 <button onClick={()=>setOffersTab("chats")} style={{flex:1, background: offersTab==="chats" ? "#D4AF37" : "#111", color: offersTab==="chats" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>Chats ({conversations.length})</button>
 </div>
-{offersTab==="chats" && offlineMessages.length>0 && (
-<div style={{margin:"10px", background:"#001a0f", border:"1px solid #00ff88", borderRadius:"12px", padding:"10px"}}>
-<div style={{color:"#00ff88", fontWeight:"900", fontSize:"12px", display:"flex", justifyContent:"space-between"}}><span>📡 Offline Bluetooth Chats ({offlineMessages.length})</span><span onClick={syncOfflineChats} style={{background:"#00ff88", color:"black", padding:"2px 8px", borderRadius:"10px", cursor:"pointer"}}>↻ Sync All</span></div>
-{Array.from(new Set(offlineMessages.map(m=> m.from_handle===myHandle ? m.to_handle : m.from_handle))).map((h:any)=>(
-<div key={h} onClick={()=>{ const prof = profiles.find(p=> p.handle===h); setOfflinePairedUser(prof || {handle:h, avatar:"https://i.pravatar.cc/200"}); setShowOfflineModal(true); }} style={{background:"#0a1a0f", border:"1px solid #00ff88", padding:"8px", borderRadius:"8px", marginTop:"6px", display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer"}}>
-<div><div style={{fontWeight:"900", fontSize:"12px"}}>{h} <span style={{color:"#00ff88"}}>📡 ᛒT</span></div><div style={{fontSize:"10px", color:"#888"}}>{offlineMessages.filter(m=> m.from_handle===h || m.to_handle===h).length} offline msgs • Tap to open</div></div>
-<div style={{color:"#00ff88"}}>📡</div>
-</div>
-))}
-</div>
-)}
 <div style={{padding:"12px"}}>
 {offersTab==="chats" && (
 <div>
-{conversations.length===0 && offlineMessages.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No chats yet! Make an offer to start 💬<br/><button onClick={()=>{ setOfflinePairedUser({handle:"@nearby", avatar:"https://i.pravatar.cc/200"}); setShowOfflineModal(true); }} style={{marginTop:"12px", background:"#00ff88", color:"black", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>📡 Start Offline ᛒluetooth Chat</button></div>}
+{conversations.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No chats yet! Make an offer to start 💬</div>}
 {conversations.map((handle:any)=>{
   const prof = profiles.find(p=> p.handle===handle);
   const lastMsg = [...messages].reverse().find(m=> (m.from_handle===handle && m.to_handle===myHandle) || (m.from_handle===myHandle && m.to_handle===handle));
@@ -514,10 +391,7 @@ return(
     <div onClick={()=>{ setChatUser(prof || {handle: handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{display:"flex", gap:"10px", alignItems:"center", flex:1, cursor:"pointer"}}>
       <img src={prof?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%", border:"1px solid #D4AF37"}}/>
       <div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{handle}</div><div style={{fontSize:"12px", color:"#888", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:"180px"}}>{lastMsg ? lastMsg.text : lastOffer ? `💰 Offer $${lastOffer.amount}` : "No messages yet"}</div></div>
-      <div style={{display:"flex", flexDirection:"column", gap:"4px"}}>
       <div style={{color:"#D4AF37", fontSize:"12px"}}>💬 Open</div>
-      <div onClick={(e)=>{ e.stopPropagation(); handleBluetoothPair(prof || {handle}); }} style={{background:"#00ff88", color:"black", fontSize:"9px", padding:"2px 6px", borderRadius:"10px", fontWeight:"900", textAlign:"center"}}>📡 ᛒT</div>
-      </div>
     </div>
     <div onClick={()=>deleteChat(handle)} style={{background:"#222", border:"1px solid #ff4444", color:"#ff4444", padding:"6px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"900", cursor:"pointer"}}>🗑️</div>
   </div>
@@ -537,7 +411,6 @@ return(
     </div>
     <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
       <button onClick={()=>{ setChatUser(fromProfile || {handle: o.from_handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{flex:1, background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>💬 Reply</button>
-      <button onClick={()=>handleBluetoothPair(fromProfile || {handle: o.from_handle})} style={{background:"#00ff88", color:"black", fontWeight:"900", padding:"10px 12px", borderRadius:"8px", border:"none"}}>📡 BT</button>
       <button onClick={()=>deleteOffer(o.id)} style={{background:"#222", border:"1px solid #ff4444", color:"#ff4444", fontWeight:"900", padding:"10px 12px", borderRadius:"8px"}}>🗑️</button>
     </div>
   </div>
@@ -555,7 +428,6 @@ return(
     </div>
     <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
       <button onClick={()=>{ setChatUser(toProfile || {handle: o.to_handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", fontWeight:"900", padding:"10px", borderRadius:"8px"}}>💬 Open Chat</button>
-      <button onClick={()=>handleBluetoothPair(toProfile || {handle: o.to_handle})} style={{background:"#00ff88", color:"black", fontWeight:"900", padding:"10px 12px", borderRadius:"8px", border:"none"}}>📡 ᛒT</button>
       <button onClick={()=>deleteOffer(o.id)} style={{background:"#222", border:"1px solid #ff4444", color:"#ff4444", fontWeight:"900", padding:"10px 12px", borderRadius:"8px"}}>🗑️ Delete</button>
     </div>
   </div>
@@ -582,7 +454,6 @@ return(
 <div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"14px", flexWrap:"wrap"}}>
 {(selectedUser.pay_link || selectedUser.pay_handle) && (<button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>💰 Pay Me</button>)}
 {(selectedUser.location || selectedUser.latitude) && (<button onClick={()=> openInSimMaps(selectedUser.latitude?.toString(), selectedUser.longitude?.toString(), selectedUser.location)} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>🗺️ Visit Me</button>)}
-<button onClick={()=>handleBluetoothPair(selectedUser)} style={{background:"#00ff88", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>📡 Pair BT Offline</button>
 </div>
 {selectedUser.location && <div style={{color:"#888", fontSize:"11px", marginTop:"8px"}}>📍 {selectedUser.location}</div>}
 </div>
@@ -631,18 +502,18 @@ return(
 <input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
 
 <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#0a1a0f"}}>
-<div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>💎 PROFILE STATUS - Like Items!</div>
+<div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>💎 PROFILE STATUS</div>
 <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
 <button onClick={()=>setProfileStatus("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ For Sale</button>
 <button onClick={()=>setProfileStatus("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Sold Out</button>
-<button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>⚫ Not For Sale</button>
+<button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💎 Not For Sale</button>
 </div>
 </div>
 
 <div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup - $IM ₿an€</div>
 <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
-<option value="capitec">Capitec Pay</option><option value="payshap">PayShap ID</option><option value="bank">Bank EFT</option><option value="paypal">FNB</option><option value="custom">Custom Link</option>
+<option value="capitec">Capitec</option><option value="payshap">PayShap</option><option value="bank">EFT</option><option value="paypal">FNB</option><option value="custom">Custom Link</option>
 </select>
 <input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="PayShap 082... or Capitec ID" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
@@ -710,11 +581,11 @@ return(
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth $tore 🛒 Availible 🟢</h2>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth $tore 🛒 Available 🟢</h2>
 <input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
-<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 $ell List ({availableMarketItems.length})</button>
-<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>👥 ₿uyers ({filteredProfiles.length})</button>
+<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 Sell List ({availableMarketItems.length})</button>
+<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>💰 Buyers ({filteredProfiles.length})</button>
 </div>
 </div>
 {searchTab==="market" && (
