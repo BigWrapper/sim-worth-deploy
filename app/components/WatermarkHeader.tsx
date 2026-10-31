@@ -62,7 +62,7 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
           <div onClick={handlePayMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: payHandle || payLink ? "#1a1a00" : "black"}}>Pay Me</div>
         </div>
         <div style={{textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center"}}>
-          <div style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px"}}>SIM Worth Account</div>
+          <div style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px"}}>SIM Worth</div>
           <img src={avatarPreview} onClick={onAvatarClick} style={{width:"95px", height:"95px", borderRadius:"50%", border:"3px solid gold", objectFit:"cover", cursor:"pointer"}} alt="avatar"/>
         </div>
         <div style={{textAlign:"center"}}>
@@ -78,8 +78,7 @@ export default function WatermarkHeader({ avatarPreview, totalWorth, onAvatarCli
         <div style={{textAlign:"center"}}><div style={{color:"white", fontWeight:"900", fontSize:"18px"}}>0</div><div style={{color:"#888", fontSize:"11px"}}>Following</div></div>
       </div>
       <div style={{marginTop:"12px", border:"1px solid gold", borderRadius:"14px", padding:"10px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-        <div style={{flex:1, textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
-        <div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px"}}>12.5% (24h)</div>
+        <div style={{flex:1, textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>SIM WORTH</div><div style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
       </div>
     </div>
   );
