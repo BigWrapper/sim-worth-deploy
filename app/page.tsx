@@ -2,140 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const luxuryStyles = `
-  :root { color-scheme: dark; }
-  html, body {
-    min-height: 100%;
-    margin: 0;
-    background: #030405 !important;
-  }
-  body {
-    color: #f5f2e9;
-    background:
-      radial-gradient(ellipse at 50% 8%, rgba(194,145,40,.20), transparent 34%),
-      radial-gradient(ellipse at 8% 48%, rgba(50,65,90,.16), transparent 38%),
-      radial-gradient(ellipse at 92% 72%, rgba(176,122,24,.13), transparent 36%),
-      linear-gradient(145deg, #08090c 0%, #111116 48%, #030405 100%) !important;
-    background-attachment: fixed !important;
-    overflow-x: hidden;
-  }
-  .sim-luxury-shell {
-    position: relative;
-    isolation: isolate;
-    min-height: 100vh;
-    color: #f7f4ec !important;
-    background:
-      radial-gradient(ellipse at 50% 0%, rgba(212,175,55,.15), transparent 35%),
-      radial-gradient(ellipse at 0% 55%, rgba(50,70,100,.13), transparent 42%),
-      radial-gradient(ellipse at 100% 85%, rgba(212,175,55,.10), transparent 38%),
-      linear-gradient(145deg, rgba(8,9,13,.97), rgba(4,5,8,.98)) !important;
-    box-shadow: 0 0 90px rgba(0,0,0,.8);
-  }
-  .sim-luxury-shell::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: .42;
-    background:
-      radial-gradient(circle at 50% 42%, transparent 0 19%, rgba(218,174,65,.08) 19.2%, transparent 19.8% 25%, rgba(218,174,65,.045) 25.2%, transparent 25.7%),
-      repeating-linear-gradient(115deg, transparent 0 54px, rgba(255,255,255,.018) 55px, transparent 56px 108px),
-      radial-gradient(ellipse at 50% 45%, rgba(210,166,58,.08), transparent 60%);
-    mask-image: linear-gradient(to bottom, black, transparent 92%);
-  }
-  .sim-luxury-shell::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.46) 100%);
-  }
-  .sim-luxury-shell h1, .sim-luxury-shell h2 {
-    text-shadow: 0 0 18px rgba(212,175,55,.22);
-    letter-spacing: .025em;
-  }
-  .sim-luxury-shell button {
-    cursor: pointer;
-    transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 5px 18px rgba(0,0,0,.32);
-  }
-  .sim-luxury-shell button:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.12);
-    box-shadow: 0 0 18px rgba(212,175,55,.22), 0 8px 24px rgba(0,0,0,.4);
-  }
-  .sim-luxury-shell input, .sim-luxury-shell select {
-    box-sizing: border-box;
-    outline: none;
-    transition: border-color .2s ease, box-shadow .2s ease;
-  }
-  .sim-luxury-shell input:focus, .sim-luxury-shell select:focus {
-    border-color: #d4af37 !important;
-    box-shadow: 0 0 0 2px rgba(212,175,55,.14), 0 0 18px rgba(212,175,55,.10);
-  }
-  .sim-luxury-shell img {
-    filter: saturate(1.06);
-  }
-  .sim-luxury-shell [style*="border-radius: 14px"],
-  .sim-luxury-shell [style*="border-radius:14px"],
-  .sim-luxury-shell [style*="border-radius: 12px"],
-  .sim-luxury-shell [style*="border-radius:12px"] {
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 12px 28px rgba(0,0,0,.22);
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .sim-luxury-shell {
-      animation: simFadeIn .65s ease both;
-    }
-    @keyframes simFadeIn {
-      from { opacity: .75; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  }
-
-  /* === CASINO FLOATING EFFECTS - ADDED, NO NAMES CHANGED === */
-  @keyframes floatCash {
-    0% { transform: translateY(110vh) rotate(0deg) scale(0.6); opacity:0; }
-    10% { opacity:0.9; }
-    90% { opacity:0.9; }
-    100% { transform: translateY(-20vh) rotate(360deg) scale(1.3); opacity:0; }
-  }
-  @keyframes glowPulse {
-    0%,100% { text-shadow: 0 0 10px #D4AF37, 0 0 20px #D4AF37; transform: scale(1); }
-    50% { text-shadow: 0 0 20px #FFD700, 0 0 40px #FFD700, 0 0 60px #FFD700; transform: scale(1.06); }
-  }
-  @keyframes slotBounce {
-    0%,100% { transform: translateY(0px); }
-    50% { transform: translateY(-4px); }
-  }
-  @keyframes goldShineMove {
-    0% { background-position: -200% center; }
-    100% { background-position: 200% center; }
-  }
-  .floating-cash {
-    position: fixed;
-    font-weight: 900;
-    color: #D4AF37;
-    text-shadow: 0 0 12px #FFD700;
-    animation: floatCash linear infinite;
-    pointer-events: none;
-    z-index: 5;
-    will-change: transform, opacity;
-  }
-  .casino-float-worth {
-    animation: glowPulse 2.2s ease-in-out infinite, slotBounce 1.1s ease-in-out infinite;
-    display: inline-block;
-  }
-  .gold-shine-float {
-    background: linear-gradient(90deg, #D4AF37 0%, #FFD700 30%, #FFF 50%, #FFD700 70%, #D4AF37 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: goldShineMove 3s linear infinite;
-  }
-`;
-
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; };
 
@@ -184,7 +50,7 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
       {(streetAddress || userLocation) && <div style={{color:"#888", fontSize:"10px", marginTop:"2px"}}>📍 {streetAddress ? `${streetAddress}, ${suburb}` : userLocation}</div>}
       </div>
       <div style={{marginTop:"12px", border:"1px solid gold", borderRadius:"14px", padding:"10px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-        <div style={{flex:1, textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>SIM WORTH</div><div className="casino-float-worth gold-shine-float" style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
+        <div style={{flex:1, textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>SIM WORTH</div><div style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
       </div>
     </div>
   );
@@ -404,12 +270,36 @@ const myOffersCount = myOffers.length;
 
 if(!loggedIn){
 return(
-<div className="sim-luxury-shell" style={{minHeight:"100vh", background:"black", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:"80px", padding:"20px"}}>
-<style jsx global>{luxuryStyles}</style>
-{[...Array(10)].map((_,i)=>(<div key={i} className="floating-cash" style={{left:`${i*9+2}%`, animationDelay:`${i*0.6}s`, animationDuration:`${4+i%3}s`, fontSize:`${18+i%2*6}px`}}>{["$","💵","💰","$"][i%4]}</div>))}
-<h1 style={{margin:0, fontSize:"56px", fontWeight:"900"}}><span className="casino-float-worth gold-shine-float" style={{color:"#D4AF37"}}>$</span><span style={{color:"white"}}>IM</span></h1>
-<div className="casino-float-worth gold-shine-float" style={{color:"#D4AF37", fontSize:"32px", fontWeight:"900", letterSpacing:"6px"}}>WORTH</div>
-<div style={{width:"100%", maxWidth:"360px", marginTop:"40px", border:"1px solid #333", borderRadius:"24px", background:"#0a0a0a", padding:"24px"}}>
+<div style={{minHeight:"100vh", background:"black", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:"80px", padding:"20px", position:"relative", overflow:"hidden"}}>
+<style>{`
+@keyframes matrixRise {
+  0% { transform: translateY(100vh) rotate(0deg); opacity:0; }
+  15% { opacity:0.9; }
+  85% { opacity:0.9; }
+  100% { transform: translateY(-20vh) rotate(180deg); opacity:0; }
+}
+.matrix-icon {
+  position: fixed;
+  color: #D4AF37;
+  text-shadow: 0 0 8px #FFD700, 0 0 15px #D4AF37;
+  font-weight: 900;
+  animation: matrixRise linear infinite;
+  pointer-events: none;
+  z-index: 10;
+  user-select: none;
+}
+`}</style>
+{[...Array(20)].map((_,i)=>(
+  <div key={i} className="matrix-icon" style={{
+    left: `${(i*5+Math.random()*5)%100}%`,
+    animationDelay: `${i*0.35}s`,
+    animationDuration: `${3+i%4}s`,
+    fontSize: `${14+Math.random()*22}px`
+  }}>{["$","$IM","💰","$IM","$","💵","$IM","$"][i%8]}</div>
+))}
+<h1 style={{margin:0, fontSize:"56px", fontWeight:"900", position:"relative", zIndex:2}}><span style={{color:"#D4AF37"}}>$</span><span style={{color:"white"}}>IM</span></h1>
+<div style={{color:"#D4AF37", fontSize:"32px", fontWeight:"900", letterSpacing:"6px", position:"relative", zIndex:2}}>WORTH</div>
+<div style={{width:"100%", maxWidth:"360px", marginTop:"40px", border:"1px solid #333", borderRadius:"24px", background:"#0a0a0a", padding:"24px", position:"relative", zIndex:2}}>
 {err && <div style={{color:"#f87171", fontSize:"12px", marginBottom:"12px", textAlign:"center"}}>{err}</div>}
 <input placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"12px"}}/>
 <input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"20px"}}/>
@@ -421,10 +311,37 @@ return(
 }
 
 return(
-<div className="sim-luxury-shell" style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
-<style jsx global>{luxuryStyles}</style>
-{/* FLOATING CASINO CASH - SAME NAMES, JUST FLOATING */}
-{[...Array(12)].map((_,i)=>(<div key={i} className="floating-cash" style={{left:`${(i*7+3)%100}%`, top:`${(i*11)%100}%`, animationDelay:`${i*0.5}s`, animationDuration:`${3.5+i%3}s`, fontSize:`${14+i%3*8}px`}}>{["$","💵","💰","💸","$"][i%5]}</div>))}
+<div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px", position:"relative", overflow:"hidden"}}>
+<style>{`
+@keyframes matrixRise {
+  0% { transform: translateY(110vh) translateX(0px) rotate(0deg) scale(0.5); opacity:0; }
+  10% { opacity:1; }
+  50% { transform: translateY(50vh) translateX(10px) rotate(90deg) scale(1); }
+  90% { opacity:1; }
+  100% { transform: translateY(-10vh) translateX(-10px) rotate(180deg) scale(1.2); opacity:0; }
+}
+.matrix-icon {
+  position: fixed;
+  color: #D4AF37;
+  text-shadow: 0 0 8px #FFD700, 0 0 15px #D4AF37;
+  font-weight: 900;
+  animation: matrixRise linear infinite;
+  pointer-events: none;
+  z-index: 999;
+  user-select: none;
+}
+`}</style>
+{/* MATRIX ICONS FALLING FROM BELOW - ONLY THIS EFFECT */}
+{[...Array(25)].map((_,i)=>(
+  <div key={i} className="matrix-icon" style={{
+    left: `${Math.random()*100}%`,
+    bottom: "-50px",
+    animationDelay: `${Math.random()*5}s`,
+    animationDuration: `${3+Math.random()*4}s`,
+    fontSize: `${12+Math.random()*24}px`,
+    opacity: 0.7 + Math.random()*0.3
+  }}>{["$","$IM","💰","$","💵","$IM","$","💸","$IM"][i%9]}</div>
+))}
 
 {/* CHAT MODAL */}
 {showChat && chatUser && (
@@ -502,10 +419,10 @@ return(
     <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
       <img src={fromProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%", border:"1px solid #D4AF37"}}/>
       <div style={{flex:1}}>
-        <div style={{fontWeight:"900", fontSize:"14px"}}>{o.from_handle} offered <span className="casino-float-worth" style={{color:"#D4AF37"}}>${o.amount}</span></div>
+        <div style={{fontWeight:"900", fontSize:"14px"}}>{o.from_handle} offered <span style={{color:"#D4AF37"}}>${o.amount}</span></div>
         <div style={{fontSize:"11px", color:"#888"}}>{o.message || "Offer for your item"} • {new Date(o.created_at).toLocaleDateString()}</div>
       </div>
-      <div className="casino-float-worth gold-shine-float" style={{color:"#D4AF37", fontWeight:"900"}}>${o.amount}</div>
+      <div style={{color:"#D4AF37", fontWeight:"900"}}>${o.amount}</div>
     </div>
     <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
       <button onClick={()=>{ setChatUser(fromProfile || {handle: o.from_handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{flex:1, background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>💬 Reply in App</button>
@@ -538,7 +455,7 @@ return(
 {selectedUserProducts.map((p)=>(
 <div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:selectedUser.email, owner_handle:selectedUser.handle, isMine:false})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer"}}>
 <img src={p.img} style={{width:"100%", height:"120px", objectFit:"cover"}}/>
-<div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div className="casino-float-worth" style={{fontWeight:"900", color:"#D4AF37"}}>${Number(p.price).toFixed(2)}</div></div>
+<div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div style={{fontWeight:"900", color:"#D4AF37"}}>${Number(p.price).toFixed(2)}</div></div>
 </div>
 ))}
 </div>
@@ -561,7 +478,7 @@ return(
 <div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: i===0 ? "#D4AF37" : i===1 ? "#C0C0C0" : i===2 ? "#CD7F32" : "#222", color: i<=2 ? "black" : "white", fontWeight:"900", fontSize:"13px"}}>{i===0 ? "👑" : `#${i+1}`}</div>
 <img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%", objectFit:"cover", border: i===0 ? "2px solid #D4AF37" : "1px solid #333"}}/>
 <div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"} {i===0 && "• TOP"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers</div><div style={{fontSize:"10px", color: i<=2 ? "#D4AF37" : "#666", marginTop:"2px"}}>{u.bio?.substring(0,35) || "Building empire"}</div></div>
-<div style={{textAlign:"right"}}><div className="casino-float-worth gold-shine-float" style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div><div style={{fontSize:"10px", color: u.followersCount>0 ? "#00ff88" : "#666", marginTop:"2px"}}>{u.followersCount} 👥</div></div>
+<div style={{textAlign:"right"}}><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div><div style={{fontSize:"10px", color: u.followersCount>0 ? "#00ff88" : "#666", marginTop:"2px"}}>{u.followersCount} 👥</div></div>
 </div>
 ))}
 </div>
@@ -611,10 +528,10 @@ return(
 )}
 {/* === CLICKABLE OFFERS RECEIVED BUTTON - FIXED === */}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
-<div><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div className="casino-float-worth gold-shine-float" style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
+<div><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
 <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border: myOffersCount>0 ? "1px solid #D4AF37" : "1px solid #222", padding:"6px 12px", borderRadius:"10px"}}>
 <div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🔴"}</div>
-<div className={myOffersCount>0 ? "casino-float-worth" : ""} style={{color: myOffersCount>0 ? "#D4AF37" : "white", fontWeight:"900", fontSize:"18px", textDecoration: myOffersCount>0 ? "underline" : "none"}}>{myOffersCount} {myOffersCount>0 ? "→ View" : ""}</div>
+<div style={{color: myOffersCount>0 ? "#D4AF37" : "white", fontWeight:"900", fontSize:"18px", textDecoration: myOffersCount>0 ? "underline" : "none"}}>{myOffersCount} {myOffersCount>0 ? "→ View" : ""}</div>
 </div>
 </div>
 </div>
@@ -624,13 +541,13 @@ return(
 <img src={p.img} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true})} style={{width:"100%", height:"100px", objectFit:"cover", cursor:"pointer"}}/>
 <div style={{padding:"6px"}}>
 {editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px", fontSize:"11px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px", fontSize:"10px"}}>OK</button></div>) : (<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"11px", fontWeight:"bold", cursor:"pointer", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title} ✏️</div>)}
-{editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px", marginTop:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} className="casino-float-worth" style={{fontWeight:"900", fontSize:"12px", color:"#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
+{editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px", marginTop:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color:"#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
 </div>
 <div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px"}}>
 <button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px", fontSize:"12px"}}>📷</button>
 <button onClick={async()=>{setProducts(products.filter(x=>x.id!==p.id)); await supabase.from("products").delete().eq("id", p.id); loadFeed();}} style={{background:"rgba(255,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"20px", height:"20px"}}>×</button>
 </div>
-{offers.filter(o=>o.product_id===p.id).length>0 && <div className="casino-float-worth" style={{position:"absolute", bottom:"50px", left:"6px", background:"#D4AF37", color:"black", fontSize:"9px", fontWeight:"900", padding:"2px 6px", borderRadius:"10px"}}>{offers.filter(o=>o.product_id===p.id).length} OFFERS</div>}
+{offers.filter(o=>o.product_id===p.id).length>0 && <div style={{position:"absolute", bottom:"50px", left:"6px", background:"#D4AF37", color:"black", fontSize:"9px", fontWeight:"900", padding:"2px 6px", borderRadius:"10px"}}>{offers.filter(o=>o.product_id===p.id).length} OFFERS</div>}
 </div>
 ))}
 <div onClick={addProduct} style={{background:"#0a0a0a", border:"2px dashed #D4AF37", borderRadius:"14px", height:"120px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer"}}>+ Add</div>
@@ -653,7 +570,7 @@ return(
 <div style={{display:"flex", gap:"10px", flex:1, cursor:"pointer"}} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }}>
 <img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%", objectFit:"cover"}}/>
 <div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name} {u.handle===myHandle && "(You)"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {follows.filter(f=>f.following_handle===u.handle).length} followers</div></div>
-<div className="casino-float-worth" style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(u.total_worth||0).toFixed(2)}</div>
+<div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(u.total_worth||0).toFixed(2)}</div>
 </div>
 {u.handle !== myHandle && (
 <button onClick={(e)=>{ e.stopPropagation(); handleFollow(u.handle); }} style={{background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "#888" : "black", fontWeight:"900", padding:"6px 12px", borderRadius:"20px", border:"none", fontSize:"11px", height:"32px", alignSelf:"center"}}>
@@ -665,7 +582,7 @@ return(
 </div>
 </div>
 )}
-<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
+<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px", zIndex:1000}}>
 <div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#D4AF37" : "#888", cursor:"pointer"}}>👤 Search</div>
 <div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "normal"}}>👑 Worth</div>
 <div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#D4AF37" : "#888", cursor:"pointer", position:"relative"}}>💰 Offers {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>}</div>
