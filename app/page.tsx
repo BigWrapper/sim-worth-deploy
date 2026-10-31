@@ -106,17 +106,25 @@ const [chatText, setChatText] = useState("");
 const [showChat, setShowChat] = useState(false);
 const [offersTab, setOffersTab] = useState("received");
 const [modalEditingTitle, setModalEditingTitle] = useState(false);
-const [profileStatus, setProfileStatus] = useState("for_sale");
+  const [profileStatus, setProfileStatus] = useState("for_sale");
+const [isLightMode, setIsLightMode] = useState(false);
+const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
+const [isOfflineMode, setIsOfflineMode] = useState(false);
+const [isMarketRefreshing, setIsMarketRefreshing] = useState(false);
+const [isBluetoothScanning, setIsBluetoothScanning] = useState(false);
+const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
+const [bluetoothDevices, setBluetoothDevices] = useState<any[]>([]);
 
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
+const theme = { bg: isLightMode ? "#f5f5f0" : "black", cardBg: isLightMode ? "white" : "#111", cardBorder: isLightMode ? "#ddd" : "#2a2a2a", text: isLightMode ? "black" : "white", subText: isLightMode ? "#666" : "#888", inputBg: isLightMode ? "#f0f0f0" : "#111", navBg: isLightMode ? "white" : "black", navBorder: "#0a84ff", };
 
 const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
   let geoUrl = ""; if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; } else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; } else { alert("Add address first bro!"); return; } window.location.href = geoUrl;
 };
 const handleLogout = async ()=>{ if(!confirm("Confirm Logout")) return; await supabase.auth.signOut(); localStorage.removeItem("im_session"); setLoggedIn(false); setEmail(""); setPassword(""); setView("accounts"); };
 
-const loadFeed = async ()=>{
+const loadFeed = async ()=>{ setIsMarketRefreshing(true);
   const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
   if(profs) setProfiles(profs.map((p:any)=>({ id: p.id, email: p.email || p.handle, handle: p.handle, name: p.display_name || p.handle?.replace('@',''), avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12", total_worth: p.net_worth || 0, bio: p.bio, about: p.about, location: p.location, latitude: p.latitude, longitude: p.longitude, pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link, profile_status: p.profile_status || "for_sale" })));
   const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
@@ -124,11 +132,15 @@ const loadFeed = async ()=>{
   const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
   const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
   const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(500); if(ms) setMessages(ms);
+  setTimeout(()=>setIsMarketRefreshing(false), 600);
 };
+
+const handleBluetoothScan = async ()=>{ setIsBluetoothScanning(true); setNearbyUsers([]); try { // @ts-ignore if(!navigator.bluetooth){ alert("📡 Bluetooth not supported, showing nearby users via offline!"); const shuffled = [...profiles].sort(()=>0.5-Math.random()).slice(0,5); setNearbyUsers(shuffled); setIsOfflineMode(true); setIsBluetoothScanning(false); return; } // @ts-ignore const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['battery_service'] }); setBluetoothDevices(prev=>[...prev, { id: Date.now().toString(), name: device.name || "Unknown BT Device", device }]); alert(`✅ Found: ${device.name || "Unknown"} - BT chat ON!`); const shuffled = [...profiles].sort(()=>0.5-Math.random()).slice(0,5); setNearbyUsers(shuffled); setIsOfflineMode(true); } catch(e:any){ const shuffled = [...profiles].sort(()=>0.5-Math.random()).slice(0,5); setNearbyUsers(shuffled); setIsOfflineMode(true); } setIsBluetoothScanning(false); };
+const handleBluetoothChat = (user:any)=>{ setChatUser(user); setShowChat(true); alert(`📡 BT chat with ${user.handle} - offline mesh!`); };
 
 useEffect(()=>{
   const checkSession = async ()=>{
-        const { data } = await supabase.auth.getSession();
+    const { data } = await supabase.auth.getSession();
     if(data.session?.user?.email_confirmed_at){ const em = data.session.user.email!; setEmail(em); setMyId(data.session.user.id); setLoggedIn(true); loadMyData(em); }
     else { const old = localStorage.getItem("im_session"); if(old) { setEmail(old); setLoggedIn(true); loadMyData(old); } }
     loadFeed();
@@ -202,7 +214,7 @@ const setProductStatus = async (id:string, newStatus:string)=>{
   setProducts(prev => prev.map(p=> p.id===id ? {...p, status:newStatus} : p));
   setSelectedUserProducts(prev => prev.map(p=> p.id===id ? {...p, status:newStatus} : p));
   if(modalInfo && modalInfo.id===id) setModalInfo({...modalInfo, status: newStatus});
-  const { error } = await supabase.from("products").update({ status: newStatus }).eq("id", id);
+    const { error } = await supabase.from("products").update({ status: newStatus }).eq("id", id);
   if(error){ alert("⚠️ Run SQL: ALTER TABLE products ADD COLUMN status TEXT DEFAULT 'for_sale'; Error: "+error.message); loadFeed(); }
 };
 
@@ -258,7 +270,8 @@ const getStatusBadge = (status?:string)=>{
   if(status==="not_for_sale") return { text:"NOT FOR SALE 💎", color:"#888", bg:"rgba(0,0,0,0.85)" };
   return { text:"FOR SALE ✅", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
-  const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
+
+const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
 
 if(!loggedIn){
 return(
@@ -277,7 +290,7 @@ return(
 }
 
 return(
-<div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
+<div style={{minHeight:"100vh", background: theme.bg, color: theme.text, maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
 {showChat && chatUser && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
 <div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
@@ -309,7 +322,7 @@ return(
 
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
-<img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
+  <img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
 <>
@@ -377,7 +390,7 @@ return(
 <button onClick={()=>setOffersTab("sent")} style={{flex:1, background: offersTab==="sent" ? "#D4AF37" : "#111", color: offersTab==="sent" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>Sent ({myOffersSent.length})</button>
 <button onClick={()=>setOffersTab("chats")} style={{flex:1, background: offersTab==="chats" ? "#D4AF37" : "#111", color: offersTab==="chats" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>Chats ({conversations.length})</button>
 </div>
-  <div style={{padding:"12px"}}>
+<div style={{padding:"12px"}}>
 {offersTab==="chats" && (
 <div>
 {conversations.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No chats yet! Make an offer to start 💬</div>}
@@ -417,7 +430,7 @@ return(
 })}
 {offersTab==="sent" && myOffersSent.map((o:any)=>{
   const toProfile = profiles.find(p=> p.handle===o.to_handle);
-  return (
+    return (
   <div key={o.id} style={{background:"#111", border:"1px solid #2a2a2a", borderLeft:"4px solid #00ff88", padding:"12px", borderRadius:"12px", marginBottom:"10px", position:"relative"}}>
     <div onClick={()=>deleteOffer(o.id)} style={{position:"absolute", top:"8px", right:"8px", background:"#ff4444", color:"white", width:"24px", height:"24px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"12px", fontWeight:"900", cursor:"pointer"}}>✕</div>
     <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
@@ -517,7 +530,7 @@ return(
 <input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="PayShap 082... or Capitec ID" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
-  <div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
+<div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS</div>
 <input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
@@ -525,7 +538,7 @@ return(
 <div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
 <input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 <input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
-</div>
+  </div>
 <button onClick={()=>{ navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured!`); }); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
 </div>
 <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
@@ -580,7 +593,7 @@ return(
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth $tore 🛒 Available 🟢</h2>
+<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth $tore 🛒 Available 🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:`1px solid ${theme.cardBorder}`, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "🌙 Dark" : "☀️ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:`1px solid ${isOfflineMode ? "#0a84ff" : theme.cardBorder}`, color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
 <input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
 <button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 Sell List ({availableMarketItems.length})</button>
@@ -619,11 +632,11 @@ return(
 )}
 </div>
 )}
-<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
-<div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#D4AF37" : "#888", cursor:"pointer"}}>🛒 $hop</div>
-<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer"}}>👑 Worth</div>
-<div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#D4AF37" : "#888", cursor:"pointer", position:"relative"}}>💬 Inbox {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>}</div>
-<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile</div>
+<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background: theme.navBg, borderTop:`2px solid ${theme.navBorder}`, display:"flex", justifyContent:"space-around", padding:"10px"}}>
+<div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="accounts" ? "900" : "400", background: view==="accounts" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="accounts" ? "1px solid #0a84ff" : "none", transition:"all 0.2s"}}>🛒 $hop {isMarketRefreshing && "↻"}</div>
+<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "400", background: view==="feed" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="feed" ? "1px solid #0a84ff" : "none", transition:"all 0.2s"}}>👑 Worth</div>
+<div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#0a84ff" : "#888", cursor:"pointer", position:"relative", fontWeight: view==="offers" ? "900" : "400", background: view==="offers" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="offers" ? "1px solid #0a84ff" : "none", transition:"all 0.2s"}}>💬 Inbox {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>} {isOfflineMode && <span style={{position:"absolute", top:"-6px", left:"-8px", background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 4px", borderRadius:"10px"}}>BT</span>}</div>
+<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="profile" ? "900" : "400", background: view==="profile" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="profile" ? "1px solid #0a84ff" : "none", transition:"all 0.2s"}}>💎 Profile {isLightMode ? "☀️" : "🌙"}</div>
 </div>
 </div>
 );
