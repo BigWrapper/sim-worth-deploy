@@ -321,8 +321,7 @@ return(
 <div style={{textAlign:"center", color:"#666", fontSize:"13px", marginTop:"16px"}} onClick={()=>setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Have account? Login":"No account? Sign Up"}</div>
 </div>
 </div>
-);
-)  
+);  
 }
 
 return(
@@ -649,6 +648,5 @@ return(
 <div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="profile" ? "900" : "400", background: view==="profile" ? "#0a1a2a" : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="profile" ? "1px solid #0a84ff" : "none"}}>💎 Profile {isOfflineMode && "📴"}</div>
 </div>
 </div>
-);
-)  
+);  
 }
