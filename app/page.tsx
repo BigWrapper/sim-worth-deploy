@@ -1,10 +1,83 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
-import WatermarkHeader from "./components/WatermarkHeader";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; };
+
+// === MERGED WATERMARK HEADER - INSIDE SAME FILE ===
+type HeaderProps = {
+  avatarPreview: string;
+  totalWorth: number;
+  onAvatarClick: () => void;
+  myUserId: string;
+  myHandle: string;
+  userLocation?: string;
+  userLat?: string;
+  userLng?: string;
+  streetAddress?: string;
+  suburb?: string;
+  city?: string;
+  payLink?: string;
+  payHandle?: string;
+  payMethod?: string;
+};
+
+function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod }: HeaderProps) {
+  const handlePayMe = () => {
+    if (payLink && payLink.startsWith("http")) { window.open(payLink, '_blank'); return; }
+    if (payHandle) {
+      if (payMethod === "capitec" || payMethod === "payshap") { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); }
+      else if (payMethod === "bank") { alert(`Bank: ${payHandle} - Copy to pay`); }
+      else { window.open(`https://${payHandle}`, '_blank'); }
+      return;
+    }
+    alert("Go to Edit Profile > Setup Pay Me to add your Capitec PayShap ID!");
+  };
+  const handleVisitMe = () => {
+    const label = myHandle || "SIM Worth User";
+    const manualFull = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city || 'South Africa'}` : null;
+    const finalAddress = manualFull || userLocation;
+    if (userLat && userLng && userLat !== "" && userLng !== "") {
+      const geoUri = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || label)})`;
+      window.location.href = geoUri;
+    } else if (finalAddress) {
+      const geoUri = `geo:0,0?q=${encodeURIComponent(finalAddress)}`;
+      window.location.href = geoUri;
+    } else {
+      alert("Set your address first! Go to Edit Profile > Visit Me Setup > Add Street + Suburb");
+    }
+  };
+  return (
+    <div style={{background:"black", padding:"10px"}}>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+        <div style={{textAlign:"center"}}>
+          <img src="/sim_banc.png" onClick={handlePayMe} style={{width:"85px", height:"85px", objectFit:"contain", cursor:"pointer"}} alt="banc"/>
+          <div onClick={handlePayMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: payHandle || payLink ? "#1a1a00" : "black"}}>Pay Me</div>
+        </div>
+        <div style={{textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center"}}>
+          <div style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px"}}>SIM Worth</div>
+          <img src={avatarPreview} onClick={onAvatarClick} style={{width:"95px", height:"95px", borderRadius:"50%", border:"3px solid gold", objectFit:"cover", cursor:"pointer"}} alt="avatar"/>
+        </div>
+        <div style={{textAlign:"center"}}>
+          <img src="/sim_maps.png" onClick={handleVisitMe} style={{width:"85px", height:"85px", objectFit:"contain", cursor:"pointer"}} alt="maps"/>
+          <div onClick={handleVisitMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: userLocation || streetAddress ? "#1a1a00" : "black"}}>Visit Me</div>
+        </div>
+      </div>
+      <div style={{textAlign:"center", marginTop:"10px"}}><div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div>
+      {(streetAddress || userLocation) && <div style={{color:"#888", fontSize:"10px", marginTop:"2px"}}>📍 {streetAddress ? `${streetAddress}, ${suburb}` : userLocation}</div>}
+      </div>
+      <div style={{display:"flex", justifyContent:"center", gap:"40px", marginTop:"8px"}}>
+        <div style={{textAlign:"center"}}><div style={{color:"white", fontWeight:"900", fontSize:"18px"}}>0</div><div style={{color:"#888", fontSize:"11px"}}>Followers</div></div>
+        <div style={{textAlign:"center"}}><div style={{color:"white", fontWeight:"900", fontSize:"18px"}}>0</div><div style={{color:"#888", fontSize:"11px"}}>Following</div></div>
+      </div>
+      <div style={{marginTop:"12px", border:"1px solid gold", borderRadius:"14px", padding:"10px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+        <div style={{flex:1, textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>SIM WORTH</div><div style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
+      </div>
+    </div>
+  );
+}
+// === END HEADER ===
 
 export default function FullApp(){
 const [loggedIn, setLoggedIn] = useState(false);
@@ -40,7 +113,6 @@ const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [offerAmount, setOfferAmount] = useState("");
 
-// PAY ME & VISIT ME STATE + NEW MANUAL ADDRESS FOR SIM MAPS
 const [payMethod, setPayMethod] = useState("capitec");
 const [payHandle, setPayHandle] = useState("");
 const [payLink, setPayLink] = useState("");
@@ -55,44 +127,30 @@ const [myId, setMyId] = useState("");
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
 
-// SIM MAPS HELPER - OPENS OFFLINE MAPS ONLY (NO CHROME)
 const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
   let geoUrl = "";
   if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){
     geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`;
   } else if(address){
     geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`;
-  } else {
-    alert("Add address first bro!");
-    return;
-  }
+  } else { alert("Add address first bro!"); return; }
   window.location.href = geoUrl;
 };
 
 const loadFeed = async ()=>{
   const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
-  if(profs) setProfiles(profs.map((p:any)=>({ 
-    id: p.id, email: p.email || p.handle, handle: p.handle,
-    name: p.display_name || p.handle?.replace('@',''),
-    avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12",
-    total_worth: p.net_worth || 0, bio: p.bio, about: p.about,
-    location: p.location, latitude: p.latitude, longitude: p.longitude,
-    pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link
-  })));
+  if(profs) setProfiles(profs.map((p:any)=>({ id: p.id, email: p.email || p.handle, handle: p.handle, name: p.display_name || p.handle?.replace('@',''), avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12", total_worth: p.net_worth || 0, bio: p.bio, about: p.about, location: p.location, latitude: p.latitude, longitude: p.longitude, pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link })));
   const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
   if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item"})));
-  const { data: fl } = await supabase.from("follows").select("*");
-  if(fl) setFollows(fl);
-  const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false});
-  if(of) setOffers(of);
+  const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
+  const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
 };
 
 useEffect(()=>{
   const checkSession = async ()=>{
     const { data } = await supabase.auth.getSession();
     if(data.session?.user?.email_confirmed_at){
-      const em = data.session.user.email!;
-      setEmail(em); setMyId(data.session.user.id); setLoggedIn(true); loadMyData(em);
+      const em = data.session.user.email!; setEmail(em); setMyId(data.session.user.id); setLoggedIn(true); loadMyData(em);
     } else {
       const old = localStorage.getItem("im_session");
       if(old) { setEmail(old); setLoggedIn(true); loadMyData(old); }
@@ -108,25 +166,10 @@ const loadMyData = async (em:string)=>{
   const handle = "@" + em.split("@")[0].toLowerCase().trim();
   const { data: prof } = await supabase.from("profiles").select("*").eq("handle", handle).maybeSingle();
   if(prof){ 
-    if(prof.avatar_url) setAvatarPreview(prof.avatar_url); 
-    if(prof.bio) setBio(prof.bio); 
-    if(prof.about) setAbout(prof.about);
-    if(prof.pay_method) setPayMethod(prof.pay_method);
-    if(prof.pay_handle) setPayHandle(prof.pay_handle);
-    if(prof.pay_link) setPayLink(prof.pay_link);
-    if(prof.location) {
-      setUserLocation(prof.location);
-      // Try to parse street/suburb from location if it contains comma
-      const parts = prof.location.split(',');
-      if(parts.length >= 2){
-        setStreetAddress(parts[0].trim());
-        setSuburb(parts[1].trim());
-        if(parts[2]) setCity(parts[2].trim());
-      }
-    }
-    if(prof.latitude) setUserLat(prof.latitude.toString());
-    if(prof.longitude) setUserLng(prof.longitude.toString());
-    if(prof.id) setMyId(prof.id);
+    if(prof.avatar_url) setAvatarPreview(prof.avatar_url); if(prof.bio) setBio(prof.bio); if(prof.about) setAbout(prof.about);
+    if(prof.pay_method) setPayMethod(prof.pay_method); if(prof.pay_handle) setPayHandle(prof.pay_handle); if(prof.pay_link) setPayLink(prof.pay_link);
+    if(prof.location) { setUserLocation(prof.location); const parts = prof.location.split(','); if(parts.length >= 2){ setStreetAddress(parts[0].trim()); setSuburb(parts[1].trim()); if(parts[2]) setCity(parts[2].trim()); } }
+    if(prof.latitude) setUserLat(prof.latitude.toString()); if(prof.longitude) setUserLng(prof.longitude.toString()); if(prof.id) setMyId(prof.id);
   }
 };
 
@@ -139,79 +182,42 @@ const loadPublicUser = async (user:any)=>{
 
 const syncProfile = async (em:string, worth:number, av:string)=>{
   if(!em || !em.includes("@")) return;
-  const handle = "@" + em.split("@")[0].toLowerCase().trim();
-  if(handle === "@" || handle.length < 3) return;
-  // Build full address from manual fields
+  const handle = "@" + em.split("@")[0].toLowerCase().trim(); if(handle === "@" || handle.length < 3) return;
   const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
   const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
-  if(existing){ 
-    await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("id", existing.id); 
-  }
-  else { 
-    await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }); 
-  }
+  if(existing){ await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("id", existing.id); }
+  else { await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }); }
 };
 
 const saveBio = async ()=>{
   const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
-  await supabase.from("profiles").update({ 
-    bio: bio, about: about,
-    pay_method: payMethod, pay_handle: payHandle, pay_link: payLink,
-    location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null
-  }).eq("handle", myHandle);
+  await supabase.from("profiles").update({ bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("handle", myHandle);
   setEditingBio(false); loadFeed(); alert("Profile Saved Successfully ✓");
 };
 
 const doLogin = async ()=>{
-  setErr("");
-  if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
+  setErr(""); if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
   try {
     if(authMode==="signup"){
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password: password,
-        options: { data: { handle: "@" + email.split("@")[0].toLowerCase() } }
-      });
+      const { data, error } = await supabase.auth.signUp({ email: email.trim().toLowerCase(), password: password, options: { data: { handle: "@" + email.split("@")[0].toLowerCase() } } });
       if(error) throw error;
-      if(!data.session){
-        setErr("✅ Verification email sent! Check your inbox & spam to confirm, then LOGIN.");
-        setAuthMode("login");
-        return;
-      }
-      localStorage.setItem("im_session", email);
-      await syncProfile(email, 0, avatarPreview);
-      setLoggedIn(true); await loadMyData(email); await loadFeed();
+      if(!data.session){ setErr("✅ Verification email sent! Check your inbox & spam to confirm, then LOGIN."); setAuthMode("login"); return; }
+      localStorage.setItem("im_session", email); await syncProfile(email, 0, avatarPreview); setLoggedIn(true); await loadMyData(email); await loadFeed();
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password: password
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
       if(error) throw error;
-      if(!data.user?.email_confirmed_at){
-        setErr("⚠️ Email not verified. Check your inbox for confirmation link.");
-        await supabase.auth.signOut();
-        return;
-      }
-      localStorage.setItem("im_session", email);
-      setMyId(data.user.id);
-      await loadMyData(email); 
-      setLoggedIn(true); 
-      await loadFeed();
+      if(!data.user?.email_confirmed_at){ setErr("⚠️ Email not verified. Check your inbox for confirmation link."); await supabase.auth.signOut(); return; }
+      localStorage.setItem("im_session", email); setMyId(data.user.id); await loadMyData(email); setLoggedIn(true); await loadFeed();
     }
-  } catch(e:any){
-    setErr(e.message);
-  }
+  } catch(e:any){ setErr(e.message); }
 };
 
 const handleAvatarChange = async (e:any)=>{
-  const file = e.target.files?.[0]; if(!file) return;
-  setAvatarPreview(URL.createObjectURL(file));
+  const file = e.target.files?.[0]; if(!file) return; setAvatarPreview(URL.createObjectURL(file));
   try {
-    const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
-    const fileName = `${safeEmail}/${Date.now()}.jpg`;
+    const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/${Date.now()}.jpg`;
     await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
-    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    const publicUrl = data.publicUrl + `?t=${Date.now()}`;
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`;
     setAvatarPreview(publicUrl); await syncProfile(email, totalWorth, publicUrl); await loadFeed();
   } catch(err:any){ alert("Upload failed: " + err.message); }
 };
@@ -219,75 +225,27 @@ const handleAvatarChange = async (e:any)=>{
 const handleProductImageChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file || !activeProductId) return;
   try {
-    const safeEmail = email.replace(/[^a-z0-9]/gi, '_');
-    const fileName = `${safeEmail}/product_${activeProductId}_${Date.now()}.jpg`;
+    const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/product_${activeProductId}_${Date.now()}.jpg`;
     await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
-    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    const publicUrl = data.publicUrl + `?t=${Date.now()}`;
-    setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p));
-    setSelectedUserProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p));
-    if(modalInfo) setModalImage(publicUrl);
-    await supabase.from("products").update({ img: publicUrl }).eq("id", activeProductId);
-    await loadFeed();
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`;
+    setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p)); setSelectedUserProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p)); if(modalInfo) setModalImage(publicUrl);
+    await supabase.from("products").update({ img: publicUrl }).eq("id", activeProductId); await loadFeed();
   } catch(err:any){ alert("Product image failed: " + err.message); }
 };
 
 const addProduct = async ()=>{
-  const newId = Date.now().toString();
-  const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item" };
+  const newId = Date.now().toString(); const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item" };
   setProducts([newItem, ...products]);
   const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice, title: newItem.title }).select().single();
-  if(data) setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p));
-  await loadFeed();
+  if(data) setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p)); await loadFeed();
 };
 
-const updatePrice = async (id:string)=>{
-  const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; }
-  setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p));
-  await supabase.from("products").update({ price: num }).eq("id", id);
-  setEditingPriceId(null); loadFeed();
-};
-
-const updateTitle = async (id:string)=>{
-  if(!tempTitle.trim()) { setEditingTitleId(null); return; }
-  setProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p));
-  await supabase.from("products").update({ title: tempTitle }).eq("id", id);
-  setEditingTitleId(null); loadFeed();
-  if(modalInfo && modalInfo.id===id) setModalInfo({...modalInfo, title: tempTitle});
-};
-
-const handleFollow = async (targetHandle:string)=>{
-  if(myHandle === targetHandle) return;
-  const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle);
-  if(existing){ await supabase.from("follows").delete().eq("id", existing.id); }
-  else { await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }); }
-  loadFeed();
-};
-
-const placeOffer = async ()=>{
-  if(!offerAmount || !modalInfo) return;
-  const amount = parseFloat(offerAmount);
-  if(isNaN(amount)){ alert("Enter valid amount"); return; }
-  const toHandle = modalInfo.owner_handle || selectedUser?.handle || feedProducts.find(p=> p.id===modalInfo.id)?.owner_email;
-  await supabase.from("offers").insert({ 
-    product_id: modalInfo.id, 
-    from_handle: myHandle, 
-    to_handle: toHandle, 
-    amount: amount,
-    message: `Offer for ${modalInfo.title || 'item'}`
-  });
-  alert(`Offer $${amount} sent to ${toHandle} ✓`);
-  setOfferAmount(""); setShowImageModal(false); loadFeed();
-};
-
-const openImageModal = (img:string, info:any=null)=>{
-  setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount("");
-};
-
-const savePhoto = ()=>{
-  const link = document.createElement('a'); link.href = modalImage; link.download = `imworth-${Date.now()}.jpg`; link.target = "_blank"; link.click();
-};
-
+const updatePrice = async (id:string)=>{ const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p)); await supabase.from("products").update({ price: num }).eq("id", id); setEditingPriceId(null); loadFeed(); };
+const updateTitle = async (id:string)=>{ if(!tempTitle.trim()) { setEditingTitleId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p)); await supabase.from("products").update({ title: tempTitle }).eq("id", id); setEditingTitleId(null); loadFeed(); if(modalInfo && modalInfo.id===id) setModalInfo({...modalInfo, title: tempTitle}); };
+const handleFollow = async (targetHandle:string)=>{ if(myHandle === targetHandle) return; const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle); if(existing){ await supabase.from("follows").delete().eq("id", existing.id); } else { await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }); } loadFeed(); };
+const placeOffer = async ()=>{ if(!offerAmount || !modalInfo) return; const amount = parseFloat(offerAmount); if(isNaN(amount)){ alert("Enter valid amount"); return; } const toHandle = modalInfo.owner_handle || selectedUser?.handle || feedProducts.find(p=> p.id===modalInfo.id)?.owner_email; await supabase.from("offers").insert({ product_id: modalInfo.id, from_handle: myHandle, to_handle: toHandle, amount: amount, message: `Offer for ${modalInfo.title || 'item'}` }); alert(`Offer $${amount} sent to ${toHandle} ✓`); setOfferAmount(""); setShowImageModal(false); loadFeed(); };
+const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); };
+const savePhoto = ()=>{ const link = document.createElement('a'); link.href = modalImage; link.download = `imworth-${Date.now()}.jpg`; link.target = "_blank"; link.click(); };
 const filteredProfiles = profiles.filter(p=> p.handle.toLowerCase().includes(search.toLowerCase()) || p.name.toLowerCase().includes(search.toLowerCase()));
 const myFollowers = follows.filter(f=> f.following_handle===myHandle).length;
 const myFollowing = follows.filter(f=> f.follower_handle===myHandle).length;
@@ -326,9 +284,7 @@ return(
 {offers.filter(o=> o.product_id===modalInfo.id).length>0 && (
 <div style={{marginTop:"10px", background:"#0a0a0a", padding:"8px", borderRadius:"8px", border:"1px solid #D4AF37"}}>
 <div style={{fontSize:"11px", color:"#D4AF37", fontWeight:"bold"}}>OFFERS ({offers.filter(o=>o.product_id===modalInfo.id).length})</div>
-{offers.filter(o=>o.product_id===modalInfo.id).slice(0,3).map((o:any)=>(
-<div key={o.id} style={{fontSize:"11px", color:"white", marginTop:"4px"}}>{o.from_handle} offered ${o.amount}</div>
-))}
+{offers.filter(o=>o.product_id===modalInfo.id).slice(0,3).map((o:any)=>(<div key={o.id} style={{fontSize:"11px", color:"white", marginTop:"4px"}}>{o.from_handle} offered ${o.amount}</div>))}
 </div>
 )}
 </div>
@@ -364,16 +320,10 @@ return(
 <div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.follower_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Following</span></div>
 </div>
 <button onClick={()=>handleFollow(selectedUser.handle)} style={{marginTop:"12px", background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "white" : "black", fontWeight:"900", padding:"8px 20px", borderRadius:"20px", border:"none"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "Following ✓" : "Follow +"}</button>
-
 <div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"12px", flexWrap:"wrap"}}>
-{(selectedUser.pay_link || selectedUser.pay_handle) && (
-<button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>💰 Pay {selectedUser.handle}</button>
-)}
-{(selectedUser.location) && (
-<button onClick={()=> openInSimMaps(selectedUser.latitude, selectedUser.longitude, selectedUser.location)} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>🗺️ Visit in SIM Maps</button>
-)}
+{(selectedUser.pay_link || selectedUser.pay_handle) && (<button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>💰 Pay {selectedUser.handle}</button>)}
+{(selectedUser.location) && (<button onClick={()=> openInSimMaps(selectedUser.latitude, selectedUser.longitude, selectedUser.location)} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>🗺️ Visit in SIM Maps</button>)}
 </div>
-
 </div>
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
@@ -389,48 +339,20 @@ return(
 {view==="feed" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 SIM Worth 💵 INVESTORS 🏆</h2>
-<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀 • Most Buyers💰 → Highest Worth👑</div>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆💎 $IM Worth 💰 Investor$ 💎🏆</h2>
+<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀 Most Buyers💵 Highest Worth👑</div>
 <div style={{display:"flex", gap:"10px", marginTop:"10px"}}>
 <div style={{background:"#111", padding:"6px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px"}}>👑 {profiles.length} Hustlers</div>
 <div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh Rank</div>
 </div>
 </div>
-
 <div style={{padding:"12px"}}>
-{profiles.map(p=>({
-  ...p,
-  followersCount: follows.filter(f=> f.following_handle===p.handle).length,
-  followingCount: follows.filter(f=> f.follower_handle===p.handle).length,
-})).sort((a:any,b:any)=>{
-  if(b.followersCount !== a.followersCount) return b.followersCount - a.followersCount;
-  return b.total_worth - a.total_worth;
-}).map((u:any, i:number)=>(
-<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{
-  display:"flex", gap:"12px", 
-  background: i===0 ? "#1a1a00" : u.handle===myHandle ? "#111" : "#0f0f0f",
-  padding:"14px", borderRadius:"14px", marginBottom:"10px", 
-  border: i===0 ? "2px solid #D4AF37" : u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #222",
-  cursor:"pointer", alignItems:"center"
-}}>
-<div style={{
-  width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center",
-  background: i===0 ? "#D4AF37" : i===1 ? "#C0C0C0" : i===2 ? "#CD7F32" : "#222",
-  color: i<=2 ? "black" : "white", fontWeight:"900", fontSize:"13px"
-}}>
-{i===0 ? "👑" : `#${i+1}`}
-</div>
+{profiles.map(p=>({ ...p, followersCount: follows.filter(f=> f.following_handle===p.handle).length, followingCount: follows.filter(f=> f.follower_handle===p.handle).length, })).sort((a:any,b:any)=>{ if(b.followersCount !== a.followersCount) return b.followersCount - a.followersCount; return b.total_worth - a.total_worth; }).map((u:any, i:number)=>(
+<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{ display:"flex", gap:"12px", background: i===0 ? "#1a1a00" : u.handle===myHandle ? "#111" : "#0f0f0f", padding:"14px", borderRadius:"14px", marginBottom:"10px", border: i===0 ? "2px solid #D4AF37" : u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #222", cursor:"pointer", alignItems:"center"}}>
+<div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: i===0 ? "#D4AF37" : i===1 ? "#C0C0C0" : i===2 ? "#CD7F32" : "#222", color: i<=2 ? "black" : "white", fontWeight:"900", fontSize:"13px"}}>{i===0 ? "👑" : `#${i+1}`}</div>
 <img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%", objectFit:"cover", border: i===0 ? "2px solid #D4AF37" : "1px solid #333"}}/>
-<div style={{flex:1}}>
-<div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"} {i===0 && "• TOP"}</div>
-<div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers • {u.followingCount} following</div>
-<div style={{fontSize:"10px", color: i<=2 ? "#D4AF37" : "#666", marginTop:"2px"}}>{u.bio?.substring(0,35) || "Building empire"}</div>
-</div>
-<div style={{textAlign:"right"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div>
-<div style={{fontSize:"10px", color:"#888"}}>WORTH</div>
-<div style={{fontSize:"10px", color: u.followersCount>0 ? "#00ff88" : "#666", marginTop:"2px"}}>{u.followersCount} 👥</div>
-</div>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"} {i===0 && "• TOP"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers • {u.followingCount} following</div><div style={{fontSize:"10px", color: i<=2 ? "#D4AF37" : "#666", marginTop:"2px"}}>{u.bio?.substring(0,35) || "Building empire"}</div></div>
+<div style={{textAlign:"right"}}><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div><div style={{fontSize:"10px", color:"#888"}}>WORTH</div><div style={{fontSize:"10px", color: u.followersCount>0 ? "#00ff88" : "#666", marginTop:"2px"}}>{u.followersCount} 👥</div></div>
 </div>
 ))}
 </div>
@@ -446,50 +368,27 @@ return(
 <div>
 <input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio - I'm Worth CEO" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About - Entrepreneur" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
-
 <div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup (SIM Banc)</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup ($IM Banc)</div>
 <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
-<option value="capitec">Capitec Pay</option>
-<option value="payshap">PayShap ID (Phone)</option>
-<option value="bank">Bank EFT</option>
-<option value="paypal">PayPal / Link</option>
-<option value="custom">Custom Link</option>
+<option value="capitec">Capitec Pay</option><option value="payshap">PayShap ID (Phone)</option><option value="bank">Bank EFT</option><option value="paypal">PayPal / Link</option><option value="custom">Custom Link</option>
 </select>
 <input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="PayShap 082... or Capitec ID" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://... (optional)" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
-
 <div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS (Offline)</div>
-
 <input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address e.g. 29 Hans Cloete Street" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb e.g. Rosedale" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={city} onChange={e=>setCity(e.target.value)} placeholder="City e.g. Upington" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-
 <div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
 <input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat -26.02" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 <input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng 28.13" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
-
-<button onClick={()=>{
-  if(!navigator.geolocation){ alert('Geolocation not supported'); return; }
-  navigator.geolocation.getCurrentPosition(p=>{ 
-    setUserLat(p.coords.latitude.toString()); 
-    setUserLng(p.coords.longitude.toString()); 
-    alert(`Location captured! ${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`); 
-  }, err=> alert('GPS Error: '+err.message), {enableHighAccuracy:true, timeout:15000});
-}} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
-
-<button onClick={()=>{
-  const full = `${streetAddress}, ${suburb}, ${city}`;
-  if(!streetAddress || !suburb){ alert("Fill Street + Suburb first!"); return; }
-  openInSimMaps(userLat, userLng, full);
-}} style={{width:"100%", background:"#0a84ff", color:"white", padding:"12px", borderRadius:"8px", fontWeight:"900", border:"none", marginBottom:"8px"}}>🗺️ Open Address in SIM Maps (Offline)</button>
-
+<button onClick={()=>{ if(!navigator.geolocation){ alert('Geolocation not supported'); return; } navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured! ${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`); }, err=> alert('GPS Error: '+err.message), {enableHighAccuracy:true, timeout:15000}); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
+<button onClick={()=>{ const full = `${streetAddress}, ${suburb}, ${city}`; if(!streetAddress || !suburb){ alert("Fill Street + Suburb first!"); return; } openInSimMaps(userLat, userLng, full); }} style={{width:"100%", background:"#0a84ff", color:"white", padding:"12px", borderRadius:"8px", fontWeight:"900", border:"none", marginBottom:"8px"}}>🗺️ Open Address in SIM Maps (Offline)</button>
 <div style={{fontSize:"10px", color:"#888", textAlign:"center"}}>No data needed! SIM Maps opens offline with your typed address!</div>
 </div>
-
 <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
 <button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
 </div>
@@ -500,9 +399,7 @@ return(
 <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
 {userLocation && <div style={{color:"#D4AF37", fontSize:"11px", marginTop:"6px"}}>📍 {userLocation}</div>}
 {(payHandle || payLink) && <div style={{color:"#00ff88", fontSize:"11px", marginTop:"4px"}}>💰 Pay: {payMethod} - {payHandle || payLink}</div>}
-{userLocation && (
-<button onClick={()=> openInSimMaps(userLat, userLng, userLocation)} style={{marginTop:"10px", width:"100%", background:"#0a84ff", color:"white", padding:"10px", borderRadius:"8px", fontWeight:"900", border:"none"}}>🗺️ View Me in SIM Maps</button>
-)}
+{userLocation && (<button onClick={()=> openInSimMaps(userLat, userLng, userLocation)} style={{marginTop:"10px", width:"100%", background:"#0a84ff", color:"white", padding:"10px", borderRadius:"8px", fontWeight:"900", border:"none"}}>🗺️ View Me in SIM Maps</button>)}
 </div>
 )}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
@@ -510,22 +407,13 @@ return(
 <div><div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED</div><div style={{color:"white", fontWeight:"900"}}>{offers.filter(o=> o.to_handle===myHandle).length}</div></div>
 </div>
 </div>
-
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginTop:"10px"}}>
 {products.map((p)=>(
 <div key={p.id} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", position:"relative"}}>
 <img src={p.img} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true})} style={{width:"100%", height:"100px", objectFit:"cover", cursor:"pointer"}}/>
 <div style={{padding:"6px"}}>
-{editingTitleId===p.id ? (
-<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px", fontSize:"11px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px", fontSize:"10px"}}>OK</button></div>
-) : (
-<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"11px", fontWeight:"bold", cursor:"pointer", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title} ✏️</div>
-)}
-{editingPriceId===p.id ? (
-<div style={{display:"flex", gap:"4px", marginTop:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>
-) : (
-<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color:"#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>
-)}
+{editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px", fontSize:"11px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px", fontSize:"10px"}}>OK</button></div>) : (<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"11px", fontWeight:"bold", cursor:"pointer", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title} ✏️</div>)}
+{editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px", marginTop:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color:"#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
 </div>
 <div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px"}}>
 <button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px", fontSize:"12px"}}>📷</button>
