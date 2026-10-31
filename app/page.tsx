@@ -107,16 +107,6 @@ const [showChat, setShowChat] = useState(false);
 const [offersTab, setOffersTab] = useState("received");
 const [modalEditingTitle, setModalEditingTitle] = useState(false);
 const [profileStatus, setProfileStatus] = useState("for_sale");
-// ADDED - BLUETOOTH + LIVE REFRESH + BLUE NAV
-const [showOfflineModal, setShowOfflineModal] = useState(false);
-const [offlinePairedUser, setOfflinePairedUser] = useState<any>(null);
-const [offlineMessages, setOfflineMessages] = useState<any[]>([]);
-const [offlineText, setOfflineText] = useState("");
-const [bluetoothDevice, setBluetoothDevice] = useState<any>(null);
-const [isScanning, setIsScanning] = useState(false);
-const [isOfflineMode, setIsOfflineMode] = useState(false);
-const [liveRefreshCount, setLiveRefreshCount] = useState(0);
-const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
 
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
@@ -134,24 +124,18 @@ const loadFeed = async ()=>{
   const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
   const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
   const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(500); if(ms) setMessages(ms);
-  const offline = localStorage.getItem(`offline_chats_${myHandle}`);
-  if(offline){ try{ setOfflineMessages(JSON.parse(offline)); }catch{} }
 };
 
 useEffect(()=>{
   const checkSession = async ()=>{
-    const { data } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
     if(data.session?.user?.email_confirmed_at){ const em = data.session.user.email!; setEmail(em); setMyId(data.session.user.id); setLoggedIn(true); loadMyData(em); }
     else { const old = localStorage.getItem("im_session"); if(old) { setEmail(old); setLoggedIn(true); loadMyData(old); } }
     loadFeed();
   };
   checkSession();
-  const channel = supabase.channel('live-messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, ()=>{ loadFeed(); setLiveRefreshCount(c=>c+1); }).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'products' }, ()=>{ loadFeed(); setLiveRefreshCount(c=>c+1); setIsLiveRefreshing(true); setTimeout(()=>setIsLiveRefreshing(false),2000); }).subscribe();
-  const channelShop = supabase.channel('live-shop').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'products' }, (payload:any)=>{ loadFeed(); setLiveRefreshCount(c=>c+1); setIsLiveRefreshing(true); setTimeout(()=>setIsLiveRefreshing(false),2500); }).subscribe();
-  setIsOfflineMode(!navigator.onLine);
-  window.addEventListener('online', ()=>setIsOfflineMode(false));
-  window.addEventListener('offline', ()=>setIsOfflineMode(true));
-  return ()=>{ supabase.removeChannel(channel); supabase.removeChannel(channelShop); };
+  const channel = supabase.channel('live-messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, ()=>{ loadFeed(); }).subscribe();
+  return ()=>{ supabase.removeChannel(channel); };
 },[]);
 
 const loadMyData = async (em:string)=>{
@@ -260,37 +244,6 @@ const sendChatMessage = async ()=>{
   await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, text: msg });
 };
 
-// ADDED - BLUETOOTH + LIVE REFRESH
-const handleBluetoothPair = async (user:any = null)=>{
-  setIsScanning(true);
-  try{
-    if((navigator as any).bluetooth){
-      const device = await (navigator as any).bluetooth.requestDevice({ acceptAllDevices: true });
-      setBluetoothDevice(device);
-    } else {
-      setBluetoothDevice({ name: user?.handle || "Nearby", id: "wifi" });
-    }
-    setOfflinePairedUser(user || selectedUser || { handle: "@nearby_seller", avatar: "https://i.pravatar.cc/200?img=12" });
-    setShowOfflineModal(true);
-  } catch(e:any){
-    setBluetoothDevice({ name: "WiFi-Direct", id: "wifi" });
-    setOfflinePairedUser(user || selectedUser || { handle: "@nearby_seller", avatar: "https://i.pravatar.cc/200?img=12" });
-    setShowOfflineModal(true);
-  }
-  setIsScanning(false);
-};
-const sendOfflineMessage = async ()=>{
-  if(!offlineText.trim() || !offlinePairedUser) return;
-  const newMsg = { id: Date.now().toString(), from_handle: myHandle, to_handle: offlinePairedUser.handle, text: offlineText, created_at: new Date().toISOString(), offline: true };
-  const updated = [...offlineMessages, newMsg];
-  setOfflineMessages(updated);
-  localStorage.setItem(`offline_chats_${myHandle}`, JSON.stringify(updated));
-  setOfflineText("");
-};
-const syncOfflineChats = async ()=>{ alert(`Synced ${offlineMessages.length} offline messages!`); };
-const deleteOfflineMessage = (id:string)=>{ const updated = offlineMessages.filter(m=> m.id!==id); setOfflineMessages(updated); localStorage.setItem(`offline_chats_${myHandle}`, JSON.stringify(updated)); };
-const handleLiveRefresh = async ()=>{ setIsLiveRefreshing(true); await loadFeed(); setLiveRefreshCount(c=>c+1); setTimeout(()=>setIsLiveRefreshing(false),1000); };
-
 const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); };
 const savePhoto = ()=>{ const link = document.createElement('a'); link.href = modalImage; link.download = `imworth-${Date.now()}.jpg`; link.target = "_blank"; link.click(); };
 const filteredProfiles = profiles.filter(p=> p.handle.toLowerCase().includes(search.toLowerCase()) || p.name.toLowerCase().includes(search.toLowerCase()));
@@ -305,8 +258,7 @@ const getStatusBadge = (status?:string)=>{
   if(status==="not_for_sale") return { text:"NOT FOR SALE 💎", color:"#888", bg:"rgba(0,0,0,0.85)" };
   return { text:"FOR SALE ✅", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
-
-const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
+  const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
 
 if(!loggedIn){
 return(
@@ -321,13 +273,39 @@ return(
 <div style={{textAlign:"center", color:"#666", fontSize:"13px", marginTop:"16px"}} onClick={()=>setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Have account? Login":"No account? Sign Up"}</div>
 </div>
 </div>
-);  
+);
 }
 
 return(
 <div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
 {showChat && chatUser && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
+<div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
+<div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
+<img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%"}}/>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{chatUser.handle}</div><div style={{fontSize:"11px", color:"#00ff88"}}>● Online - Live ✓</div></div>
+<button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from $IM Worth!`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
+</div>
+<div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px"}}>
+{offers.filter(o=> (o.from_handle===myHandle && o.to_handle===chatUser.handle) || (o.from_handle===chatUser.handle && o.to_handle===myHandle)).map((o:any)=>(
+<div key={o.id} style={{alignSelf:"center", background:"#1a1a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900"}}>💰 Offer ${o.amount} from {o.from_handle} → {o.to_handle}</div>
+))}
+{messages.filter(m=> (m.from_handle===myHandle && m.to_handle===chatUser.handle) || (m.from_handle===chatUser.handle && m.to_handle===myHandle)).map((m:any)=>(
+<div key={m.id} style={{alignSelf: m.from_handle===myHandle ? "flex-end" : "flex-start", background: m.from_handle===myHandle ? "#D4AF37" : "#222", color: m.from_handle===myHandle ? "black" : "white", padding:"10px 14px", borderRadius: m.from_handle===myHandle ? "18px 18px 4px 18px" : "18px 18px 18px 4px", maxWidth:"75%", fontSize:"13px"}}>
+{m.image_url && <img src={m.image_url} style={{width:"100%", borderRadius:"10px", marginBottom:"6px"}}/>}
+<div>{m.text}</div>
+<div style={{fontSize:"9px", opacity:0.6, marginTop:"4px", display:"flex", justifyContent:"space-between", gap:"8px"}}><span>{new Date(m.created_at).toLocaleTimeString()}</span>{m.from_handle===myHandle && <span onClick={()=>deleteMessage(m.id)} style={{color:"#ff4444", fontWeight:"900", cursor:"pointer"}}>🗑️ Delete</span>}</div>
+</div>
+))}
+</div>
+<div style={{padding:"10px", borderTop:"1px solid #222", display:"flex", gap:"8px", background:"#0a0a0a"}}>
+<button onClick={()=>chatImageRef.current?.click()} style={{background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"12px"}}>📷</button>
+<input value={chatText} onChange={e=>setChatText(e.target.value)} onKeyDown={e=> e.key==="Enter" && sendChatMessage()} placeholder={`Message ${chatUser.handle}...`} style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"24px"}}/>
+<button onClick={sendChatMessage} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"24px", border:"none"}}>Send</button>
+</div>
+<input ref={chatImageRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleChatImage}/>
+</div>
+)}
 
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
@@ -399,7 +377,7 @@ return(
 <button onClick={()=>setOffersTab("sent")} style={{flex:1, background: offersTab==="sent" ? "#D4AF37" : "#111", color: offersTab==="sent" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>Sent ({myOffersSent.length})</button>
 <button onClick={()=>setOffersTab("chats")} style={{flex:1, background: offersTab==="chats" ? "#D4AF37" : "#111", color: offersTab==="chats" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>Chats ({conversations.length})</button>
 </div>
-<div style={{padding:"12px"}}>
+  <div style={{padding:"12px"}}>
 {offersTab==="chats" && (
 <div>
 {conversations.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No chats yet! Make an offer to start 💬</div>}
@@ -475,7 +453,6 @@ return(
 <div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"14px", flexWrap:"wrap"}}>
 {(selectedUser.pay_link || selectedUser.pay_handle) && (<button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>💰 Pay Me</button>)}
 {(selectedUser.location || selectedUser.latitude) && (<button onClick={()=> openInSimMaps(selectedUser.latitude?.toString(), selectedUser.longitude?.toString(), selectedUser.location)} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>🗺️ Visit Me</button>)}
-<button onClick={()=>handleBluetoothPair(selectedUser)} style={{background: isScanning ? "#222" : "#00ff88", color: isScanning ? "#888" : "black", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>{isScanning ? "Scanning..." : "📡 BT Pair"}</button>
 </div>
 {selectedUser.location && <div style={{color:"#888", fontSize:"11px", marginTop:"8px"}}>📍 {selectedUser.location}</div>}
 </div>
@@ -522,6 +499,7 @@ return(
 <div>
 <input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
+
 <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#0a1a0f"}}>
 <div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>💎 PROFILE STATUS</div>
 <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
@@ -530,6 +508,7 @@ return(
 <button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💎 Not For Sale</button>
 </div>
 </div>
+
 <div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup - $IM ₿an€</div>
 <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
@@ -538,7 +517,7 @@ return(
 <input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="PayShap 082... or Capitec ID" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
-<div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
+  <div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS</div>
 <input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
@@ -557,29 +536,57 @@ return(
 <div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div>
 <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
 <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
+<div style={{display:"flex", gap:"6px", marginTop:"10px"}}>
+<button onClick={()=>setProfileStatusDirect("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Sale</button>
+<button onClick={()=>setProfileStatusDirect("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Sold</button>
+<button onClick={()=>setProfileStatusDirect("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Not Sale</button>
+</div>
 </div>
 )}
+<div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
+<div><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
+<div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
+<div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount} → View</div>
+</div>
+</div>
+</div>
+<div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginTop:"10px"}}>
+{products.map((p)=>(
+<div key={p.id} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #555" : "1px solid #2a2a2a", position:"relative"}}>
+<div style={{position:"relative"}}>
+<img src={p.img} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true, status:p.status})} style={{width:"100%", height:"100px", objectFit:"cover", cursor:"pointer", filter: p.status==="sold" ? "grayscale(60%)" : "none"}}/>
+<div style={{position:"absolute", top:"6px", left:"6px", background: getStatusBadge(p.status).bg, color: getStatusBadge(p.status).color, fontSize:"7px", fontWeight:"900", padding:"2px 5px", borderRadius:"10px", border:"1px solid currentColor"}}>{getStatusBadge(p.status).text}</div>
+</div>
+<div style={{padding:"6px"}}>
+{editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"11px", fontWeight:"bold", cursor:"pointer"}}>{p.title} ✏️</div>)}
+{editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color: p.status==="sold" ? "#ff4444" : p.status==="not_for_sale" ? "#888" : "#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
+<div style={{display:"flex", gap:"3px", marginTop:"6px"}}>
+<button onClick={()=>setProductStatus(p.id, "for_sale")} style={{flex:1, background: p.status==="for_sale" || !p.status ? "#00ff88" : "#222", color: p.status==="for_sale" || !p.status ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Sale</button>
+<button onClick={()=>setProductStatus(p.id, "sold")} style={{flex:1, background: p.status==="sold" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Sold</button>
+<button onClick={()=>setProductStatus(p.id, "not_for_sale")} style={{flex:1, background: p.status==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Not Sale</button>
+</div>
+</div>
+<div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px"}}>
+<button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px"}}>📷</button>
+<button onClick={async()=>{setProducts(products.filter(x=>x.id!==p.id)); await supabase.from("products").delete().eq("id", p.id); loadFeed();}} style={{background:"rgba(255,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"20px", height:"20px"}}>×</button>
+</div>
+</div>
+))}
+<div onClick={addProduct} style={{background:"#0a0a0a", border:"2px dashed #D4AF37", borderRadius:"14px", height:"150px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer"}}>+ Add</div>
 </div>
 </div>
 )}
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth $tore 🛒 Available 🟢 {isLiveRefreshing && <span style={{color:"#0a84ff", fontSize:"12px"}}>● LIVE</span>}</h2>
-<button onClick={handleLiveRefresh} style={{background: isLiveRefreshing ? "#0a84ff" : "#111", color: isLiveRefreshing ? "white" : "#D4AF37", border:"1px solid #0a84ff", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>{isLiveRefreshing ? "Syncing..." : "Live Refresh"} {liveRefreshCount>0 && `(${liveRefreshCount})`}</button>
-</div>
-<div style={{marginTop:"8px", display:"flex", gap:"6px", alignItems:"center"}}>
-<div style={{width:"8px", height:"8px", background: isLiveRefreshing ? "#0a84ff" : "#00ff88", borderRadius:"50%"}}></div>
-<div style={{fontSize:"10px", color: isLiveRefreshing ? "#0a84ff" : "#888"}}>{isLiveRefreshing ? "Live syncing new items..." : `Live • ${availableMarketItems.length} items • Auto-refresh ON • ${isOfflineMode ? "Offline" : "Online"}`}</div>
-</div>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth $tore 🛒 Available 🟢</h2>
 <input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
 <button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 Sell List ({availableMarketItems.length})</button>
 <button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>💰 Buyers ({filteredProfiles.length})</button>
 </div>
 </div>
-
 {searchTab==="market" && (
 <div style={{padding:"12px"}}>
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
@@ -587,7 +594,7 @@ return(
   const owner = profiles.find(pr=> pr.email===p.owner_email);
   return (
   <div key={p.id} onClick={()=>{ const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer"}}>
-    <div style={{position:"relative"}}><img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/><div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div>{isLiveRefreshing && <div style={{position:"absolute", top:"6px", right:"6px", background:"#0a84ff", color:"white", fontSize:"7px", fontWeight:"900", padding:"2px 5px", borderRadius:"10px"}}>LIVE</div>}</div>
+    <div style={{position:"relative"}}><img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/><div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div></div>
     <div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div style={{fontSize:"10px", color:"#888"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]}</div></div>
   </div>
   );
@@ -612,41 +619,12 @@ return(
 )}
 </div>
 )}
-
-{/* OFFLINE BLUETOOTH MODAL - BLUE HIGHLIGHT FEATURE */}
-{showOfflineModal && offlinePairedUser && (
-<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10001, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
-<div style={{padding:"12px", borderBottom:"1px solid #222", background:"#0a0a0a", display:"flex", alignItems:"center", gap:"10px"}}>
-<div onClick={()=>setShowOfflineModal(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
-<img src={offlinePairedUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%", border:"2px solid #00ff88"}}/>
-<div style={{flex:1}}>
-<div style={{fontWeight:"900", fontSize:"14px"}}>{offlinePairedUser.handle} <span style={{background:"#00ff88", color:"black", fontSize:"8px", padding:"2px 6px", borderRadius:"10px"}}>📡 BT PAIRED</span></div>
-<div style={{fontSize:"11px", color:"#00ff88"}}>● {bluetoothDevice?.name || "Bluetooth"} • Offline • No data ✓</div>
-</div>
-<button onClick={syncOfflineChats} style={{background:"#D4AF37", color:"black", border:"none", padding:"6px 10px", borderRadius:"20px", fontWeight:"900", fontSize:"10px"}}>↻ Sync</button>
-</div>
-<div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px", background:"#050505"}}>
-{offlineMessages.filter((m:any)=> (m.from_handle===myHandle && m.to_handle===offlinePairedUser.handle) || (m.from_handle===offlinePairedUser.handle && m.to_handle===myHandle)).map((m:any)=>(
-<div key={m.id} style={{alignSelf: m.from_handle===myHandle ? "flex-end" : "flex-start", background: m.from_handle===myHandle ? "#00ff88" : "#222", color: m.from_handle===myHandle ? "black" : "white", padding:"10px 14px", borderRadius:"12px", maxWidth:"75%", fontSize:"13px"}}>
-<div>{m.text}</div>
-<div style={{fontSize:"9px", opacity:0.6, marginTop:"4px"}}>{new Date(m.created_at).toLocaleTimeString()} {m.synced ? "✓ Synced" : "📴 Offline"} <span onClick={()=>deleteOfflineMessage(m.id)} style={{color:"#ff4444", cursor:"pointer"}}> ✕</span></div>
-</div>
-))}
-</div>
-<div style={{padding:"10px", borderTop:"1px solid #222", display:"flex", gap:"8px", background:"#0a0a0a"}}>
-<input value={offlineText} onChange={e=>setOfflineText(e.target.value)} onKeyDown={(e:any)=> e.key==="Enter" && sendOfflineMessage()} placeholder={`Offline to ${offlinePairedUser.handle} via BT...`} style={{flex:1, background:"#111", border:"1px solid #00ff88", color:"white", padding:"12px", borderRadius:"24px"}}/>
-<button onClick={sendOfflineMessage} style={{background:"#00ff88", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"24px", border:"none"}}>Send 📡</button>
+<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
+<div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#D4AF37" : "#888", cursor:"pointer"}}>🛒 $hop</div>
+<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer"}}>👑 Worth</div>
+<div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#D4AF37" : "#888", cursor:"pointer", position:"relative"}}>💬 Inbox {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>}</div>
+<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile</div>
 </div>
 </div>
-)}
-
-{/* BLUE NAV - #0a84ff HIGHLIGHT - FINAL FEATURE */}
-<div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"2px solid #0a84ff", display:"flex", justifyContent:"space-around", padding:"10px"}}>
-<div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="accounts" ? "900" : "400", background: view==="accounts" ? "#0a1a2a" : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="accounts" ? "1px solid #0a84ff" : "none"}}>🛒 $hop {isLiveRefreshing && "●"}</div>
-<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "400", background: view==="feed" ? "#0a1a2a" : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="feed" ? "1px solid #0a84ff" : "none"}}>👑 Worth</div>
-<div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#0a84ff" : "#888", cursor:"pointer", position:"relative", fontWeight: view==="offers" ? "900" : "400", background: view==="offers" ? "#0a1a2a" : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="offers" ? "1px solid #0a84ff" : "none"}}>💬 Inbox {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>}</div>
-<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="profile" ? "900" : "400", background: view==="profile" ? "#0a1a2a" : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="profile" ? "1px solid #0a84ff" : "none"}}>💎 Profile {isOfflineMode && "📴"}</div>
-</div>
-</div>
-);  
+);
 }
