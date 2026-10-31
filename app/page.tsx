@@ -14,21 +14,13 @@ type HeaderProps = {
 function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod }: HeaderProps) {
   const handlePayMe = () => {
     if (payLink && payLink.startsWith("http")) { window.open(payLink, '_blank'); return; }
-    if (payHandle) {
-      if (payMethod === "capitec" || payMethod === "payshap") { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); }
-      else if (payMethod === "bank") { alert(`Bank: ${payHandle}`); }
-      else { window.open(`https://${payHandle}`, '_blank'); } return;
-    }
+    if (payHandle) { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); return; }
     alert("Go to Edit Profile > Setup Pay Me!");
   };
   const handleVisitMe = () => {
-    const label = myHandle || "SIM Worth User";
-    const manualFull = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city || 'South Africa'}` : null;
-    const finalAddress = manualFull || userLocation;
-    if (userLat && userLng && userLat !== "" && userLng !== "") {
-      window.location.href = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || label)})`;
-    } else if (finalAddress) { window.location.href = `geo:0,0?q=${encodeURIComponent(finalAddress)}`; }
-    else { alert("Set your address first!"); }
+    const finalAddress = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
+    if (userLat && userLng) { window.location.href = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || myHandle)})`; }
+    else if (finalAddress) { window.location.href = `geo:0,0?q=${encodeURIComponent(finalAddress)}`; }
   };
   return (
     <div style={{background:"black", padding:"10px"}}>
@@ -67,6 +59,8 @@ const [products, setProducts] = useState<Product[]>([]);
 const [profiles, setProfiles] = useState<any[]>([]);
 const [feedProducts, setFeedProducts] = useState<Product[]>([]);
 const [search, setSearch] = useState("");
+const [marketSearch, setMarketSearch] = useState(""); // MARKETPLACE SEARCH
+const [searchTab, setSearchTab] = useState("market"); // market | users
 const [selectedUser, setSelectedUser] = useState<any>(null);
 const [selectedUserProducts, setSelectedUserProducts] = useState<Product[]>([]);
 const [follows, setFollows] = useState<any[]>([]);
@@ -107,20 +101,9 @@ const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
 
 const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
-  let geoUrl = "";
-  if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; }
-  else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; }
-  else { alert("Add address first bro!"); return; }
-  window.location.href = geoUrl;
+  let geoUrl = ""; if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; } else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; } else { alert("Add address first bro!"); return; } window.location.href = geoUrl;
 };
-
-const handleLogout = async ()=>{
-  if(!confirm("Logout bro?")) return;
-  await supabase.auth.signOut();
-  localStorage.removeItem("im_session");
-  setLoggedIn(false);
-  setEmail(""); setPassword(""); setView("accounts");
-};
+const handleLogout = async ()=>{ if(!confirm("Logout bro?")) return; await supabase.auth.signOut(); localStorage.removeItem("im_session"); setLoggedIn(false); setEmail(""); setPassword(""); setView("accounts"); };
 
 const loadFeed = async ()=>{
   const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
@@ -211,42 +194,15 @@ const setProductStatus = async (id:string, newStatus:string)=>{
   loadFeed();
 };
 
-const deleteOffer = async (offerId:string)=>{
-  if(!confirm("Delete this offer bro?")) return;
-  setOffers(prev => prev.filter(o=> o.id!==offerId));
-  await supabase.from("offers").delete().eq("id", offerId);
-};
-
-const deleteChat = async (otherHandle:string)=>{
-  if(!confirm(`Delete ALL messages with ${otherHandle}?`)) return;
-  setMessages(prev => prev.filter(m=> !((m.from_handle===myHandle && m.to_handle===otherHandle) || (m.from_handle===otherHandle && m.to_handle===myHandle))));
-  await supabase.from("messages").delete().or(`and(from_handle.eq.${myHandle},to_handle.eq.${otherHandle}),and(from_handle.eq.${otherHandle},to_handle.eq.${myHandle})`);
-};
-
-const deleteMessage = async (msgId:string)=>{
-  if(!confirm("Delete this message?")) return;
-  setMessages(prev => prev.filter(m=> m.id!==msgId));
-  await supabase.from("messages").delete().eq("id", msgId);
-};
+const deleteOffer = async (offerId:string)=>{ if(!confirm("Delete this offer bro?")) return; setOffers(prev => prev.filter(o=> o.id!==offerId)); await supabase.from("offers").delete().eq("id", offerId); };
+const deleteChat = async (otherHandle:string)=>{ if(!confirm(`Delete ALL messages with ${otherHandle}?`)) return; setMessages(prev => prev.filter(m=> !((m.from_handle===myHandle && m.to_handle===otherHandle) || (m.from_handle===otherHandle && m.to_handle===myHandle)))); await supabase.from("messages").delete().or(`and(from_handle.eq.${myHandle},to_handle.eq.${otherHandle}),and(from_handle.eq.${otherHandle},to_handle.eq.${myHandle})`); };
+const deleteMessage = async (msgId:string)=>{ if(!confirm("Delete this message?")) return; setMessages(prev => prev.filter(m=> m.id!==msgId)); await supabase.from("messages").delete().eq("id", msgId); };
 
 const updatePrice = async (id:string)=>{ const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p)); await supabase.from("products").update({ price: num }).eq("id", id); setEditingPriceId(null); loadFeed(); };
 const updateTitle = async (id:string)=>{ if(!tempTitle.trim()) { setEditingTitleId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p)); await supabase.from("products").update({ title: tempTitle }).eq("id", id); setEditingTitleId(null); loadFeed(); if(modalInfo && modalInfo.id===id) setModalInfo({...modalInfo, title: tempTitle}); };
 
 const handleFollow = async (targetHandle:string)=>{
-  if(myHandle === targetHandle) { alert("Can't follow yourself bro!"); return; }
-  if(!myHandle || myHandle === "@" ) return;
-  const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle);
-  if(existing){
-    setFollows(prev => prev.filter(f=> f.id !== existing.id));
-    const { error } = await supabase.from("follows").delete().eq("id", existing.id);
-    if(error){ setFollows(prev => [...prev, existing]); }
-  } else {
-    const temp = { id: Date.now().toString(), follower_handle: myHandle, following_handle: targetHandle };
-    setFollows(prev => [...prev, temp]);
-    const { data, error } = await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }).select().single();
-    if(error){ setFollows(prev => prev.filter(f=> f.id !== temp.id)); }
-    else if(data){ setFollows(prev => prev.map(f=> f.id===temp.id ? data : f)); }
-  }
+  if(myHandle === targetHandle) { alert("Can't follow yourself bro!"); return; } if(!myHandle || myHandle === "@" ) return; const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle); if(existing){ setFollows(prev => prev.filter(f=> f.id !== existing.id)); const { error } = await supabase.from("follows").delete().eq("id", existing.id); if(error){ setFollows(prev => [...prev, existing]); } } else { const temp = { id: Date.now().toString(), follower_handle: myHandle, following_handle: targetHandle }; setFollows(prev => [...prev, temp]); const { data, error } = await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }).select().single(); if(error){ setFollows(prev => prev.filter(f=> f.id !== temp.id)); } else if(data){ setFollows(prev => prev.map(f=> f.id===temp.id ? data : f)); } }
 };
 
 const placeOffer = async ()=>{
@@ -277,6 +233,9 @@ const getStatusBadge = (status?:string)=>{
   return { text:"FOR SALE ✅", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
 
+// MARKETPLACE FILTER
+const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
+
 if(!loggedIn){
 return(
 <div style={{minHeight:"100vh", background:"black", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:"80px", padding:"20px"}}>
@@ -300,7 +259,7 @@ return(
 <div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
 <div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
 <img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{chatUser.handle}</div><div style={{fontSize:"11px", color:"#00ff88"}}>● Online - SIM Worth Chat • Live ✓</div></div>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{chatUser.handle}</div><div style={{fontSize:"11px", color:"#00ff88"}}>● Online - Live ✓</div></div>
 <button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from SIM Worth!`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
 </div>
 <div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px"}}>
@@ -329,7 +288,7 @@ return(
 <img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><div style={{fontWeight:"bold", color:"#D4AF37"}}>{modalInfo?.title || "Item"} - ${modalInfo?.price || modalInfo?.total_worth || ""}</div><div style={{background: getStatusBadge(modalInfo?.status).bg, color: getStatusBadge(modalInfo?.status).color, fontSize:"10px", fontWeight:"900", padding:"4px 8px", borderRadius:"12px", border:"1px solid currentColor"}}>{getStatusBadge(modalInfo?.status).text}</div></div>
-<div style={{fontSize:"11px", color:"#888"}}>{modalInfo?.email || modalInfo?.handle || ""}</div>
+<div style={{fontSize:"11px", color:"#888"}}>{modalInfo?.email || modalInfo?.handle || modalInfo?.owner_handle || ""}</div>
 {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
 <div style={{marginTop:"10px"}}>
 <div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>YOUR ITEM - EDIT</div>
@@ -345,8 +304,8 @@ return(
 </div>
 ) : (
 <div style={{marginTop:"10px"}}>
-{modalInfo?.status==="sold" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 SOLD OUT - No longer available</div>
-: modalInfo?.status==="not_for_sale" ? <div style={{background:"#333", color:"#888", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>⚫ NOT FOR SALE - Owner's collection</div>
+{modalInfo?.status==="sold" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 SOLD OUT</div>
+: modalInfo?.status==="not_for_sale" ? <div style={{background:"#333", color:"#888", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>⚫ NOT FOR SALE</div>
 : <div><div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>PLACE AN OFFER / BID</div><div style={{display:"flex", gap:"6px", marginTop:"8px"}}><input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/><button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button></div></div>}
 </div>
 )}
@@ -445,10 +404,6 @@ return(
 <div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.follower_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Following</span></div>
 </div>
 <button onClick={(e)=>{ e.stopPropagation(); handleFollow(selectedUser.handle); }} style={{marginTop:"12px", background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "white" : "black", fontWeight:"900", padding:"10px 24px", borderRadius:"20px", border: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "1px solid #333" : "none", cursor:"pointer"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "Following ✓" : "Follow + 🚀"}</button>
-<div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"12px", flexWrap:"wrap"}}>
-{(selectedUser.pay_link || selectedUser.pay_handle) && (<button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>💰 Pay {selectedUser.handle}</button>)}
-{(selectedUser.location) && (<button onClick={()=> openInSimMaps(selectedUser.latitude, selectedUser.longitude, selectedUser.location)} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"8px 16px", borderRadius:"20px", border:"none"}}>🗺️ Visit in SIM Maps</button>)}
-</div>
 </div>
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
@@ -469,7 +424,7 @@ return(
 {view==="feed" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 $IM Worth 👑 Inve$tor$ 🏆</h2>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 $IM Worth 👑 Investor$ 🏆</h2>
 <div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀 Most Buyers💰 Highest Worth👑</div>
 <div style={{display:"flex", gap:"10px", marginTop:"10px"}}>
 <div style={{background:"#111", padding:"6px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px"}}>💎 {profiles.length} Hustlers</div>
@@ -574,15 +529,51 @@ return(
 )}
 {view==="accounts" && (
 <div>
-<div style={{padding:"15px"}}>
-<h2 style={{color:"#D4AF37", margin:0}}>$IM Worth List 🔍</h2>
-<input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"12px"}}/>
-<div style={{marginTop:"10px", display:"flex", gap:"10px"}}>
-<div style={{background:"#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #333", fontSize:"12px"}}>👥 {myFollowers} Followers LIVE</div>
-<div onClick={()=>setView("offers")} style={{background: myOffersCount>0 ? "#D4AF37" : "#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"12px", color: myOffersCount>0 ? "black" : "#D4AF37", fontWeight:"900", cursor:"pointer"}}>💬 {conversations.length} Chats {conversations.length>0 ? "🔴" : ""}</div>
+<div style={{padding:"15px", borderBottom:"1px solid #222"}}>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth Marketplace 🛒</h2>
+<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Facebook-style • All available items • Search by name</div>
+<input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
+<div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
+<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 Marketplace ({availableMarketItems.length})</button>
+<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>👥 Users ({filteredProfiles.length})</button>
+</div>
+<div style={{marginTop:"10px", display:"flex", gap:"8px", flexWrap:"wrap"}}>
+<div style={{background:"#111", padding:"6px 10px", borderRadius:"20px", border:"1px solid #333", fontSize:"11px"}}>👥 {myFollowers} Followers LIVE</div>
+<div onClick={()=>setView("offers")} style={{background:"#111", padding:"6px 10px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px", color:"#D4AF37", fontWeight:"900", cursor:"pointer"}}>💬 {conversations.length} Chats {conversations.length>0 ? "🔴" : ""}</div>
 </div>
 </div>
+
+{searchTab==="market" && (
+<div style={{padding:"12px"}}>
+{availableMarketItems.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"30px"}}>No items for sale yet! Be first to post 💰<br/><span style={{fontSize:"11px"}}>Add items in Profile → Set to For Sale</span></div>}
+<div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
+{availableMarketItems.map((p:any)=>{
+  const owner = profiles.find(pr=> pr.email===p.owner_email);
+  return (
+  <div key={p.id} onClick={()=>{
+    const ownerProfile = profiles.find(pr=> pr.email===p.owner_email);
+    const ownerHandle = ownerProfile?.handle || p.owner_email;
+    openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status});
+  }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer", position:"relative"}}>
+    <div style={{position:"relative"}}>
+      <img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/>
+      <div style={{position:"absolute", top:"6px", left:"6px", background:"rgba(0,255,136,0.9)", color:"black", fontSize:"8px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>FOR SALE ✅</div>
+      <div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div>
+    </div>
+    <div style={{padding:"8px"}}>
+      <div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div>
+      <div style={{fontSize:"10px", color:"#888", marginTop:"2px", display:"flex", justifyContent:"space-between"}}><span>{owner ? owner.handle : p.owner_email?.split("@")[0]}</span><span style={{color:"#D4AF37"}}>${Number(p.price).toFixed(0)}</span></div>
+    </div>
+  </div>
+  );
+})}
+</div>
+</div>
+)}
+
+{searchTab==="users" && (
 <div style={{padding:"15px"}}>
+<input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"12px", marginBottom:"12px"}}/>
 {filteredProfiles.map((u:any)=>(
 <div key={u.handle} style={{display:"flex", gap:"10px", background: u.handle===myHandle ? "#1a1a0a" : "#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border: u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #333"}}>
 <div style={{display:"flex", gap:"10px", flex:1, cursor:"pointer"}} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }}>
@@ -598,6 +589,7 @@ return(
 </div>
 ))}
 </div>
+)}
 </div>
 )}
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
