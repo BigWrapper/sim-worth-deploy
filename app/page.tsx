@@ -6,20 +6,9 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; };
 
 type HeaderProps = {
-  avatarPreview: string;
-  totalWorth: number;
-  onAvatarClick: () => void;
-  myUserId: string;
-  myHandle: string;
-  userLocation?: string;
-  userLat?: string;
-  userLng?: string;
-  streetAddress?: string;
-  suburb?: string;
-  city?: string;
-  payLink?: string;
-  payHandle?: string;
-  payMethod?: string;
+  avatarPreview: string; totalWorth: number; onAvatarClick: () => void; myUserId: string; myHandle: string;
+  userLocation?: string; userLat?: string; userLng?: string; streetAddress?: string; suburb?: string; city?: string;
+  payLink?: string; payHandle?: string; payMethod?: string;
 };
 
 function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod }: HeaderProps) {
@@ -27,25 +16,19 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
     if (payLink && payLink.startsWith("http")) { window.open(payLink, '_blank'); return; }
     if (payHandle) {
       if (payMethod === "capitec" || payMethod === "payshap") { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); }
-      else if (payMethod === "bank") { alert(`Bank: ${payHandle} - Copy to pay`); }
-      else { window.open(`https://${payHandle}`, '_blank'); }
-      return;
+      else if (payMethod === "bank") { alert(`Bank: ${payHandle}`); }
+      else { window.open(`https://${payHandle}`, '_blank'); } return;
     }
-    alert("Go to Edit Profile > Setup Pay Me to add your Capitec PayShap ID!");
+    alert("Go to Edit Profile > Setup Pay Me!");
   };
   const handleVisitMe = () => {
     const label = myHandle || "SIM Worth User";
     const manualFull = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city || 'South Africa'}` : null;
     const finalAddress = manualFull || userLocation;
     if (userLat && userLng && userLat !== "" && userLng !== "") {
-      const geoUri = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || label)})`;
-      window.location.href = geoUri;
-    } else if (finalAddress) {
-      const geoUri = `geo:0,0?q=${encodeURIComponent(finalAddress)}`;
-      window.location.href = geoUri;
-    } else {
-      alert("Set your address first! Go to Edit Profile > Visit Me Setup > Add Street + Suburb");
-    }
+      window.location.href = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || label)})`;
+    } else if (finalAddress) { window.location.href = `geo:0,0?q=${encodeURIComponent(finalAddress)}`; }
+    else { alert("Set your address first!"); }
   };
   return (
     <div style={{background:"black", padding:"10px"}}>
@@ -65,10 +48,6 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
       </div>
       <div style={{textAlign:"center", marginTop:"10px"}}><div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div>
       {(streetAddress || userLocation) && <div style={{color:"#888", fontSize:"10px", marginTop:"2px"}}>📍 {streetAddress ? `${streetAddress}, ${suburb}` : userLocation}</div>}
-      </div>
-      <div style={{display:"flex", justifyContent:"center", gap:"40px", marginTop:"8px"}}>
-        <div style={{textAlign:"center"}}><div style={{color:"white", fontWeight:"900", fontSize:"18px"}}>0</div><div style={{color:"#888", fontSize:"11px"}}>Followers</div></div>
-        <div style={{textAlign:"center"}}><div style={{color:"white", fontWeight:"900", fontSize:"18px"}}>0</div><div style={{color:"#888", fontSize:"11px"}}>Following</div></div>
       </div>
       <div style={{marginTop:"12px", border:"1px solid gold", borderRadius:"14px", padding:"10px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
         <div style={{flex:1, textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>SIM WORTH</div><div style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
@@ -92,6 +71,7 @@ const [selectedUser, setSelectedUser] = useState<any>(null);
 const [selectedUserProducts, setSelectedUserProducts] = useState<Product[]>([]);
 const [follows, setFollows] = useState<any[]>([]);
 const [offers, setOffers] = useState<any[]>([]);
+const [messages, setMessages] = useState<any[]>([]);
 const [avatarPreview, setAvatarPreview] = useState("https://i.pravatar.cc/200?img=12");
 const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
 const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
@@ -99,6 +79,7 @@ const [tempPrice, setTempPrice] = useState("");
 const [tempTitle, setTempTitle] = useState("");
 const avatarInputRef = useRef<HTMLInputElement>(null);
 const productInputRef = useRef<HTMLInputElement>(null);
+const chatImageRef = useRef<HTMLInputElement>(null);
 const [activeProductId, setActiveProductId] = useState<string | null>(null);
 const [bio, setBio] = useState("Im Totally Worthed!");
 const [about, setAbout] = useState("Entrepreneur");
@@ -117,16 +98,19 @@ const [streetAddress, setStreetAddress] = useState("");
 const [suburb, setSuburb] = useState("");
 const [city, setCity] = useState("Uptize");
 const [myId, setMyId] = useState("");
+// CHAT STATE
+const [chatUser, setChatUser] = useState<any>(null);
+const [chatText, setChatText] = useState("");
+const [showChat, setShowChat] = useState(false);
+
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
 
 const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
   let geoUrl = "";
-  if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){
-    geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`;
-  } else if(address){
-    geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`;
-  } else { alert("Add address first bro!"); return; }
+  if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; }
+  else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; }
+  else { alert("Add address first bro!"); return; }
   window.location.href = geoUrl;
 };
 
@@ -137,17 +121,14 @@ const loadFeed = async ()=>{
   if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item"})));
   const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
   const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
+  const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(200); if(ms) setMessages(ms);
 };
 
 useEffect(()=>{
   const checkSession = async ()=>{
     const { data } = await supabase.auth.getSession();
-    if(data.session?.user?.email_confirmed_at){
-      const em = data.session.user.email!; setEmail(em); setMyId(data.session.user.id); setLoggedIn(true); loadMyData(em);
-    } else {
-      const old = localStorage.getItem("im_session");
-      if(old) { setEmail(old); setLoggedIn(true); loadMyData(old); }
-    }
+    if(data.session?.user?.email_confirmed_at){ const em = data.session.user.email!; setEmail(em); setMyId(data.session.user.id); setLoggedIn(true); loadMyData(em); }
+    else { const old = localStorage.getItem("im_session"); if(old) { setEmail(old); setLoggedIn(true); loadMyData(old); } }
     loadFeed();
   };
   checkSession();
@@ -199,7 +180,7 @@ const doLogin = async ()=>{
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
       if(error) throw error;
-      if(!data.user?.email_confirmed_at){ setErr("⚠️ Email not verified. Check your inbox for confirmation link."); await supabase.auth.signOut(); return; }
+      if(!data.user?.email_confirmed_at){ setErr("⚠️ Email not verified."); await supabase.auth.signOut(); return; }
       localStorage.setItem("im_session", email); setMyId(data.user.id); await loadMyData(email); setLoggedIn(true); await loadFeed();
     }
   } catch(e:any){ setErr(e.message); }
@@ -226,6 +207,17 @@ const handleProductImageChange = async (e:any)=>{
   } catch(err:any){ alert("Product image failed: " + err.message); }
 };
 
+const handleChatImage = async (e:any)=>{
+  const file = e.target.files?.[0]; if(!file || !chatUser) return;
+  try {
+    const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/chat_${Date.now()}.jpg`;
+    await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`;
+    await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, image_url: publicUrl, text: "📷 Image" });
+    loadFeed();
+  } catch(err:any){ alert("Image failed: "+err); }
+};
+
 const addProduct = async ()=>{
   const newId = Date.now().toString(); const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item" };
   setProducts([newItem, ...products]);
@@ -236,7 +228,6 @@ const addProduct = async ()=>{
 const updatePrice = async (id:string)=>{ const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p)); await supabase.from("products").update({ price: num }).eq("id", id); setEditingPriceId(null); loadFeed(); };
 const updateTitle = async (id:string)=>{ if(!tempTitle.trim()) { setEditingTitleId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p)); await supabase.from("products").update({ title: tempTitle }).eq("id", id); setEditingTitleId(null); loadFeed(); if(modalInfo && modalInfo.id===id) setModalInfo({...modalInfo, title: tempTitle}); };
 
-// === FIXED LIVE FOLLOW - WORKING 100% ===
 const handleFollow = async (targetHandle:string)=>{
   if(myHandle === targetHandle) { alert("Can't follow yourself bro!"); return; }
   if(!myHandle || myHandle === "@" ) return;
@@ -244,22 +235,38 @@ const handleFollow = async (targetHandle:string)=>{
   if(existing){
     setFollows(prev => prev.filter(f=> f.id !== existing.id));
     const { error } = await supabase.from("follows").delete().eq("id", existing.id);
-    if(error){ console.log(error); setFollows(prev => [...prev, existing]); alert("Unfollow failed: "+error.message); }
+    if(error){ setFollows(prev => [...prev, existing]); }
   } else {
     const temp = { id: Date.now().toString(), follower_handle: myHandle, following_handle: targetHandle };
     setFollows(prev => [...prev, temp]);
     const { data, error } = await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }).select().single();
-    if(error){ console.log(error); setFollows(prev => prev.filter(f=> f.id !== temp.id)); alert("Follow failed: "+error.message+" - Run SQL fix in Supabase!"); }
+    if(error){ setFollows(prev => prev.filter(f=> f.id !== temp.id)); }
     else if(data){ setFollows(prev => prev.map(f=> f.id===temp.id ? data : f)); }
   }
 };
 
 const placeOffer = async ()=>{ if(!offerAmount || !modalInfo) return; const amount = parseFloat(offerAmount); if(isNaN(amount)){ alert("Enter valid amount"); return; } const toHandle = modalInfo.owner_handle || selectedUser?.handle || feedProducts.find(p=> p.id===modalInfo.id)?.owner_email; await supabase.from("offers").insert({ product_id: modalInfo.id, from_handle: myHandle, to_handle: toHandle, amount: amount, message: `Offer for ${modalInfo.title || 'item'}` }); alert(`Offer $${amount} sent to ${toHandle} ✓`); setOfferAmount(""); setShowImageModal(false); loadFeed(); };
+
+const sendChatMessage = async ()=>{
+  if(!chatText.trim() || !chatUser) return;
+  const msg = chatText;
+  setChatText("");
+  setMessages(prev => [...prev, { id: Date.now().toString(), from_handle: myHandle, to_handle: chatUser.handle, text: msg, created_at: new Date().toISOString() }]);
+  await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, text: msg });
+  loadFeed();
+};
+
+const openChatWith = (userHandle:string)=>{
+  const u = profiles.find(p=> p.handle===userHandle);
+  if(u){ setChatUser(u); setShowChat(true); setView("accounts"); }
+};
+
 const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); };
 const savePhoto = ()=>{ const link = document.createElement('a'); link.href = modalImage; link.download = `imworth-${Date.now()}.jpg`; link.target = "_blank"; link.click(); };
 const filteredProfiles = profiles.filter(p=> p.handle.toLowerCase().includes(search.toLowerCase()) || p.name.toLowerCase().includes(search.toLowerCase()));
 const myFollowers = follows.filter(f=> f.following_handle===myHandle).length;
-const myFollowing = follows.filter(f=> f.follower_handle===myHandle).length;
+const myOffers = offers.filter(o=> o.to_handle===myHandle);
+const myOffersCount = myOffers.length;
 
 if(!loggedIn){
 return(
@@ -279,6 +286,33 @@ return(
 
 return(
 <div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
+{/* CHAT MODAL */}
+{showChat && chatUser && (
+<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
+<div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
+<div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
+<img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%"}}/>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{chatUser.handle}</div><div style={{fontSize:"11px", color:"#00ff88"}}>● Online - SIM Worth Chat</div></div>
+<button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from SIM Worth! I saw your offer...`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
+</div>
+<div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px"}}>
+{messages.filter(m=> (m.from_handle===myHandle && m.to_handle===chatUser.handle) || (m.from_handle===chatUser.handle && m.to_handle===myHandle)).map((m:any)=>(
+<div key={m.id} style={{alignSelf: m.from_handle===myHandle ? "flex-end" : "flex-start", background: m.from_handle===myHandle ? "#D4AF37" : "#222", color: m.from_handle===myHandle ? "black" : "white", padding:"10px 14px", borderRadius: m.from_handle===myHandle ? "18px 18px 4px 18px" : "18px 18px 18px 4px", maxWidth:"75%", fontSize:"13px"}}>
+{m.image_url && <img src={m.image_url} style={{width:"100%", borderRadius:"10px", marginBottom:"6px"}}/>}
+<div>{m.text}</div>
+<div style={{fontSize:"9px", opacity:0.6, marginTop:"4px"}}>{new Date(m.created_at).toLocaleTimeString()}</div>
+</div>
+))}
+</div>
+<div style={{padding:"10px", borderTop:"1px solid #222", display:"flex", gap:"8px", background:"#0a0a0a"}}>
+<button onClick={()=>chatImageRef.current?.click()} style={{background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"12px"}}>📷</button>
+<input value={chatText} onChange={e=>setChatText(e.target.value)} onKeyDown={e=> e.key==="Enter" && sendChatMessage()} placeholder={`Message ${chatUser.handle}...`} style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"24px"}}/>
+<button onClick={sendChatMessage} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"24px", border:"none"}}>Send</button>
+</div>
+<input ref={chatImageRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleChatImage}/>
+</div>
+)}
+
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
 <img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
@@ -292,12 +326,6 @@ return(
 <button onClick={()=>{ setActiveProductId(modalInfo.id); productInputRef.current?.click(); }} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px"}}>📷 Change Photo</button>
 <button onClick={()=>{ setEditingTitleId(modalInfo.id); setTempTitle(modalInfo.title||""); }} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px"}}>✏️ Rename</button>
 </div>
-{offers.filter(o=> o.product_id===modalInfo.id).length>0 && (
-<div style={{marginTop:"10px", background:"#0a0a0a", padding:"8px", borderRadius:"8px", border:"1px solid #D4AF37"}}>
-<div style={{fontSize:"11px", color:"#D4AF37", fontWeight:"bold"}}>OFFERS ({offers.filter(o=>o.product_id===modalInfo.id).length})</div>
-{offers.filter(o=>o.product_id===modalInfo.id).slice(0,3).map((o:any)=>(<div key={o.id} style={{fontSize:"11px", color:"white", marginTop:"4px"}}>{o.from_handle} offered ${o.amount}</div>))}
-</div>
-)}
 </div>
 ) : (
 <div style={{marginTop:"10px"}}>
@@ -317,6 +345,39 @@ return(
 )}
 <input ref={avatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleAvatarChange}/>
 <input ref={productInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleProductImageChange}/>
+
+{view==="offers" && (
+<div>
+<div style={{padding:"15px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px"}}>
+<div onClick={()=>setView("profile")} style={{cursor:"pointer", fontSize:"20px"}}>←</div>
+<div style={{flex:1}}><h2 style={{color:"#D4AF37", margin:0, fontSize:"18px"}}>Offers Inbox 📥</h2><div style={{color:"#888", fontSize:"11px"}}>{myOffersCount} buyers want your items</div></div>
+<div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh</div>
+</div>
+<div style={{padding:"12px"}}>
+{myOffers.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No offers yet bro! Add items to get offers 💰</div>}
+{myOffers.map((o:any)=>{
+  const fromProfile = profiles.find(p=> p.handle===o.from_handle);
+  return (
+  <div key={o.id} style={{background:"#111", border:"1px solid #2a2a2a", borderLeft:"4px solid #D4AF37", padding:"12px", borderRadius:"12px", marginBottom:"10px"}}>
+    <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
+      <img src={fromProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%", border:"1px solid #D4AF37"}}/>
+      <div style={{flex:1}}>
+        <div style={{fontWeight:"900", fontSize:"14px"}}>{o.from_handle} offered <span style={{color:"#D4AF37"}}>${o.amount}</span></div>
+        <div style={{fontSize:"11px", color:"#888"}}>{o.message || "Offer for your item"} • {new Date(o.created_at).toLocaleDateString()}</div>
+      </div>
+      <div style={{color:"#D4AF37", fontWeight:"900"}}>${o.amount}</div>
+    </div>
+    <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
+      <button onClick={()=>{ setChatUser(fromProfile || {handle: o.from_handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{flex:1, background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>💬 Reply in App</button>
+      <button onClick={()=> window.open(`https://wa.me/?text=Hi ${o.from_handle}! Thanks for your offer of $${o.amount} on SIM Worth - Let's chat!`, '_blank')} style={{flex:1, background:"#25D366", color:"white", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>WhatsApp 📱</button>
+    </div>
+  </div>
+  );
+})}
+</div>
+</div>
+)}
+
 {view==="publicProfile" && selectedUser && (
 <div>
 <div style={{display:"flex", alignItems:"center", gap:"10px", padding:"15px", borderBottom:"1px solid #222"}}><div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div><div style={{color:"#D4AF37", fontWeight:"bold"}}>{selectedUser.handle}</div></div>
@@ -343,11 +404,12 @@ return(
 </div>
 </div>
 )}
+
 {view==="feed" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 SIM Worth 💎 INVESTORS 🏆</h2>
-<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀 • Most Buyers💰 → Highest Worth👑</div>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 $IM Worth 💵 Investor$ 🏆</h2>
+<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀 Most Buyers💰 Highest Worth👑</div>
 <div style={{display:"flex", gap:"10px", marginTop:"10px"}}>
 <div style={{background:"#111", padding:"6px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px"}}>👑 {profiles.length} Hustlers</div>
 <div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh Rank</div>
@@ -358,13 +420,14 @@ return(
 <div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{ display:"flex", gap:"12px", background: i===0 ? "#1a1a00" : u.handle===myHandle ? "#111" : "#0f0f0f", padding:"14px", borderRadius:"14px", marginBottom:"10px", border: i===0 ? "2px solid #D4AF37" : u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #222", cursor:"pointer", alignItems:"center"}}>
 <div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: i===0 ? "#D4AF37" : i===1 ? "#C0C0C0" : i===2 ? "#CD7F32" : "#222", color: i<=2 ? "black" : "white", fontWeight:"900", fontSize:"13px"}}>{i===0 ? "👑" : `#${i+1}`}</div>
 <img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%", objectFit:"cover", border: i===0 ? "2px solid #D4AF37" : "1px solid #333"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"} {i===0 && "• TOP"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers • {u.followingCount} following</div><div style={{fontSize:"10px", color: i<=2 ? "#D4AF37" : "#666", marginTop:"2px"}}>{u.bio?.substring(0,35) || "Building empire"}</div></div>
-<div style={{textAlign:"right"}}><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div><div style={{fontSize:"10px", color:"#888"}}>WORTH</div><div style={{fontSize:"10px", color: u.followersCount>0 ? "#00ff88" : "#666", marginTop:"2px"}}>{u.followersCount} 👥</div></div>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"} {i===0 && "• TOP"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers</div><div style={{fontSize:"10px", color: i<=2 ? "#D4AF37" : "#666", marginTop:"2px"}}>{u.bio?.substring(0,35) || "Building empire"}</div></div>
+<div style={{textAlign:"right"}}><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div><div style={{fontSize:"10px", color: u.followersCount>0 ? "#00ff88" : "#666", marginTop:"2px"}}>{u.followersCount} 👥</div></div>
 </div>
 ))}
 </div>
 </div>
 )}
+
 {view==="profile" && (
 <div>
 <WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true})} />
@@ -374,7 +437,7 @@ return(
 <input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio - I'm Worth CEO" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About - Entrepreneur" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
 <div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup (SIM Banc)</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup ($IM Banc)</div>
 <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
 <option value="capitec">Capitec Pay</option><option value="payshap">PayShap ID (Phone)</option><option value="bank">Bank EFT</option><option value="paypal">PayPal / Link</option><option value="custom">Custom Link</option>
 </select>
@@ -390,9 +453,8 @@ return(
 <input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat -26.02" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 <input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng 28.13" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
-<button onClick={()=>{ if(!navigator.geolocation){ alert('Geolocation not supported'); return; } navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured! ${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`); }, err=> alert('GPS Error: '+err.message), {enableHighAccuracy:true, timeout:15000}); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
-<button onClick={()=>{ const full = `${streetAddress}, ${suburb}, ${city}`; if(!streetAddress || !suburb){ alert("Fill Street + Suburb first!"); return; } openInSimMaps(userLat, userLng, full); }} style={{width:"100%", background:"#0a84ff", color:"white", padding:"12px", borderRadius:"8px", fontWeight:"900", border:"none", marginBottom:"8px"}}>🗺️ Open Address in SIM Maps (Offline)</button>
-<div style={{fontSize:"10px", color:"#888", textAlign:"center"}}>No data needed! SIM Maps opens offline with your typed address!</div>
+<button onClick={()=>{ if(!navigator.geolocation){ alert('Geolocation not supported'); return; } navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured!`); }, err=> alert('GPS Error: '+err.message), {enableHighAccuracy:true, timeout:15000}); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
+<button onClick={()=>{ const full = `${streetAddress}, ${suburb}, ${city}`; if(!streetAddress || !suburb){ alert("Fill Street + Suburb first!"); return; } openInSimMaps(userLat, userLng, full); }} style={{width:"100%", background:"#0a84ff", color:"white", padding:"12px", borderRadius:"8px", fontWeight:"900", border:"none", marginBottom:"8px"}}>🗺️ Open Address in SIM Maps</button>
 </div>
 <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
 <button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
@@ -407,9 +469,13 @@ return(
 {userLocation && (<button onClick={()=> openInSimMaps(userLat, userLng, userLocation)} style={{marginTop:"10px", width:"100%", background:"#0a84ff", color:"white", padding:"10px", borderRadius:"8px", fontWeight:"900", border:"none"}}>🗺️ View Me in SIM Maps</button>)}
 </div>
 )}
+{/* === CLICKABLE OFFERS RECEIVED BUTTON - FIXED === */}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
-<div><div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED</div><div style={{color:"white", fontWeight:"900"}}>{offers.filter(o=> o.to_handle===myHandle).length}</div></div>
+<div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border: myOffersCount>0 ? "1px solid #D4AF37" : "1px solid #222", padding:"6px 12px", borderRadius:"10px"}}>
+<div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🔴"}</div>
+<div style={{color: myOffersCount>0 ? "#D4AF37" : "white", fontWeight:"900", fontSize:"18px", textDecoration: myOffersCount>0 ? "underline" : "none"}}>{myOffersCount} {myOffersCount>0 ? "→ View" : ""}</div>
+</div>
 </div>
 </div>
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginTop:"10px"}}>
@@ -434,11 +500,11 @@ return(
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px"}}>
-<h2 style={{color:"#D4AF37", margin:0}}>SIM Worth List 🔍</h2>
+<h2 style={{color:"#D4AF37", margin:0}}>$IM Worth List 🔍</h2>
 <input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"10px", display:"flex", gap:"10px"}}>
 <div style={{background:"#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #333", fontSize:"12px"}}>👥 {myFollowers} Followers LIVE</div>
-<div style={{background:"#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"12px", color:"#D4AF37"}}>💰 {offers.filter(o=>o.to_handle===myHandle).length} Offers</div>
+<div onClick={()=>setView("offers")} style={{background: myOffersCount>0 ? "#D4AF37" : "#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"12px", color: myOffersCount>0 ? "black" : "#D4AF37", fontWeight:"900", cursor:"pointer"}}>💰 {myOffersCount} Offers {myOffersCount>0 ? "🔴 Click!" : ""}</div>
 </div>
 </div>
 <div style={{padding:"15px"}}>
@@ -462,8 +528,8 @@ return(
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
 <div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#D4AF37" : "#888", cursor:"pointer"}}>👤 Search</div>
 <div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "normal"}}>👑 Worth</div>
+<div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#D4AF37" : "#888", cursor:"pointer", position:"relative"}}>💰 Offers {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>}</div>
 <div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile ({myFollowers})</div>
-<div onClick={()=>{localStorage.removeItem("im_session"); setLoggedIn(false);}} style={{color:"#888", cursor:"pointer"}}>Logout</div>
 </div>
 </div>
 );
