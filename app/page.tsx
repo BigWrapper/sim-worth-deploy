@@ -96,7 +96,7 @@ const [chatUser, setChatUser] = useState<any>(null);
 const [chatText, setChatText] = useState("");
 const [showChat, setShowChat] = useState(false);
 const [offersTab, setOffersTab] = useState("received");
-const [modalEditingTitle, setModalEditingTitle] = useState(false); // FIX RENAME
+const [modalEditingTitle, setModalEditingTitle] = useState(false);
 
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
@@ -192,11 +192,7 @@ const setProductStatus = async (id:string, newStatus:string)=>{
   setSelectedUserProducts(prev => prev.map(p=> p.id===id ? {...p, status:newStatus} : p));
   if(modalInfo && modalInfo.id===id) setModalInfo({...modalInfo, status: newStatus});
   const { error } = await supabase.from("products").update({ status: newStatus }).eq("id", id);
-  if(error){
-    alert("⚠️ Supabase error: status column missing! Run SQL:\nALTER TABLE products ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'for_sale';\n\nError: "+error.message);
-    // revert local if failed
-    loadFeed();
-  }
+  if(error){ alert("⚠️ Run SQL: ALTER TABLE products ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'for_sale'; Error: "+error.message); loadFeed(); }
 };
 
 const deleteOffer = async (offerId:string)=>{ if(!confirm("Delete this offer bro?")) return; setOffers(prev => prev.filter(o=> o.id!==offerId)); await supabase.from("offers").delete().eq("id", offerId); };
@@ -209,9 +205,7 @@ const updateTitle = async (id:string)=>{
   setProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p));
   setSelectedUserProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p));
   await supabase.from("products").update({ title: tempTitle }).eq("id", id);
-  setEditingTitleId(null);
-  setModalEditingTitle(false);
-  loadFeed();
+  setEditingTitleId(null); setModalEditingTitle(false); loadFeed();
   if(modalInfo && modalInfo.id===id) setModalInfo({...modalInfo, title: tempTitle});
 };
 
@@ -300,7 +294,6 @@ return(
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
 <img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
-{/* IS THIS A PRODUCT OR AVATAR? */}
 {modalInfo?.id ? (
 <>
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
@@ -340,11 +333,10 @@ return(
 )}
 </>
 ) : (
-/* AVATAR VIEW - NO FOR SALE BUTTONS */
 <div style={{textAlign:"center"}}>
 <div style={{fontWeight:"bold", color:"#D4AF37", fontSize:"16px"}}>{modalInfo?.handle || "Profile Photo"}</div>
 <div style={{fontSize:"11px", color:"#888", marginTop:"4px"}}>{modalInfo?.bio || ""}</div>
-<div style={{marginTop:"10px", color:"#888", fontSize:"11px"}}>This is your profile photo - not an item for sale</div>
+<div style={{marginTop:"10px", color:"#888", fontSize:"11px"}}>This is your profile photo</div>
 </div>
 )}
 </div>
@@ -398,12 +390,12 @@ return(
     <div onClick={()=>deleteOffer(o.id)} style={{position:"absolute", top:"8px", right:"8px", background:"#ff4444", color:"white", width:"24px", height:"24px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"12px", fontWeight:"900", cursor:"pointer"}}>✕</div>
     <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
       <img src={fromProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
-      <div style={{flex:1, paddingRight:"30px"}}><div style={{fontWeight:"900"}}>{o.from_handle} offered <span style={{color:"#D4AF37"}}>${o.amount}</span></div><div style={{fontSize:"11px", color:"#888"}}>{o.message} • Last reply: {chatPreview ? chatPreview.text.substring(0,30) : "No reply yet - Reply now!"}</div></div>
+      <div style={{flex:1, paddingRight:"30px"}}><div style={{fontWeight:"900"}}>{o.from_handle} offered <span style={{color:"#D4AF37"}}>${o.amount}</span></div><div style={{fontSize:"11px", color:"#888"}}>{o.message} • Last reply: {chatPreview ? chatPreview.text.substring(0,30) : "No reply yet"}</div></div>
       <div style={{color:"#D4AF37", fontWeight:"900"}}>${o.amount}</div>
     </div>
     <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
       <button onClick={()=>{ setChatUser(fromProfile || {handle: o.from_handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{flex:1, background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>💬 Reply</button>
-      <button onClick={()=> window.open(`https://wa.me/?text=Hi ${o.from_handle}! Thanks for $${o.amount} on SIM Worth`, '_blank')} style={{flex:1, background:"#25D366", color:"white", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>WhatsApp</button>
+      <button onClick={()=> window.open(`https://wa.me/?text=Hi ${o.from_handle}! Thanks for $${o.amount}`, '_blank')} style={{flex:1, background:"#25D366", color:"white", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>WhatsApp</button>
       <button onClick={()=>deleteOffer(o.id)} style={{background:"#222", border:"1px solid #ff4444", color:"#ff4444", fontWeight:"900", padding:"10px 12px", borderRadius:"8px"}}>🗑️</button>
     </div>
   </div>
@@ -417,7 +409,7 @@ return(
     <div onClick={()=>deleteOffer(o.id)} style={{position:"absolute", top:"8px", right:"8px", background:"#ff4444", color:"white", width:"24px", height:"24px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"12px", fontWeight:"900", cursor:"pointer"}}>✕</div>
     <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
       <img src={toProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
-      <div style={{flex:1, paddingRight:"30px"}}><div style={{fontWeight:"900"}}>You → {o.to_handle} <span style={{color:"#D4AF37"}}>${o.amount}</span></div><div style={{fontSize:"11px", color: chatPreview ? "#00ff88" : "#888"}}>{chatPreview ? `Reply: ${chatPreview.text.substring(0,30)}` : "Waiting for reply..."}</div></div>
+      <div style={{flex:1, paddingRight:"30px"}}><div style={{fontWeight:"900"}}>You → {o.to_handle} <span style={{color:"#D4AF37"}}>${o.amount}</span></div><div style={{fontSize:"11px", color: chatPreview ? "#00ff88" : "#888"}}>{chatPreview ? `Reply: ${chatPreview.text.substring(0,30)}` : "Waiting"}</div></div>
       <div style={{color:"#D4AF37", fontWeight:"900"}}>${o.amount}</div>
     </div>
     <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
@@ -442,7 +434,26 @@ return(
 <div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.follower_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Following</span></div>
 </div>
 <button onClick={(e)=>{ e.stopPropagation(); handleFollow(selectedUser.handle); }} style={{marginTop:"12px", background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "white" : "black", fontWeight:"900", padding:"10px 24px", borderRadius:"20px", border: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "1px solid #333" : "none", cursor:"pointer"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "Following ✓" : "Follow + 🚀"}</button>
+
+<div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"14px", flexWrap:"wrap"}}>
+{(selectedUser.pay_link || selectedUser.pay_handle) && (
+<button onClick={()=>{
+  if(selectedUser.pay_link && selectedUser.pay_link.startsWith("http")) window.open(selectedUser.pay_link, '_blank');
+  else if(selectedUser.pay_handle) window.open(`https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank');
+}} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>
+💰 Pay Me
+</button>
+)}
+{(selectedUser.location || selectedUser.latitude) && (
+<button onClick={()=> openInSimMaps(selectedUser.latitude?.toString(), selectedUser.longitude?.toString(), selectedUser.location)} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>
+🗺️ Visit Me
+</button>
+)}
 </div>
+{selectedUser.location && <div style={{color:"#888", fontSize:"11px", marginTop:"8px"}}>📍 {selectedUser.location}</div>}
+{selectedUser.bio && <div style={{color:"#888", fontSize:"11px", marginTop:"6px"}}>{selectedUser.bio}</div>}
+</div>
+
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
 <div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:selectedUser.email, owner_handle:selectedUser.handle, isMine:false, status:p.status})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #444" : "1px solid #2a2a2a", cursor:"pointer", position:"relative", opacity: p.status==="sold" || p.status==="not_for_sale" ? 0.7 : 1}}>
@@ -462,17 +473,20 @@ return(
 {view==="feed" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 $IM Worth 👑 Inve$tor$ 🏆</h2>
-<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀</div>
-<div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer", display:"inline-block", marginTop:"8px"}}>↻ Refresh</div>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 $IM Worth 👑 Investor$ 🏆</h2>
+<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀 Most Buyers💰 Highest Worth👑</div>
+<div style={{display:"flex", gap:"10px", marginTop:"10px"}}>
+<div style={{background:"#111", padding:"6px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px"}}>💎 {profiles.length} Hustlers</div>
+<div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh Rank</div>
+</div>
 </div>
 <div style={{padding:"12px"}}>
-{profiles.map(p=>({ ...p, followersCount: follows.filter(f=> f.following_handle===p.handle).length })).sort((a:any,b:any)=> b.followersCount - a.followersCount).map((u:any, i:number)=>(
-<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{ display:"flex", gap:"12px", background:"#0f0f0f", padding:"14px", borderRadius:"14px", marginBottom:"10px", border:"1px solid #222", cursor:"pointer", alignItems:"center"}}>
-<div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: i===0 ? "#D4AF37" : "#222", color: i===0 ? "black" : "white", fontWeight:"900"}}>{i===0 ? "👑" : `#${i+1}`}</div>
-<img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900"}}>{u.name}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers</div></div>
-<div style={{color:"#D4AF37", fontWeight:"900"}}>${Number(u.total_worth||0).toFixed(0)}</div>
+{profiles.map(p=>({ ...p, followersCount: follows.filter(f=> f.following_handle===p.handle).length, followingCount: follows.filter(f=> f.follower_handle===p.handle).length, })).sort((a:any,b:any)=>{ if(b.followersCount !== a.followersCount) return b.followersCount - a.followersCount; return b.total_worth - a.total_worth; }).map((u:any, i:number)=>(
+<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{ display:"flex", gap:"12px", background: i===0 ? "#1a1a00" : u.handle===myHandle ? "#111" : "#0f0f0f", padding:"14px", borderRadius:"14px", marginBottom:"10px", border: i===0 ? "2px solid #D4AF37" : u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #222", cursor:"pointer", alignItems:"center"}}>
+<div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: i===0 ? "#D4AF37" : i===1 ? "#C0C0C0" : i===2 ? "#CD7F32" : "#222", color: i<=2 ? "black" : "white", fontWeight:"900", fontSize:"13px"}}>{i===0 ? "👑" : `#${i+1}`}</div>
+<img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%", objectFit:"cover", border: i===0 ? "2px solid #D4AF37" : "1px solid #333"}}/>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"} {i===0 && "• TOP"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers</div><div style={{fontSize:"10px", color: i<=2 ? "#D4AF37" : "#666", marginTop:"2px"}}>{u.bio?.substring(0,35) || "Building empire"}</div></div>
+<div style={{textAlign:"right"}}><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div><div style={{fontSize:"10px", color: u.followersCount>0 ? "#00ff88" : "#666", marginTop:"2px"}}>{u.followersCount} 👥</div></div>
 </div>
 ))}
 </div>
@@ -485,42 +499,52 @@ return(
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
 {editingBio ? (
 <div>
-<input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
+<input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio - I'm Worth CEO" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About - Entrepreneur" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
 <div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup ($IM Banc)</div>
 <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
-<option value="capitec">Capitec Pay</option><option value="payshap">PayShap ID</option><option value="bank">Bank EFT</option><option value="paypal">PayPal / Link</option><option value="custom">Custom Link</option>
+<option value="capitec">Capitec Pay</option><option value="payshap">PayShap ID (Phone)</option><option value="bank">Bank EFT</option><option value="paypal">PayPal / Link</option><option value="custom">Custom Link</option>
 </select>
 <input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="PayShap 082... or Capitec ID" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+<input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://... (optional)" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
 <div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS</div>
-<input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={city} onChange={e=>setCity(e.target.value)} placeholder="City" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS (Offline)</div>
+<input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address e.g. 29 Hans Cloete Street" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb e.g. Rosedale" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+<input value={city} onChange={e=>setCity(e.target.value)} placeholder="City e.g. Upington" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
-<input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
-<input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+<input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat -26.02" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+<input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng 28.13" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
 </div>
-<button onClick={()=>{ navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured!`); }); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
+<button onClick={()=>{ if(!navigator.geolocation){ alert('Geolocation not supported'); return; } navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured!`); }, err=> alert('GPS Error: '+err.message), {enableHighAccuracy:true, timeout:15000}); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
+<button onClick={()=>{ const full = `${streetAddress}, ${suburb}, ${city}`; if(!streetAddress || !suburb){ alert("Fill Street + Suburb first!"); return; } openInSimMaps(userLat, userLng, full); }} style={{width:"100%", background:"#0a84ff", color:"white", padding:"12px", borderRadius:"8px", fontWeight:"900", border:"none", marginBottom:"8px"}}>🗺️ Open Address in SIM Maps</button>
 </div>
 <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
 <button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
 </div>
 ) : (
 <div>
-<div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div>
+<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+<div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div>
+<div style={{display:"flex", gap:"8px"}}>
+<div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div>
+<div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px", fontWeight:"900"}}>Logout ⎋</div>
+</div>
+</div>
 <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
 <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
+{userLocation && <div style={{color:"#D4AF37", fontSize:"11px", marginTop:"6px"}}>📍 {userLocation}</div>}
+{(payHandle || payLink) && <div style={{color:"#00ff88", fontSize:"11px", marginTop:"4px"}}>💰 Pay: {payMethod} - {payHandle || payLink}</div>}
+{userLocation && (<button onClick={()=> openInSimMaps(userLat, userLng, userLocation)} style={{marginTop:"10px", width:"100%", background:"#0a84ff", color:"white", padding:"10px", borderRadius:"8px", fontWeight:"900", border:"none"}}>🗺️ View Me in SIM Maps</button>)}
 </div>
 )}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
-<div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
-<div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🔴"}</div>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount} → View</div>
+<div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border: myOffersCount>0 ? "1px solid #D4AF37" : "1px solid #222", padding:"6px 12px", borderRadius:"10px"}}>
+<div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
+<div style={{color: myOffersCount>0 ? "#D4AF37" : "white", fontWeight:"900", fontSize:"18px", textDecoration: myOffersCount>0 ? "underline" : "none"}}>{myOffersCount} {myOffersCount>0 ? "→ View" : ""}</div>
 </div>
 </div>
 </div>
@@ -530,10 +554,11 @@ return(
 <div style={{position:"relative"}}>
 <img src={p.img} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true, status:p.status})} style={{width:"100%", height:"100px", objectFit:"cover", cursor:"pointer", filter: p.status==="sold" ? "grayscale(60%)" : "none"}}/>
 <div style={{position:"absolute", top:"6px", left:"6px", background: getStatusBadge(p.status).bg, color: getStatusBadge(p.status).color, fontSize:"7px", fontWeight:"900", padding:"2px 5px", borderRadius:"10px", border:"1px solid currentColor"}}>{getStatusBadge(p.status).text}</div>
+{p.status==="sold" && <div style={{position:"absolute", inset:0, background:"rgba(255,0,0,0.12)", display:"flex", alignItems:"center", justifyContent:"center"}}><div style={{background:"#ff4444", color:"white", fontWeight:"900", padding:"2px 8px", borderRadius:"20px", fontSize:"10px", transform:"rotate(-12deg)"}}>SOLD</div></div>}
 </div>
 <div style={{padding:"6px"}}>
-{editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"11px", fontWeight:"bold", cursor:"pointer"}}>{p.title} ✏️</div>)}
-{editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color: p.status==="sold" ? "#ff4444" : p.status==="not_for_sale" ? "#888" : "#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
+{editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px", fontSize:"11px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px", fontSize:"10px"}}>OK</button></div>) : (<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"11px", fontWeight:"bold", cursor:"pointer", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title} ✏️</div>)}
+{editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px", marginTop:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color: p.status==="sold" ? "#ff4444" : p.status==="not_for_sale" ? "#888" : "#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
 <div style={{display:"flex", gap:"3px", marginTop:"6px"}}>
 <button onClick={()=>setProductStatus(p.id, "for_sale")} style={{flex:1, background: p.status==="for_sale" || !p.status ? "#00ff88" : "#222", color: p.status==="for_sale" || !p.status ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Sale</button>
 <button onClick={()=>setProductStatus(p.id, "sold")} style={{flex:1, background: p.status==="sold" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Sold</button>
@@ -541,9 +566,10 @@ return(
 </div>
 </div>
 <div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px"}}>
-<button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px"}}>📷</button>
+<button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px", fontSize:"12px"}}>📷</button>
 <button onClick={async()=>{setProducts(products.filter(x=>x.id!==p.id)); await supabase.from("products").delete().eq("id", p.id); loadFeed();}} style={{background:"rgba(255,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"20px", height:"20px"}}>×</button>
 </div>
+{offers.filter(o=>o.product_id===p.id).length>0 && <div style={{position:"absolute", bottom:"50px", left:"6px", background:"#D4AF37", color:"black", fontSize:"9px", fontWeight:"900", padding:"2px 6px", borderRadius:"10px"}}>{offers.filter(o=>o.product_id===p.id).length} OFFERS</div>}
 </div>
 ))}
 <div onClick={addProduct} style={{background:"#0a0a0a", border:"2px dashed #D4AF37", borderRadius:"14px", height:"150px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer"}}>+ Add</div>
@@ -553,39 +579,62 @@ return(
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth Marketplace 🛒</h2>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth $tore 🛒</h2>
+<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Facebook-style • All available items • Search by name</div>
 <input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
 <button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 Marketplace ({availableMarketItems.length})</button>
 <button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>👥 Users ({filteredProfiles.length})</button>
 </div>
+<div style={{marginTop:"10px", display:"flex", gap:"8px", flexWrap:"wrap"}}>
+<div style={{background:"#111", padding:"6px 10px", borderRadius:"20px", border:"1px solid #333", fontSize:"11px"}}>👥 {myFollowers} Followers LIVE</div>
+<div onClick={()=>setView("offers")} style={{background:"#111", padding:"6px 10px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px", color:"#D4AF37", fontWeight:"900", cursor:"pointer"}}>💬 {conversations.length} Chats {conversations.length>0 ? "🔴" : ""}</div>
 </div>
+</div>
+
 {searchTab==="market" && (
 <div style={{padding:"12px"}}>
+{availableMarketItems.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"30px"}}>No items for sale yet! Be first to post 💰<br/><span style={{fontSize:"11px"}}>Add items in Profile → Set to For Sale</span></div>}
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
 {availableMarketItems.map((p:any)=>{
   const owner = profiles.find(pr=> pr.email===p.owner_email);
   return (
-  <div key={p.id} onClick={()=>{ const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer"}}>
-    <div style={{position:"relative"}}><img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/><div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div></div>
-    <div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div style={{fontSize:"10px", color:"#888"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]}</div></div>
+  <div key={p.id} onClick={()=>{
+    const ownerProfile = profiles.find(pr=> pr.email===p.owner_email);
+    const ownerHandle = ownerProfile?.handle || p.owner_email;
+    openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status});
+  }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer", position:"relative"}}>
+    <div style={{position:"relative"}}>
+      <img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/>
+      <div style={{position:"absolute", top:"6px", left:"6px", background:"rgba(0,255,136,0.9)", color:"black", fontSize:"8px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>FOR SALE ✅</div>
+      <div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div>
+    </div>
+    <div style={{padding:"8px"}}>
+      <div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div>
+      <div style={{fontSize:"10px", color:"#888", marginTop:"2px", display:"flex", justifyContent:"space-between"}}><span>{owner ? owner.handle : p.owner_email?.split("@")[0]}</span><span style={{color:"#D4AF37"}}>${Number(p.price).toFixed(0)}</span></div>
+    </div>
   </div>
   );
 })}
 </div>
 </div>
 )}
+
 {searchTab==="users" && (
 <div style={{padding:"15px"}}>
 <input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"12px", marginBottom:"12px"}}/>
 {filteredProfiles.map((u:any)=>(
 <div key={u.handle} style={{display:"flex", gap:"10px", background: u.handle===myHandle ? "#1a1a0a" : "#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border: u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #333"}}>
 <div style={{display:"flex", gap:"10px", flex:1, cursor:"pointer"}} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }}>
-<img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%"}}/>
+<img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%", objectFit:"cover"}}/>
 <div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name} {u.handle===myHandle && "(You)"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {follows.filter(f=>f.following_handle===u.handle).length} followers</div></div>
 <div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(u.total_worth||0).toFixed(2)}</div>
 </div>
-{u.handle !== myHandle && (<button onClick={(e)=>{ e.stopPropagation(); handleFollow(u.handle); }} style={{background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "#222" : "#D4AF37", color: "black", fontWeight:"900", padding:"6px 12px", borderRadius:"20px", border:"none", fontSize:"11px"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "✓" : "+ Follow"}</button>)}
+{u.handle !== myHandle && (
+<button onClick={(e)=>{ e.stopPropagation(); handleFollow(u.handle); }} style={{background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "#888" : "black", fontWeight:"900", padding:"6px 12px", borderRadius:"20px", border:"none", fontSize:"11px", height:"32px", alignSelf:"center"}}>
+{follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "✓" : "+ Follow"}
+</button>
+)}
 </div>
 ))}
 </div>
@@ -594,9 +643,9 @@ return(
 )}
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
 <div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#D4AF37" : "#888", cursor:"pointer"}}>👤 Search</div>
-<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer"}}>👑 Worth</div>
+<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "normal"}}>👑 Worth</div>
 <div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#D4AF37" : "#888", cursor:"pointer", position:"relative"}}>💬 Inbox {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>}</div>
-<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile</div>
+<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile ({myFollowers})</div>
 </div>
 </div>
 );
