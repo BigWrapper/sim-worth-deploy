@@ -2,6 +2,100 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
+
+const luxuryStyles = `
+  :root { color-scheme: dark; }
+  html, body {
+    min-height: 100%;
+    margin: 0;
+    background: #030405 !important;
+  }
+  body {
+    color: #f5f2e9;
+    background:
+      radial-gradient(ellipse at 50% 8%, rgba(194,145,40,.20), transparent 34%),
+      radial-gradient(ellipse at 8% 48%, rgba(50,65,90,.16), transparent 38%),
+      radial-gradient(ellipse at 92% 72%, rgba(176,122,24,.13), transparent 36%),
+      linear-gradient(145deg, #08090c 0%, #111116 48%, #030405 100%) !important;
+    background-attachment: fixed !important;
+    overflow-x: hidden;
+  }
+  .sim-luxury-shell {
+    position: relative;
+    isolation: isolate;
+    min-height: 100vh;
+    color: #f7f4ec !important;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(212,175,55,.15), transparent 35%),
+      radial-gradient(ellipse at 0% 55%, rgba(50,70,100,.13), transparent 42%),
+      radial-gradient(ellipse at 100% 85%, rgba(212,175,55,.10), transparent 38%),
+      linear-gradient(145deg, rgba(8,9,13,.97), rgba(4,5,8,.98)) !important;
+    box-shadow: 0 0 90px rgba(0,0,0,.8);
+  }
+  .sim-luxury-shell::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: .42;
+    background:
+      radial-gradient(circle at 50% 42%, transparent 0 19%, rgba(218,174,65,.08) 19.2%, transparent 19.8% 25%, rgba(218,174,65,.045) 25.2%, transparent 25.7%),
+      repeating-linear-gradient(115deg, transparent 0 54px, rgba(255,255,255,.018) 55px, transparent 56px 108px),
+      radial-gradient(ellipse at 50% 45%, rgba(210,166,58,.08), transparent 60%);
+    mask-image: linear-gradient(to bottom, black, transparent 92%);
+  }
+  .sim-luxury-shell::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.46) 100%);
+  }
+  .sim-luxury-shell h1, .sim-luxury-shell h2 {
+    text-shadow: 0 0 18px rgba(212,175,55,.22);
+    letter-spacing: .025em;
+  }
+  .sim-luxury-shell button {
+    cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 5px 18px rgba(0,0,0,.32);
+  }
+  .sim-luxury-shell button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+    box-shadow: 0 0 18px rgba(212,175,55,.22), 0 8px 24px rgba(0,0,0,.4);
+  }
+  .sim-luxury-shell input, .sim-luxury-shell select {
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .sim-luxury-shell input:focus, .sim-luxury-shell select:focus {
+    border-color: #d4af37 !important;
+    box-shadow: 0 0 0 2px rgba(212,175,55,.14), 0 0 18px rgba(212,175,55,.10);
+  }
+  .sim-luxury-shell img {
+    filter: saturate(1.06);
+  }
+  .sim-luxury-shell [style*="border-radius: 14px"],
+  .sim-luxury-shell [style*="border-radius:14px"],
+  .sim-luxury-shell [style*="border-radius: 12px"],
+  .sim-luxury-shell [style*="border-radius:12px"] {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 12px 28px rgba(0,0,0,.22);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .sim-luxury-shell {
+      animation: simFadeIn .65s ease both;
+    }
+    @keyframes simFadeIn {
+      from { opacity: .75; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+`;
+
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; };
 
@@ -270,7 +364,8 @@ const myOffersCount = myOffers.length;
 
 if(!loggedIn){
 return(
-<div style={{minHeight:"100vh", background:"black", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:"80px", padding:"20px"}}>
+<div className="sim-luxury-shell" style={{minHeight:"100vh", background:"black", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:"80px", padding:"20px"}}>
+<style jsx global>{luxuryStyles}</style>
 <h1 style={{margin:0, fontSize:"56px", fontWeight:"900"}}><span style={{color:"#D4AF37"}}>$</span><span style={{color:"white"}}>IM</span></h1>
 <div style={{color:"#D4AF37", fontSize:"32px", fontWeight:"900", letterSpacing:"6px"}}>WORTH</div>
 <div style={{width:"100%", maxWidth:"360px", marginTop:"40px", border:"1px solid #333", borderRadius:"24px", background:"#0a0a0a", padding:"24px"}}>
@@ -285,7 +380,8 @@ return(
 }
 
 return(
-<div style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
+<div className="sim-luxury-shell" style={{minHeight:"100vh", background:"black", color:"white", maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
+<style jsx global>{luxuryStyles}</style>
 {/* CHAT MODAL */}
 {showChat && chatUser && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
