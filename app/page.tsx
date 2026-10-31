@@ -14,21 +14,13 @@ type HeaderProps = {
 function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod, onLogout }: HeaderProps) {
   const handlePayMe = () => {
     if (payLink && payLink.startsWith("http")) { window.open(payLink, '_blank'); return; }
-    if (payHandle) {
-      if (payMethod === "capitec" || payMethod === "payshap") { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); }
-      else if (payMethod === "bank") { alert(`Bank: ${payHandle}`); }
-      else { window.open(`https://${payHandle}`, '_blank'); } return;
-    }
+    if (payHandle) { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); return; }
     alert("Go to Edit Profile > Setup Pay Me!");
   };
   const handleVisitMe = () => {
-    const label = myHandle || "SIM Worth User";
-    const manualFull = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city || 'South Africa'}` : null;
-    const finalAddress = manualFull || userLocation;
-    if (userLat && userLng && userLat !== "" && userLng !== "") {
-      window.location.href = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || label)})`;
-    } else if (finalAddress) { window.location.href = `geo:0,0?q=${encodeURIComponent(finalAddress)}`; }
-    else { alert("Set your address first!"); }
+    const finalAddress = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
+    if (userLat && userLng) { window.location.href = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || myHandle)})`; }
+    else if (finalAddress) { window.location.href = `geo:0,0?q=${encodeURIComponent(finalAddress)}`; }
   };
   return (
     <div style={{background:"black", padding:"10px"}}>
@@ -51,10 +43,7 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
         <div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div>
         <div style={{width:"50px"}}></div>
       </div>
-      {(streetAddress || userLocation) && <div style={{color:"#888", fontSize:"10px", marginTop:"2px", textAlign:"center"}}>📍 {streetAddress ? `${streetAddress}, ${suburb}` : userLocation}</div>}
-      <div style={{marginTop:"12px", border:"1px solid gold", borderRadius:"14px", padding:"10px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-        <div style={{flex:1, textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>SIM WORTH</div><div style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
-      </div>
+      <div style={{marginTop:"12px", border:"1px solid gold", borderRadius:"14px", padding:"10px", textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>SIM WORTH</div><div style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
     </div>
   );
 }
@@ -104,27 +93,15 @@ const [myId, setMyId] = useState("");
 const [chatUser, setChatUser] = useState<any>(null);
 const [chatText, setChatText] = useState("");
 const [showChat, setShowChat] = useState(false);
+const [offersTab, setOffersTab] = useState("received");
 
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
 
 const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
-  let geoUrl = "";
-  if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; }
-  else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; }
-  else { alert("Add address first bro!"); return; }
-  window.location.href = geoUrl;
+  let geoUrl = ""; if(lat && lng) geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || "")})`; else if(address) geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; else return; window.location.href = geoUrl;
 };
-
-const handleLogout = async ()=>{
-  if(!confirm("Logout bro?")) return;
-  await supabase.auth.signOut();
-  localStorage.removeItem("im_session");
-  setLoggedIn(false);
-  setEmail("");
-  setPassword("");
-  setView("accounts");
-};
+const handleLogout = async ()=>{ if(!confirm("Logout?")) return; await supabase.auth.signOut(); localStorage.removeItem("im_session"); setLoggedIn(false); setEmail(""); };
 
 const loadFeed = async ()=>{
   const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
@@ -133,7 +110,7 @@ const loadFeed = async ()=>{
   if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item"})));
   const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
   const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
-  const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(200); if(ms) setMessages(ms);
+  const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(500); if(ms) setMessages(ms);
 };
 
 useEffect(()=>{
@@ -144,6 +121,9 @@ useEffect(()=>{
     loadFeed();
   };
   checkSession();
+  // REALTIME - so both sides see messages instantly
+  const channel = supabase.channel('realtime-messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'offers' }, ()=>{ loadFeed(); }).subscribe();
+  return ()=>{ supabase.removeChannel(channel); };
 },[]);
 
 const loadMyData = async (em:string)=>{
@@ -151,129 +131,30 @@ const loadMyData = async (em:string)=>{
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, title:p.title || "My Item"})));
   const handle = "@" + em.split("@")[0].toLowerCase().trim();
   const { data: prof } = await supabase.from("profiles").select("*").eq("handle", handle).maybeSingle();
-  if(prof){ 
-    if(prof.avatar_url) setAvatarPreview(prof.avatar_url); if(prof.bio) setBio(prof.bio); if(prof.about) setAbout(prof.about);
-    if(prof.pay_method) setPayMethod(prof.pay_method); if(prof.pay_handle) setPayHandle(prof.pay_handle); if(prof.pay_link) setPayLink(prof.pay_link);
-    if(prof.location) { setUserLocation(prof.location); const parts = prof.location.split(','); if(parts.length >= 2){ setStreetAddress(parts[0].trim()); setSuburb(parts[1].trim()); if(parts[2]) setCity(parts[2].trim()); } }
-    if(prof.latitude) setUserLat(prof.latitude.toString()); if(prof.longitude) setUserLng(prof.longitude.toString()); if(prof.id) setMyId(prof.id);
-  }
+  if(prof){ if(prof.avatar_url) setAvatarPreview(prof.avatar_url); if(prof.bio) setBio(prof.bio); if(prof.about) setAbout(prof.about); if(prof.pay_method) setPayMethod(prof.pay_method); if(prof.pay_handle) setPayHandle(prof.pay_handle); if(prof.pay_link) setPayLink(prof.pay_link); if(prof.location) setUserLocation(prof.location); if(prof.latitude) setUserLat(prof.latitude.toString()); if(prof.longitude) setUserLng(prof.longitude.toString()); }
 };
-
-const loadPublicUser = async (user:any)=>{
-  setSelectedUser(user);
-  const { data } = await supabase.from("products").select("*").eq("owner_email", user.email).order("created_at",{ascending:false});
-  if(data) setSelectedUserProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, title:p.title || "My Item"})));
-  setView("publicProfile");
-};
-
-const syncProfile = async (em:string, worth:number, av:string)=>{
-  if(!em || !em.includes("@")) return;
-  const handle = "@" + em.split("@")[0].toLowerCase().trim(); if(handle === "@" || handle.length < 3) return;
-  const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
-  const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle();
-  if(existing){ await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("id", existing.id); }
-  else { await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }); }
-};
-
-const saveBio = async ()=>{
-  const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
-  await supabase.from("profiles").update({ bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("handle", myHandle);
-  setEditingBio(false); loadFeed(); alert("Profile Saved Successfully ✓");
-};
-
-const doLogin = async ()=>{
-  setErr(""); if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
-  try {
-    if(authMode==="signup"){
-      const { data, error } = await supabase.auth.signUp({ email: email.trim().toLowerCase(), password: password, options: { data: { handle: "@" + email.split("@")[0].toLowerCase() } } });
-      if(error) throw error;
-      if(!data.session){ setErr("✅ Verification email sent! Check your inbox & spam to confirm, then LOGIN."); setAuthMode("login"); return; }
-      localStorage.setItem("im_session", email); await syncProfile(email, 0, avatarPreview); setLoggedIn(true); await loadMyData(email); await loadFeed();
-    } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
-      if(error) throw error;
-      if(!data.user?.email_confirmed_at){ setErr("⚠️ Email not verified."); await supabase.auth.signOut(); return; }
-      localStorage.setItem("im_session", email); setMyId(data.user.id); await loadMyData(email); setLoggedIn(true); await loadFeed();
-    }
-  } catch(e:any){ setErr(e.message); }
-};
-
-const handleAvatarChange = async (e:any)=>{
-  const file = e.target.files?.[0]; if(!file) return; setAvatarPreview(URL.createObjectURL(file));
-  try {
-    const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/${Date.now()}.jpg`;
-    await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
-    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`;
-    setAvatarPreview(publicUrl); await syncProfile(email, totalWorth, publicUrl); await loadFeed();
-  } catch(err:any){ alert("Upload failed: " + err.message); }
-};
-
-const handleProductImageChange = async (e:any)=>{
-  const file = e.target.files?.[0]; if(!file || !activeProductId) return;
-  try {
-    const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/product_${activeProductId}_${Date.now()}.jpg`;
-    await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
-    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`;
-    setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p)); setSelectedUserProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p)); if(modalInfo) setModalImage(publicUrl);
-    await supabase.from("products").update({ img: publicUrl }).eq("id", activeProductId); await loadFeed();
-  } catch(err:any){ alert("Product image failed: " + err.message); }
-};
-
-const handleChatImage = async (e:any)=>{
-  const file = e.target.files?.[0]; if(!file || !chatUser) return;
-  try {
-    const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/chat_${Date.now()}.jpg`;
-    await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type });
-    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`;
-    await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, image_url: publicUrl, text: "📷 Image" });
-    loadFeed();
-  } catch(err:any){ alert("Image failed: "+err); }
-};
-
-const addProduct = async ()=>{
-  const newId = Date.now().toString(); const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item" };
-  setProducts([newItem, ...products]);
-  const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice, title: newItem.title }).select().single();
-  if(data) setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p)); await loadFeed();
-};
-
+const loadPublicUser = async (user:any)=>{ setSelectedUser(user); const { data } = await supabase.from("products").select("*").eq("owner_email", user.email).order("created_at",{ascending:false}); if(data) setSelectedUserProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, title:p.title || "My Item"}))); setView("publicProfile"); };
+const syncProfile = async (em:string, worth:number, av:string)=>{ const handle = "@" + em.split("@")[0].toLowerCase().trim(); const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation; const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle(); if(existing){ await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("id", existing.id); } else { await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }); } };
+const saveBio = async ()=>{ const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation; await supabase.from("profiles").update({ bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null }).eq("handle", myHandle); setEditingBio(false); loadFeed(); alert("Profile Saved ✓"); };
+const doLogin = async ()=>{ setErr(""); if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars"); return; } try { if(authMode==="signup"){ const { data, error } = await supabase.auth.signUp({ email: email.trim().toLowerCase(), password: password, options: { data: { handle: "@" + email.split("@")[0].toLowerCase() } } }); if(error) throw error; if(!data.session){ setErr("✅ Verification email sent! Check inbox then LOGIN."); setAuthMode("login"); return; } localStorage.setItem("im_session", email); await syncProfile(email, 0, avatarPreview); setLoggedIn(true); await loadMyData(email); await loadFeed(); } else { const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password }); if(error) throw error; localStorage.setItem("im_session", email); setMyId(data.user.id); await loadMyData(email); setLoggedIn(true); await loadFeed(); } } catch(e:any){ setErr(e.message); } };
+const handleAvatarChange = async (e:any)=>{ const file = e.target.files?.[0]; if(!file) return; setAvatarPreview(URL.createObjectURL(file)); try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; setAvatarPreview(publicUrl); await syncProfile(email, totalWorth, publicUrl); await loadFeed(); } catch(err:any){ alert("Upload failed: " + err.message); } };
+const handleProductImageChange = async (e:any)=>{ const file = e.target.files?.[0]; if(!file || !activeProductId) return; try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/product_${activeProductId}_${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p)); await supabase.from("products").update({ img: publicUrl }).eq("id", activeProductId); await loadFeed(); } catch(err:any){ alert("Product image failed: " + err.message); } };
+const handleChatImage = async (e:any)=>{ const file = e.target.files?.[0]; if(!file || !chatUser) return; try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/chat_${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, image_url: publicUrl, text: "📷 Image" }); loadFeed(); } catch(err:any){ alert("Image failed: "+err); } };
+const addProduct = async ()=>{ const newId = Date.now().toString(); const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item" }; setProducts([newItem, ...products]); const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice, title: newItem.title }).select().single(); if(data) setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p)); await loadFeed(); };
 const updatePrice = async (id:string)=>{ const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p)); await supabase.from("products").update({ price: num }).eq("id", id); setEditingPriceId(null); loadFeed(); };
 const updateTitle = async (id:string)=>{ if(!tempTitle.trim()) { setEditingTitleId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p)); await supabase.from("products").update({ title: tempTitle }).eq("id", id); setEditingTitleId(null); loadFeed(); if(modalInfo && modalInfo.id===id) setModalInfo({...modalInfo, title: tempTitle}); };
-
-const handleFollow = async (targetHandle:string)=>{
-  if(myHandle === targetHandle) { alert("Can't follow yourself bro!"); return; }
-  if(!myHandle || myHandle === "@" ) return;
-  const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle);
-  if(existing){
-    setFollows(prev => prev.filter(f=> f.id !== existing.id));
-    const { error } = await supabase.from("follows").delete().eq("id", existing.id);
-    if(error){ setFollows(prev => [...prev, existing]); }
-  } else {
-    const temp = { id: Date.now().toString(), follower_handle: myHandle, following_handle: targetHandle };
-    setFollows(prev => [...prev, temp]);
-    const { data, error } = await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }).select().single();
-    if(error){ setFollows(prev => prev.filter(f=> f.id !== temp.id)); }
-    else if(data){ setFollows(prev => prev.map(f=> f.id===temp.id ? data : f)); }
-  }
-};
-
-const placeOffer = async ()=>{ if(!offerAmount || !modalInfo) return; const amount = parseFloat(offerAmount); if(isNaN(amount)){ alert("Enter valid amount"); return; } const toHandle = modalInfo.owner_handle || selectedUser?.handle || feedProducts.find(p=> p.id===modalInfo.id)?.owner_email; await supabase.from("offers").insert({ product_id: modalInfo.id, from_handle: myHandle, to_handle: toHandle, amount: amount, message: `Offer for ${modalInfo.title || 'item'}` }); alert(`Offer $${amount} sent to ${toHandle} ✓`); setOfferAmount(""); setShowImageModal(false); loadFeed(); };
-
-const sendChatMessage = async ()=>{
-  if(!chatText.trim() || !chatUser) return;
-  const msg = chatText;
-  setChatText("");
-  setMessages(prev => [...prev, { id: Date.now().toString(), from_handle: myHandle, to_handle: chatUser.handle, text: msg, created_at: new Date().toISOString() }]);
-  await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, text: msg });
-  loadFeed();
-};
-
+const handleFollow = async (targetHandle:string)=>{ if(myHandle === targetHandle) return; const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle); if(existing){ setFollows(prev => prev.filter(f=> f.id !== existing.id)); await supabase.from("follows").delete().eq("id", existing.id); } else { const temp = { id: Date.now().toString(), follower_handle: myHandle, following_handle: targetHandle }; setFollows(prev => [...prev, temp]); const { data } = await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }).select().single(); if(data) setFollows(prev => prev.map(f=> f.id===temp.id ? data : f)); } };
+const placeOffer = async ()=>{ if(!offerAmount || !modalInfo) return; const amount = parseFloat(offerAmount); const toHandle = modalInfo.owner_handle || selectedUser?.handle; await supabase.from("offers").insert({ product_id: modalInfo.id, from_handle: myHandle, to_handle: toHandle, amount: amount, message: `Offer for ${modalInfo.title || 'item'}` }); alert(`Offer $${amount} sent to ${toHandle} ✓`); setOfferAmount(""); setShowImageModal(false); loadFeed(); };
+const sendChatMessage = async ()=>{ if(!chatText.trim() || !chatUser) return; const msg = chatText; setChatText(""); setMessages(prev => [...prev, { id: Date.now().toString(), from_handle: myHandle, to_handle: chatUser.handle, text: msg, created_at: new Date().toISOString() }]); await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, text: msg }); loadFeed(); };
 const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); };
 const savePhoto = ()=>{ const link = document.createElement('a'); link.href = modalImage; link.download = `imworth-${Date.now()}.jpg`; link.target = "_blank"; link.click(); };
 const filteredProfiles = profiles.filter(p=> p.handle.toLowerCase().includes(search.toLowerCase()) || p.name.toLowerCase().includes(search.toLowerCase()));
 const myFollowers = follows.filter(f=> f.following_handle===myHandle).length;
-const myOffers = offers.filter(o=> o.to_handle===myHandle);
-const myOffersCount = myOffers.length;
+const myOffersReceived = offers.filter(o=> o.to_handle===myHandle);
+const myOffersSent = offers.filter(o=> o.from_handle===myHandle);
+const myOffersCount = myOffersReceived.length;
+// Build conversation list from BOTH offers + messages
+const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_handle), ...myOffersSent.map(o=>o.to_handle), ...messages.filter(m=>m.to_handle===myHandle || m.from_handle===myHandle).map(m=> m.from_handle===myHandle ? m.to_handle : m.from_handle)])).filter(h=> h!==myHandle);
 
 if(!loggedIn){
 return(
@@ -296,57 +177,37 @@ return(
 {showChat && chatUser && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
 <div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
-<div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
-<img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{chatUser.handle}</div><div style={{fontSize:"11px", color:"#00ff88"}}>● Online - SIM Worth Chat</div></div>
-<button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from SIM Worth! I saw your offer...`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
+<div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div><img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%", border:"1px solid gold"}}/><div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{chatUser.handle}</div><div style={{fontSize:"11px", color:"#00ff88"}}>● Live Chat - Both sides see replies ✓</div></div>
+<button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from SIM Worth!`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
 </div>
 <div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px"}}>
+{/* Show offers as system messages too */}
+{offers.filter(o=> (o.from_handle===myHandle && o.to_handle===chatUser.handle) || (o.from_handle===chatUser.handle && o.to_handle===myHandle)).map((o:any)=>(
+<div key={o.id} style={{alignSelf:"center", background:"#1a1a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900"}}>💰 Offer ${o.amount} from {o.from_handle} → {o.to_handle}</div>
+))}
 {messages.filter(m=> (m.from_handle===myHandle && m.to_handle===chatUser.handle) || (m.from_handle===chatUser.handle && m.to_handle===myHandle)).map((m:any)=>(
-<div key={m.id} style={{alignSelf: m.from_handle===myHandle ? "flex-end" : "flex-start", background: m.from_handle===myHandle ? "#D4AF37" : "#222", color: m.from_handle===myHandle ? "black" : "white", padding:"10px 14px", borderRadius: m.from_handle===myHandle ? "18px 18px 4px 18px" : "18px 18px 18px 4px", maxWidth:"75%", fontSize:"13px"}}>
-{m.image_url && <img src={m.image_url} style={{width:"100%", borderRadius:"10px", marginBottom:"6px"}}/>}
-<div>{m.text}</div>
-<div style={{fontSize:"9px", opacity:0.6, marginTop:"4px"}}>{new Date(m.created_at).toLocaleTimeString()}</div>
+<div key={m.id} style={{alignSelf: m.from_handle===myHandle ? "flex-end" : "flex-start", background: m.from_handle===myHandle ? "#D4AF37" : "#222", color: m.from_handle===myHandle ? "black" : "white", padding:"10px 14px", borderRadius:"18px", maxWidth:"75%", fontSize:"13px"}}>
+{m.image_url && <img src={m.image_url} style={{width:"100%", borderRadius:"10px", marginBottom:"6px"}}/>}<div>{m.text}</div><div style={{fontSize:"9px", opacity:0.6, marginTop:"4px"}}>{new Date(m.created_at).toLocaleTimeString()}</div>
 </div>
 ))}
 </div>
 <div style={{padding:"10px", borderTop:"1px solid #222", display:"flex", gap:"8px", background:"#0a0a0a"}}>
 <button onClick={()=>chatImageRef.current?.click()} style={{background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"12px"}}>📷</button>
-<input value={chatText} onChange={e=>setChatText(e.target.value)} onKeyDown={e=> e.key==="Enter" && sendChatMessage()} placeholder={`Message ${chatUser.handle}...`} style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"24px"}}/>
-<button onClick={sendChatMessage} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"24px", border:"none"}}>Send</button>
+<input value={chatText} onChange={e=>setChatText(e.target.value)} onKeyDown={e=> e.key==="Enter" && sendChatMessage()} placeholder={`Reply to ${chatUser.handle}...`} style={{flex:1, background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"24px"}}/>
+<button onClick={sendChatMessage} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"24px", border:"none"}}>Send ✓</button>
 </div>
 <input ref={chatImageRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleChatImage}/>
 </div>
 )}
 
 {showImageModal && (
-<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
-<img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
+<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px"}}>
+<img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px"}}/>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
-<div style={{fontWeight:"bold", color:"#D4AF37"}}>{modalInfo?.title || "Item"} - ${modalInfo?.price || modalInfo?.total_worth || ""}</div>
-<div style={{fontSize:"11px", color:"#888"}}>{modalInfo?.email || modalInfo?.handle || ""}</div>
-{modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
-<div style={{marginTop:"10px"}}>
-<div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>YOUR ITEM - EDIT</div>
-<div style={{display:"flex", gap:"6px", marginTop:"8px"}}>
-<button onClick={()=>{ setActiveProductId(modalInfo.id); productInputRef.current?.click(); }} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px"}}>📷 Change Photo</button>
-<button onClick={()=>{ setEditingTitleId(modalInfo.id); setTempTitle(modalInfo.title||""); }} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px"}}>✏️ Rename</button>
+<div style={{fontWeight:"bold", color:"#D4AF37"}}>{modalInfo?.title || "Item"} - ${modalInfo?.price || ""}</div>
+<div style={{marginTop:"10px", display:"flex", gap:"6px"}}><input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/><button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button></div>
 </div>
-</div>
-) : (
-<div style={{marginTop:"10px"}}>
-<div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>PLACE AN OFFER / BID</div>
-<div style={{display:"flex", gap:"6px", marginTop:"8px"}}>
-<input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/>
-<button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button>
-</div>
-</div>
-)}
-</div>
-<div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
-<button onClick={savePhoto} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>⬇ Save</button>
-<button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close ✕</button>
-</div>
+<div style={{display:"flex", gap:"10px", marginTop:"15px"}}><button onClick={savePhoto} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>⬇ Save</button><button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close ✕</button></div>
 </div>
 )}
 <input ref={avatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleAvatarChange}/>
@@ -356,27 +217,63 @@ return(
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px"}}>
 <div onClick={()=>setView("profile")} style={{cursor:"pointer", fontSize:"20px"}}>←</div>
-<div style={{flex:1}}><h2 style={{color:"#D4AF37", margin:0, fontSize:"18px"}}>Offers Inbox 📥</h2><div style={{color:"#888", fontSize:"11px"}}>{myOffersCount} buyers want your items</div></div>
+<div style={{flex:1}}><h2 style={{color:"#D4AF37", margin:0, fontSize:"18px"}}>Inbox 📥 Both Sides See Replies!</h2><div style={{color:"#888", fontSize:"11px"}}>{conversations.length} chats • {myOffersCount} offers received</div></div>
 <div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh</div>
 </div>
+<div style={{display:"flex", padding:"10px", gap:"8px"}}>
+<button onClick={()=>setOffersTab("received")} style={{flex:1, background: offersTab==="received" ? "#D4AF37" : "#111", color: offersTab==="received" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>Received ({myOffersReceived.length})</button>
+<button onClick={()=>setOffersTab("sent")} style={{flex:1, background: offersTab==="sent" ? "#D4AF37" : "#111", color: offersTab==="sent" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>Sent ({myOffersSent.length})</button>
+<button onClick={()=>setOffersTab("chats")} style={{flex:1, background: offersTab==="chats" ? "#D4AF37" : "#111", color: offersTab==="chats" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>Chats ({conversations.length})</button>
+</div>
+
 <div style={{padding:"12px"}}>
-{myOffers.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No offers yet bro! Add items to get offers 💰</div>}
-{myOffers.map((o:any)=>{
+{offersTab==="chats" && (
+<div>
+{conversations.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No chats yet! Make an offer to start 💬</div>}
+{conversations.map((handle:any)=>{
+  const prof = profiles.find(p=> p.handle===handle);
+  const lastMsg = [...messages].reverse().find(m=> (m.from_handle===handle && m.to_handle===myHandle) || (m.from_handle===myHandle && m.to_handle===handle));
+  const lastOffer = [...offers].reverse().find(o=> (o.from_handle===handle && o.to_handle===myHandle) || (o.from_handle===myHandle && o.to_handle===handle));
+  return (
+  <div key={handle} onClick={()=>{ setChatUser(prof || {handle: handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{background:"#111", border:"1px solid #2a2a2a", padding:"12px", borderRadius:"12px", marginBottom:"10px", display:"flex", gap:"10px", alignItems:"center", cursor:"pointer"}}>
+    <img src={prof?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%", border:"1px solid #D4AF37"}}/>
+    <div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{handle}</div><div style={{fontSize:"12px", color:"#888", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:"200px"}}>{lastMsg ? lastMsg.text : lastOffer ? `💰 Offer $${lastOffer.amount}` : "No messages yet"}</div></div>
+    <div style={{color:"#D4AF37", fontSize:"12px"}}>💬 Open</div>
+  </div>
+  );
+})}
+</div>
+)}
+
+{offersTab==="received" && myOffersReceived.map((o:any)=>{
   const fromProfile = profiles.find(p=> p.handle===o.from_handle);
+  const chatPreview = messages.filter(m=> (m.from_handle===o.from_handle && m.to_handle===myHandle) || (m.from_handle===myHandle && m.to_handle===o.from_handle)).slice(-1)[0];
   return (
   <div key={o.id} style={{background:"#111", border:"1px solid #2a2a2a", borderLeft:"4px solid #D4AF37", padding:"12px", borderRadius:"12px", marginBottom:"10px"}}>
     <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
-      <img src={fromProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%", border:"1px solid #D4AF37"}}/>
-      <div style={{flex:1}}>
-        <div style={{fontWeight:"900", fontSize:"14px"}}>{o.from_handle} offered <span style={{color:"#D4AF37"}}>${o.amount}</span></div>
-        <div style={{fontSize:"11px", color:"#888"}}>{o.message || "Offer for your item"} • {new Date(o.created_at).toLocaleDateString()}</div>
-      </div>
+      <img src={fromProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
+      <div style={{flex:1}}><div style={{fontWeight:"900"}}>{o.from_handle} offered <span style={{color:"#D4AF37"}}>${o.amount}</span></div><div style={{fontSize:"11px", color:"#888"}}>{o.message} • Last reply: {chatPreview ? chatPreview.text.substring(0,30) : "No reply yet - Reply now!"}</div></div>
       <div style={{color:"#D4AF37", fontWeight:"900"}}>${o.amount}</div>
     </div>
     <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
-      <button onClick={()=>{ setChatUser(fromProfile || {handle: o.from_handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{flex:1, background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>💬 Reply in App</button>
-      <button onClick={()=> window.open(`https://wa.me/?text=Hi ${o.from_handle}! Thanks for your offer of $${o.amount} on SIM Worth - Let's chat!`, '_blank')} style={{flex:1, background:"#25D366", color:"white", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>WhatsApp 📱</button>
+      <button onClick={()=>{ setChatUser(fromProfile || {handle: o.from_handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{flex:1, background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>💬 Reply (They WILL see!)</button>
+      <button onClick={()=> window.open(`https://wa.me/?text=Hi ${o.from_handle}! Thanks for $${o.amount} on SIM Worth`, '_blank')} style={{flex:1, background:"#25D366", color:"white", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>WhatsApp</button>
     </div>
+  </div>
+  );
+})}
+
+{offersTab==="sent" && myOffersSent.map((o:any)=>{
+  const toProfile = profiles.find(p=> p.handle===o.to_handle);
+  const chatPreview = messages.filter(m=> (m.from_handle===o.to_handle && m.to_handle===myHandle) || (m.from_handle===myHandle && m.to_handle===o.to_handle)).slice(-1)[0];
+  return (
+  <div key={o.id} style={{background:"#111", border:"1px solid #2a2a2a", borderLeft:"4px solid #00ff88", padding:"12px", borderRadius:"12px", marginBottom:"10px"}}>
+    <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
+      <img src={toProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
+      <div style={{flex:1}}><div style={{fontWeight:"900"}}>You → {o.to_handle} <span style={{color:"#D4AF37"}}>${o.amount}</span></div><div style={{fontSize:"11px", color: chatPreview ? "#00ff88" : "#888"}}>{chatPreview ? `Reply: ${chatPreview.text.substring(0,30)}` : "Waiting for reply..."}</div></div>
+      <div style={{color:"#D4AF37", fontWeight:"900"}}>${o.amount}</div>
+    </div>
+    <div style={{marginTop:"10px"}}><button onClick={()=>{ setChatUser(toProfile || {handle: o.to_handle, avatar: "https://i.pravatar.cc/200"}); setShowChat(true); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", fontWeight:"900", padding:"10px", borderRadius:"8px"}}>💬 Open Chat - See Replies</button></div>
   </div>
   );
 })}
@@ -390,17 +287,12 @@ return(
 <div style={{padding:"20px", textAlign:"center"}}>
 <img src={selectedUser.avatar} onClick={()=>openImageModal(selectedUser.avatar, {...selectedUser, isMine:false})} style={{width:"90px", height:"90px", borderRadius:"50%", border:"2px solid #D4AF37", objectFit:"cover", cursor:"pointer"}}/>
 <div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"10px"}}>{selectedUser.name}</div>
-<div style={{display:"flex", justifyContent:"center", gap:"20px", marginTop:"12px"}}>
-<div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.following_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Followers</span></div>
-<div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.follower_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Following</span></div>
-</div>
-<button onClick={(e)=>{ e.stopPropagation(); handleFollow(selectedUser.handle); }} style={{marginTop:"12px", background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "white" : "black", fontWeight:"900", padding:"10px 24px", borderRadius:"20px", border: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "1px solid #333" : "none", cursor:"pointer"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "Following ✓" : "Follow + 🚀"}</button>
+<button onClick={()=> handleFollow(selectedUser.handle)} style={{marginTop:"12px", background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 24px", borderRadius:"20px", border:"none"}}>Follow</button>
 </div>
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
 <div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:selectedUser.email, owner_handle:selectedUser.handle, isMine:false})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer"}}>
-<img src={p.img} style={{width:"100%", height:"120px", objectFit:"cover"}}/>
-<div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold"}}>{p.title}</div><div style={{fontWeight:"900", color:"#D4AF37"}}>${Number(p.price).toFixed(2)}</div></div>
+<img src={p.img} style={{width:"100%", height:"120px", objectFit:"cover"}}/><div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold"}}>{p.title}</div><div style={{fontWeight:"900", color:"#D4AF37"}}>${Number(p.price).toFixed(2)}</div></div>
 </div>
 ))}
 </div>
@@ -411,19 +303,16 @@ return(
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
 <h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 $IM Worth 👑 Investor$ 🏆</h2>
-<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live🔴 Ranking🚀 Most Buyers💰 Highest Worth👑</div>
-<div style={{display:"flex", gap:"10px", marginTop:"10px"}}>
-<div style={{background:"#111", padding:"6px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"11px"}}>💎 {profiles.length} Hustlers</div>
-<div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer"}}>↻ Refresh Rank</div>
-</div>
+<div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>Live Ranking • Both sides see replies now!</div>
+<div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer", display:"inline-block", marginTop:"8px"}}>↻ Refresh</div>
 </div>
 <div style={{padding:"12px"}}>
-{profiles.map(p=>({ ...p, followersCount: follows.filter(f=> f.following_handle===p.handle).length })).sort((a:any,b:any)=> b.followersCount - a.followersCount || b.total_worth - a.total_worth).map((u:any, i:number)=>(
-<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{ display:"flex", gap:"12px", background: i===0 ? "#1a1a00" : u.handle===myHandle ? "#111" : "#0f0f0f", padding:"14px", borderRadius:"14px", marginBottom:"10px", border: i===0 ? "2px solid #D4AF37" : "1px solid #222", cursor:"pointer", alignItems:"center"}}>
-<div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: i===0 ? "#D4AF37" : i===1 ? "#C0C0C0" : i===2 ? "#CD7F32" : "#222", color: i<=2 ? "black" : "white", fontWeight:"900", fontSize:"13px"}}>{i===0 ? "👑" : `#${i+1}`}</div>
-<img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%", objectFit:"cover"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{u.name} {u.handle===myHandle && "(You)"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers</div></div>
-<div style={{textAlign:"right"}}><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"15px"}}>${Number(u.total_worth||0).toFixed(0)}</div></div>
+{profiles.map(p=>({ ...p, followersCount: follows.filter(f=> f.following_handle===p.handle).length })).sort((a:any,b:any)=> b.followersCount - a.followersCount).map((u:any, i:number)=>(
+<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{ display:"flex", gap:"12px", background:"#0f0f0f", padding:"14px", borderRadius:"14px", marginBottom:"10px", border:"1px solid #222", cursor:"pointer", alignItems:"center"}}>
+<div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: i===0 ? "#D4AF37" : "#222", color: i===0 ? "black" : "white", fontWeight:"900"}}>{i===0 ? "👑" : `#${i+1}`}</div>
+<img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
+<div style={{flex:1}}><div style={{fontWeight:"900"}}>{u.name}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers</div></div>
+<div style={{color:"#D4AF37", fontWeight:"900"}}>${Number(u.total_worth||0).toFixed(0)}</div>
 </div>
 ))}
 </div>
@@ -436,46 +325,21 @@ return(
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
 {editingBio ? (
 <div>
-<input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio - I'm Worth CEO" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About - Entrepreneur" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
-<div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup ($IM Banc)</div>
-<select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
-<option value="capitec">Capitec Pay</option><option value="payshap">PayShap ID (Phone)</option><option value="bank">Bank EFT</option><option value="paypal">PayPal / Link</option><option value="custom">Custom Link</option>
-</select>
-<input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="PayShap 082... or Capitec ID" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://... (optional)" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
-</div>
-<div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS (Offline)</div>
-<input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address e.g. 29 Hans Cloete Street" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb e.g. Rosedale" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={city} onChange={e=>setCity(e.target.value)} placeholder="City e.g. Upington" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
-<input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat -26.02" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
-<input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng 28.13" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
-</div>
-<button onClick={()=>{ if(!navigator.geolocation){ alert('Geolocation not supported'); return; } navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured!`); }, err=> alert('GPS Error: '+err.message), {enableHighAccuracy:true, timeout:15000}); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
-<button onClick={()=>{ const full = `${streetAddress}, ${suburb}, ${city}`; if(!streetAddress || !suburb){ alert("Fill Street + Suburb first!"); return; } openInSimMaps(userLat, userLng, full); }} style={{width:"100%", background:"#0a84ff", color:"white", padding:"12px", borderRadius:"8px", fontWeight:"900", border:"none", marginBottom:"8px"}}>🗺️ Open Address in SIM Maps</button>
-</div>
+<input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
 <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
 <button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
 </div>
 ) : (
 <div>
-<div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div>
+<div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div>
 <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
-<div style={{color:"#888", fontSize:"11px"}}>{about}</div>
-{userLocation && <div style={{color:"#D4AF37", fontSize:"11px", marginTop:"6px"}}>📍 {userLocation}</div>}
-{(payHandle || payLink) && <div style={{color:"#00ff88", fontSize:"11px", marginTop:"4px"}}>💰 Pay: {payMethod} - {payHandle || payLink}</div>}
-{userLocation && (<button onClick={()=> openInSimMaps(userLat, userLng, userLocation)} style={{marginTop:"10px", width:"100%", background:"#0a84ff", color:"white", padding:"10px", borderRadius:"8px", fontWeight:"900", border:"none"}}>🗺️ View Me in SIM Maps</button>)}
 </div>
 )}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
-<div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border: myOffersCount>0 ? "1px solid #D4AF37" : "1px solid #222", padding:"6px 12px", borderRadius:"10px"}}>
+<div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
 <div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🔴"}</div>
-<div style={{color: myOffersCount>0 ? "#D4AF37" : "white", fontWeight:"900", fontSize:"18px", textDecoration: myOffersCount>0 ? "underline" : "none"}}>{myOffersCount} {myOffersCount>0 ? "→ View" : ""}</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount} → View</div>
 </div>
 </div>
 </div>
@@ -484,14 +348,13 @@ return(
 <div key={p.id} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", position:"relative"}}>
 <img src={p.img} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true})} style={{width:"100%", height:"100px", objectFit:"cover", cursor:"pointer"}}/>
 <div style={{padding:"6px"}}>
-{editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px", fontSize:"11px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px", fontSize:"10px"}}>OK</button></div>) : (<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"11px", fontWeight:"bold", cursor:"pointer", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title} ✏️</div>)}
-{editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px", marginTop:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color:"#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
+{editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div style={{fontSize:"11px", fontWeight:"bold"}}>{p.title} ✏️</div>)}
+{editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color:"#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
 </div>
 <div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px"}}>
-<button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px", fontSize:"12px"}}>📷</button>
+<button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px"}}>📷</button>
 <button onClick={async()=>{setProducts(products.filter(x=>x.id!==p.id)); await supabase.from("products").delete().eq("id", p.id); loadFeed();}} style={{background:"rgba(255,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"20px", height:"20px"}}>×</button>
 </div>
-{offers.filter(o=>o.product_id===p.id).length>0 && <div style={{position:"absolute", bottom:"50px", left:"6px", background:"#D4AF37", color:"black", fontSize:"9px", fontWeight:"900", padding:"2px 6px", borderRadius:"10px"}}>{offers.filter(o=>o.product_id===p.id).length} OFFERS</div>}
 </div>
 ))}
 <div onClick={addProduct} style={{background:"#0a0a0a", border:"2px dashed #D4AF37", borderRadius:"14px", height:"120px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer"}}>+ Add</div>
@@ -503,25 +366,19 @@ return(
 <div style={{padding:"15px"}}>
 <h2 style={{color:"#D4AF37", margin:0}}>$IM Worth List 🔍</h2>
 <input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"12px"}}/>
-<div style={{marginTop:"10px", display:"flex", gap:"10px"}}>
-<div style={{background:"#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #333", fontSize:"12px"}}>👥 {myFollowers} Followers LIVE</div>
-<div onClick={()=>setView("offers")} style={{background: myOffersCount>0 ? "#D4AF37" : "#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #D4AF37", fontSize:"12px", color: myOffersCount>0 ? "black" : "#D4AF37", fontWeight:"900", cursor:"pointer"}}>💰 {myOffersCount} Offers {myOffersCount>0 ? "🔴 Click!" : ""}</div>
+<div style={{marginTop:"10px", display:"flex", gap:"8px", flexWrap:"wrap"}}>
+<div style={{background:"#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #333", fontSize:"12px"}}>👥 {myFollowers} Followers</div>
+<div onClick={()=>setView("offers")} style={{background:"#D4AF37", padding:"8px 12px", borderRadius:"20px", fontSize:"12px", color:"black", fontWeight:"900", cursor:"pointer"}}>💬 Chats ({conversations.length}) 🔴</div>
 <div onClick={handleLogout} style={{background:"#111", padding:"8px 12px", borderRadius:"20px", border:"1px solid #ff4444", fontSize:"12px", color:"#ff4444", fontWeight:"900", cursor:"pointer"}}>⎋ Logout</div>
 </div>
 </div>
 <div style={{padding:"15px"}}>
 {filteredProfiles.map((u:any)=>(
-<div key={u.handle} style={{display:"flex", gap:"10px", background: u.handle===myHandle ? "#1a1a0a" : "#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border: u.handle===myHandle ? "1px solid #D4AF37" : "1px solid #333"}}>
+<div key={u.handle} style={{display:"flex", gap:"10px", background: u.handle===myHandle ? "#1a1a0a" : "#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border:"1px solid #333"}}>
 <div style={{display:"flex", gap:"10px", flex:1, cursor:"pointer"}} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }}>
-<img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%", objectFit:"cover"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name} {u.handle===myHandle && "(You)"}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {follows.filter(f=>f.following_handle===u.handle).length} followers</div></div>
-<div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(u.total_worth||0).toFixed(2)}</div>
+<img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%"}}/><div style={{flex:1}}><div style={{fontWeight:"bold"}}>{u.name}</div><div style={{fontSize:"11px", color:"#888"}}>{u.handle}</div></div><div style={{color:"#D4AF37", fontWeight:"bold"}}>${Number(u.total_worth||0).toFixed(2)}</div>
 </div>
-{u.handle !== myHandle && (
-<button onClick={(e)=>{ e.stopPropagation(); handleFollow(u.handle); }} style={{background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "#888" : "black", fontWeight:"900", padding:"6px 12px", borderRadius:"20px", border:"none", fontSize:"11px", height:"32px", alignSelf:"center"}}>
-{follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "✓" : "+ Follow"}
-</button>
-)}
+{u.handle !== myHandle && (<button onClick={(e)=>{ e.stopPropagation(); handleFollow(u.handle); }} style={{background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "#222" : "#D4AF37", color:"black", fontWeight:"900", padding:"6px 12px", borderRadius:"20px", border:"none", fontSize:"11px"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===u.handle) ? "✓" : "+ Follow"}</button>)}
 </div>
 ))}
 </div>
@@ -529,9 +386,9 @@ return(
 )}
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background:"black", borderTop:"1px solid #D4AF37", display:"flex", justifyContent:"space-around", padding:"10px"}}>
 <div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#D4AF37" : "#888", cursor:"pointer"}}>👤 Search</div>
-<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "normal"}}>👑 Worth</div>
-<div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#D4AF37" : "#888", cursor:"pointer", position:"relative"}}>💰 Offers {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>}</div>
-<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile ({myFollowers})</div>
+<div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#D4AF37" : "#888", cursor:"pointer"}}>👑 Worth</div>
+<div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#D4AF37" : "#888", cursor:"pointer", position:"relative"}}>💬 Inbox {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>}</div>
+<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#D4AF37" : "#888", cursor:"pointer"}}>💎 Profile</div>
 </div>
 </div>
 );
