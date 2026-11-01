@@ -129,7 +129,7 @@ const theme = {
   navBg: isLightMode ? "white" : "black",
   navBorder: "#0a84ff"
 };
-// SHAREit MODE - WORKS OFFLINE NO CHROME - FOR APK BUILD
+// SHAREit MODE - FIXED BUILD - NO MODULE NEEDED
 const handleBluetoothToggle = async ()=>{
   if(isBluetoothEnabled){
     setIsBluetoothEnabled(false);
@@ -139,12 +139,10 @@ const handleBluetoothToggle = async ()=>{
     setIsBluetoothScanning(false);
     return;
   }
-  // APK + WEB - NO BROWSER CHECK - WORKS OFFLINE
   setIsBluetoothEnabled(true);
   setIsOfflineMode(true);
   setIsBluetoothScanning(true);
   
-  // CACHE PROFILES FOR OFFLINE - LIKE SHAREit
   if(profiles.length > 0){
     try{ localStorage.setItem("sim_cached_profiles", JSON.stringify(profiles)); }catch{}
   }
@@ -152,24 +150,11 @@ const handleBluetoothToggle = async ()=>{
   const cached = localStorage.getItem("sim_cached_profiles");
   let baseProfiles: any[] = profiles;
   if((!baseProfiles || baseProfiles.length===0) && cached){
-    try{ baseProfiles = JSON.parse(cached); }catch{ baseProfiles = []; }
+    try{ baseProfiles = JSON.parse(cached); }catch{}
   }
   if(!baseProfiles || baseProfiles.length===0){
     baseProfiles = [{handle:"@demo1", name:"Demo User", avatar:"https://i.pravatar.cc/200?img=1", total_worth:100}, {handle:"@demo2", name:"Demo 2", avatar:"https://i.pravatar.cc/200?img=2", total_worth:200}];
   }
-  
-  // TRY REAL BLE PLUGIN FOR APK (if installed), ELSE FALLBACK
-  try{
-    const { BluetoothLe } = await import('@capacitor-community/bluetooth-le').catch(()=>({BluetoothLe: null})) as any;
-    if(BluetoothLe){
-      await BluetoothLe.initialize();
-      await BluetoothLe.requestLEScan({ allowDuplicates: false });
-      setTimeout(async ()=>{
-        await BluetoothLe.stopLEScan();
-      }, 5000);
-      // For now use cached users + real BLE devices will be added via scan listener later
-    }
-  }catch(e){ console.log("BLE not available, using app discovery", e); }
   
   setTimeout(()=>{
     const shuffled = [...baseProfiles].filter((p:any)=> p.handle !== myHandle).sort(()=>0.5-Math.random()).slice(0,12);
@@ -180,7 +165,7 @@ const handleBluetoothToggle = async ()=>{
   }, 800);
 };
 
-const handleRealBluetoothScan = async (isFallback = false)=>{
+const handleRealBluetoothScan = async ()=>{
   setIsBluetoothScanning(true);
   const cached = localStorage.getItem("sim_cached_profiles");
   let baseProfiles: any[] = profiles;
@@ -189,8 +174,6 @@ const handleRealBluetoothScan = async (isFallback = false)=>{
   }
   const shuffled = [...baseProfiles].filter((p:any)=> p.handle !== myHandle).sort(()=>0.5-Math.random()).slice(0,12);
   setNearbyUsers(shuffled);
-  const savedQueue = localStorage.getItem("bt_offline_queue");
-  if(savedQueue) setOfflineQueue(JSON.parse(savedQueue));
   setIsBluetoothScanning(false);
 };
 
@@ -204,16 +187,15 @@ const handleBluetoothChat = (user:any)=>{
 };
 
 const handleBluetoothPair = (user:any)=>{
-  setNearbyUsers(prev => prev.map(u=> u.handle===user.handle ? {...u, paired:true, isRealBT:true} : u));
+  setNearbyUsers(prev => prev.map(u=> u.handle===user.handle ? {...u, paired:true} : u));
   setBluetoothDevices(prev => {
     if(prev.find((d:any)=>d.handle===user.handle)) return prev;
-    return [...prev, {...user, paired:true, isRealBT:true}];
+    return [...prev, {...user, paired:true}];
   });
   setChatUser(user);
   setShowChat(true);
   setIsOfflineMode(true);
 };
-
 const handleLogout = async ()=>{ if(!confirm("Confirm Logout")) return; await supabase.auth.signOut(); localStorage.removeItem("im_session"); setLoggedIn(false); setEmail(""); setPassword(""); setView("accounts"); };
 
 const loadFeed = async ()=>{
