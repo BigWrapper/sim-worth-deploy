@@ -485,30 +485,17 @@ return(
 </div>
 )}
 </div>
-<div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
-<button onClick={async()=>{
-  try{
-    const response = await fetch(modalImage, {mode:'cors'});
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `SIM_Worth_${Date.now()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(()=> URL.revokeObjectURL(url), 1000);
-    alert("✅ Saved! Check Downloads folder 📁");
-  }catch(e){
-    // Fallback for APK WebView
-    const link = document.createElement('a');
-    link.href = modalImage;
-    link.download = `SIM_Worth_${Date.now()}.jpg`;
-    link.target = "_blank";
-    link.click();
-    alert("✅ Image opened - Long press to Save to Gallery! 📥");
-  }
+<div style={{display:"flex", gap:"10px", marginTop:"15px", justifyContent:"center"}}>
+<button onClick={()=>{
+  // DIRECT 1-CLICK SAVE - NO BROWSER POPUP FOR PROFILE PICS
+  const link = document.createElement('a');
+  link.href = modalImage;
+  link.download = `profile_${Date.now()}.jpg`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
+<button onClick={()=>{ setShowImageModal(false); setTimeout(()=> (document.querySelectorAll('input[type=file]')[0] as HTMLInputElement)?.click(), 300); }} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"10px 16px", borderRadius:"20px", border:"none"}}>Edit🖊️</button>
 <button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
 </div>
 </div>
