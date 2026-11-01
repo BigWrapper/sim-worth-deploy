@@ -468,8 +468,31 @@ return(
 </div>
 )}
 </div>
-<div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
-<button onClick={savePhoto} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
+<div style={{display:"flex", gap:"10px", marginTop:"15px", justifyContent:"center"}}>
+<button onClick={async()=>{
+  try{
+    const res = await fetch(modalImage);
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onloadend = async ()=>{
+      try{
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        const base64 = (reader.result as string).split(',')[1];
+        const fileName = `SIM_Worth_${Date.now()}.jpg`;
+        await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Documents });
+        alert(`✅ Saved to Phone! Documents/${fileName} 📁`);
+      }catch{
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `sim_worth_${Date.now()}.jpg`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        alert("✅ Saved to Downloads! 📥");
+      }
+    };
+    reader.readAsDataURL(blob);
+  }catch{ window.open(modalImage, '_blank'); }
+}} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
+{(modalInfo?.isMine || modalInfo?.handle===myHandle || !modalInfo?.handle || modalInfo?.owner_email===email) && (
+<button onClick={()=>{ setShowImageModal(false); setTimeout(()=> avatarInputRef.current?.click(), 300); }} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"10px 16px", borderRadius:"20px", border:"none"}}>Edit🖊️</button>
+)}
 <button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
 </div>
 </div>
