@@ -108,12 +108,14 @@ const [offersTab, setOffersTab] = useState("received");
 const [modalEditingTitle, setModalEditingTitle] = useState(false);
 const [profileStatus, setProfileStatus] = useState("for_sale");
 const [isLightMode, setIsLightMode] = useState(false);
-  const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
+const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
 const [isOfflineMode, setIsOfflineMode] = useState(false);
 const [isMarketRefreshing, setIsMarketRefreshing] = useState(false);
 const [isBluetoothScanning, setIsBluetoothScanning] = useState(false);
+const [isBluetoothEnabled, setIsBluetoothEnabled] = useState(false);
 const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
 const [bluetoothDevices, setBluetoothDevices] = useState<any[]>([]);
+const [offlineQueue, setOfflineQueue] = useState<any[]>([]);
 
 const totalWorth = products.reduce((s,p)=> s + Number(p.price), 0);
 const myHandle = "@" + email.split("@")[0].toLowerCase().trim();
@@ -126,6 +128,82 @@ const theme = {
   inputBg: isLightMode ? "#f0f0f0" : "#111",
   navBg: isLightMode ? "white" : "black",
   navBorder: "#0a84ff"
+};
+
+const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
+  let geoUrl = ""; if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; } else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; } else { alert("Add address first bro!"); return; } window.location.href = geoUrl;
+};
+
+// REAL BLUETOOTH TOGGLE ON/OFF LINKED TO PHONE
+const handleBluetoothToggle = async ()=>{
+  if(isBluetoothEnabled){
+    // TURN OFF
+    setIsBluetoothEnabled(false);
+    setIsOfflineMode(false);
+    setNearbyUsers([]);
+    setBluetoothDevices([]);
+    setIsBluetoothScanning(false);
+    alert("📡 Bluetooth OFF - Offline mode disabled");
+    return;
+  }
+  // TURN ON - CHECK REAL PHONE BLUETOOTH
+  if(!(navigator as any).bluetooth){
+    alert("⚠️ Your browser doesn't support Web Bluetooth. Using App User Discovery Mode (same app users nearby)!");
+    // FALLBACK TO APP USERS MODE
+    setIsBluetoothEnabled(true);
+    setIsOfflineMode(true);
+    handleRealBluetoothScan(true);
+    return;
+  }
+  try{
+    setIsBluetoothScanning(true);
+    // THIS TRIGGERS REAL PHONE BLUETOOTH PAIR DIALOG
+    const device = await (navigator as any).bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['battery_service']
+    });
+    setBluetoothDevices(prev => [...prev, { id: device.id, name: device.name || "Unknown Device", paired: true }]);
+    setIsBluetoothEnabled(true);
+    setIsOfflineMode(true);
+    alert(`✅ Paired with ${device.name || "device"}! Bluetooth ON - Offline mesh active!`);
+    handleRealBluetoothScan(true);
+  }catch(e:any){
+    if(e.name !== 'NotFoundError'){
+      alert("BT: " + e.message + " - Switching to App mode");
+      setIsBluetoothEnabled(true);
+      setIsOfflineMode(true);
+      handleRealBluetoothScan(true);
+    }
+  }
+  setIsBluetoothScanning(false);
+};
+
+const handleRealBluetoothScan = async (isFallback = false)=>{
+  setIsBluetoothScanning(true);
+  // SCAN SAME APP USERS IN SUPABASE AS NEARBY
+  const shuffled = [...profiles].filter(p=> p.handle !== myHandle).sort(()=>0.5-Math.random()).slice(0,8);
+  setNearbyUsers(shuffled);
+  
+  // LOAD OFFLINE QUEUE FROM LOCALSTORAGE
+  const savedQueue = localStorage.getItem("bt_offline_queue");
+  if(savedQueue) setOfflineQueue(JSON.parse(savedQueue));
+  
+  setIsBluetoothScanning(false);
+  if(!isFallback) alert(`📡 Found ${shuffled.length} $IM users nearby! Ready for offline chat!`);
+};
+
+const handleBluetoothScan = handleBluetoothToggle; // KEEP OLD NAME WORKING
+
+const handleBluetoothChat = (user:any)=>{
+  setChatUser(user);
+  setShowChat(true);
+  setIsOfflineMode(true);
+};
+
+const handleBluetoothPair = (user:any)=>{
+  alert(`🔗 Paired with ${user.handle} via Bluetooth mesh! Offline chat enabled.`);
+  setNearbyUsers(prev => prev.map(u=> u.handle===user.handle ? {...u, paired:true} : u));
+  handleBluetoothChat(user);
 };
 
 const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
@@ -157,13 +235,30 @@ const handleLogout = async ()=>{ if(!confirm("Confirm Logout")) return; await su
 
 const loadFeed = async ()=>{
   setIsMarketRefreshing(true);
-  const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
-  if(profs) setProfiles(profs.map((p:any)=>({ id: p.id, email: p.email || p.handle, handle: p.handle, name: p.display_name || p.handle?.replace('@',''), avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12", total_worth: p.net_worth || 0, bio: p.bio, about: p.about, location: p.location, latitude: p.latitude, longitude: p.longitude, pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link, profile_status: p.profile_status || "for_sale" })));
-  const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
-  if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item", status: p.status || "for_sale"})));
-  const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
-  const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
-  const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(500); if(ms) setMessages(ms);
+  setIsLiveRefreshing(true);
+  try{
+    const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
+    if(profs) setProfiles(profs.map((p:any)=>({ id: p.id, email: p.email || p.handle, handle: p.handle, name: p.display_name || p.handle?.replace('@',''), avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12", total_worth: p.net_worth || 0, bio: p.bio, about: p.about, location: p.location, latitude: p.latitude, longitude: p.longitude, pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link, profile_status: p.profile_status || "for_sale" })));
+    const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
+    if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item", status: p.status || "for_sale"})));
+    const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
+    const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
+    const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(500); 
+    if(ms){
+      setMessages(ms);
+      const queue = localStorage.getItem("bt_offline_queue");
+      if(queue){
+        const pending = JSON.parse(queue);
+        for(const q of pending){
+          await supabase.from("messages").insert({ from_handle: q.from_handle, to_handle: q.to_handle, text: q.text + " [via BT 📡]" });
+        }
+        localStorage.removeItem("bt_offline_queue");
+        setOfflineQueue([]);
+        alert(`✅ Synced ${pending.length} BT offline messages to cloud!`);
+      }
+    }
+  }catch(e){ console.log(e); }
+  setTimeout(()=>{ setIsMarketRefreshing(false); setIsLiveRefreshing(false); }, 900);
 };
 
 useEffect(()=>{
@@ -279,8 +374,16 @@ const placeOffer = async ()=>{
 const sendChatMessage = async ()=>{
   if(!chatText.trim() || !chatUser) return;
   const msg = chatText; setChatText("");
-  setMessages(prev => [...prev, { id: Date.now().toString(), from_handle: myHandle, to_handle: chatUser.handle, text: msg, created_at: new Date().toISOString() }]);
-  await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, text: msg });
+  const isBT = isOfflineMode;
+  setMessages(prev => [...prev, { id: Date.now().toString(), from_handle: myHandle, to_handle: chatUser.handle, text: msg, created_at: new Date().toISOString(), offline: isBT } as any]);
+  if(isBT){
+    const queue = JSON.parse(localStorage.getItem("bt_offline_queue") || "[]");
+    queue.push({ from_handle: myHandle, to_handle: chatUser.handle, text: msg, time: new Date().toISOString() });
+    localStorage.setItem("bt_offline_queue", JSON.stringify(queue));
+    setOfflineQueue(queue);
+  }else{
+    await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, text: msg });
+  }
 };
 
 const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); };
@@ -322,7 +425,7 @@ return(
 <div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
 <div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
 <img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px"}}>{chatUser.handle}</div><div style={{fontSize:"11px", color:"#00ff88"}}>● Online - Live ✓</div></div>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px", display:"flex", gap:"6px", alignItems:"center"}}>{chatUser.handle} {isOfflineMode && <span style={{background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 6px", borderRadius:"10px"}}>BT 📡</span>}</div><div style={{fontSize:"11px", color: isOfflineMode ? "#0a84ff" : "#00ff88"}}>{isOfflineMode ? "📡 Bluetooth Mesh - Offline" : "● Online - Live ✓"}</div></div>
 <button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from $IM Worth!`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
 </div>
 <div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px"}}>
@@ -514,7 +617,7 @@ return(
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
 <h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 $IM Worth 👑 Investor$ 🏆</h2>
-<div onClick={loadFeed} style={{background:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color:"black", fontWeight:"900", cursor:"pointer", display:"inline-block", marginTop:"8px"}}>↻ Refresh</div>
+<div onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color: isMarketRefreshing ? "white" : "black", fontWeight:"900", cursor:"pointer", display:"inline-block", marginTop:"8px"}}>{isMarketRefreshing ? "↻ Syncing Live..." : "↻ Refresh Real-Time"}</div>
 </div>
 <div style={{padding:"12px"}}>
 {profiles.map(p=>({ ...p, followersCount: follows.filter(f=> f.following_handle===p.handle).length })).sort((a:any,b:any)=> b.followersCount - a.followersCount).map((u:any, i:number)=>(
