@@ -41,32 +41,31 @@ jobs:
           fi
           npx cap sync android
 
-          # ===== FIX ICON AND SPLASH - AFTER SYNC! =====
-          echo "=== INJECTING CUSTOM ICON ==="
-          
+          # ===== FORCE USE LEGACY ICON + COMPRESS =====
+          echo "=== FORCING CUSTOM ICON ==="
+          # DELETE adaptive icon folder that overrides png!
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+          echo "Deleted mipmap-anydpi-v26 - Now Android MUST use png!"
+
           if [ -f public/icon.png ]; then
-            echo "Found icon.png - replacing..."
-            # Delete duplicate xml files first!
-            rm -f android/app/src/main/res/drawable/ic_launcher_background.xml
-            rm -f android/app/src/main/res/drawable/ic_launcher_foreground.xml
-            rm -f android/app/src/main/res/mipmap-*/ic_launcher_foreground.xml
-            
+            echo "Copying icon..."
             for dir in mipmap-hdpi mipmap-mdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
               cp public/icon.png android/app/src/main/res/$dir/ic_launcher.png
               cp public/icon.png android/app/src/main/res/$dir/ic_launcher_round.png
-              # Remove foreground xml in mipmap if exists
-              rm -f android/app/src/main/res/$dir/ic_launcher_foreground.xml
             done
-            echo "✅ Icons done!"
+            echo "✅ Icon forced!"
           fi
 
           if [ -f public/splash.png ]; then
-            echo "Injecting splash..."
+            echo "Copying splash..."
+            mkdir -p android/app/src/main/res/drawable-nodpi
             cp public/splash.png android/app/src/main/res/drawable/splash.png
+            cp public/splash.png android/app/src/main/res/drawable-nodpi/splash.png
             echo "✅ Splash done!"
           fi
 
-          # Fix kotlin duplicate bug
+          ls -lh android/app/src/main/res/mipmap-xxxhdpi/
+          
           sed -i "s/kotlin_version = .*/kotlin_version = '1.8.22'/" android/variables.gradle
           echo "
           configurations.all {
