@@ -375,7 +375,17 @@ const savePhoto = async ()=>{
     window.open(modalImage, '_blank');
   }
 };
-const filteredProfiles = profiles.filter(p=> p.handle.toLowerCase().includes(search.toLowerCase()) || p.name.toLowerCase().includes(search.toLowerCase()));
+const myFollowingHandles = follows.filter((f:any)=> f.follower_handle===myHandle).map((f:any)=> f.following_handle);
+const filteredProfiles = (()=> {
+  const q = search.toLowerCase().trim();
+  if(!q){
+    // Buyers = ONLY You + People YOU personally follow - different for each user!
+    return profiles.filter((p:any)=> p.handle===myHandle || myFollowingHandles.includes(p.handle));
+  } else {
+    // Searching: Show ALL matching users temporarily - they don't stay unless you Follow
+    return profiles.filter((p:any)=> p.handle.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
+  }
+})();
 const myFollowers = follows.filter(f=> f.following_handle===myHandle).length;
 const myOffersReceived = offers.filter(o=> o.to_handle===myHandle);
 const myOffersSent = offers.filter(o=> o.from_handle===myHandle);
