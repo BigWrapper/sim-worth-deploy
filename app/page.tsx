@@ -463,8 +463,33 @@ div[style*="border: 1px solid #2a2a2a"] {
     box-shadow: 0 0 0 1px rgba(255,225,130,.22), 0 0 22px rgba(212,175,55,.12);
   }
 }
+
+/* JACKPOT SLOT-MACHINE ATMOSPHERE */
+.jackpot-floaters{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;isolation:isolate}
+.jackpot-floaters:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 18%,rgba(255,194,45,.11),transparent 34%),radial-gradient(ellipse at 85% 72%,rgba(255,130,0,.07),transparent 28%);}
+.jackpot-number{position:absolute;display:block;font-family:'Orbitron',monospace;font-weight:900;line-height:1;white-space:nowrap;color:#ffe9a0;opacity:.17;text-shadow:0 0 7px #ffbf24,0 0 18px rgba(255,174,0,.85),0 0 36px rgba(255,115,0,.35);animation:jackpotDrift 11s ease-in-out infinite, jackpotPulse 2.8s ease-in-out infinite;will-change:transform,opacity}
+.jackpot-number:nth-child(2){left:3%;top:17%;font-size:clamp(18px,4vw,32px);animation-delay:-2s}
+.jackpot-number:nth-child(3){right:4%;top:31%;font-size:clamp(20px,5vw,38px);animation-delay:-5s}
+.jackpot-number:nth-child(4){left:5%;top:68%;font-size:clamp(17px,4vw,29px);animation-delay:-7s}
+.jackpot-number:nth-child(5){right:3%;top:79%;font-size:clamp(18px,4vw,31px);animation-delay:-3s}
+.jackpot-number:nth-child(6){left:35%;top:8%;font-size:clamp(13px,2.5vw,19px);opacity:.11;animation-delay:-4s}
+.jackpot-number:nth-child(7){right:22%;top:57%;font-size:clamp(14px,3vw,22px);opacity:.12;animation-delay:-8s}
+.jackpot-banner{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto 14px;padding:7px 12px;max-width:300px;border:1px solid rgba(255,205,74,.55);border-radius:999px;background:linear-gradient(180deg,rgba(82,49,0,.7),rgba(13,10,3,.9));box-shadow:0 0 12px rgba(255,180,0,.16),inset 0 1px 0 rgba(255,255,255,.18);color:#ffe49a;font:800 10px 'Orbitron',monospace;letter-spacing:.16em;text-transform:uppercase;}
+.jackpot-lamp{width:6px;height:6px;border-radius:50%;background:#fff1a8;box-shadow:0 0 6px #fff0a0,0 0 12px #ffb300;animation:lampBlink 1.1s steps(2,end) infinite}
+@keyframes jackpotDrift{0%,100%{transform:translate3d(0,0,0) rotate(-4deg)}50%{transform:translate3d(0,-18px,0) rotate(4deg)}}
+@keyframes jackpotPulse{0%,100%{filter:brightness(.8);text-shadow:0 0 7px #ffbf24,0 0 18px rgba(255,174,0,.65)}50%{filter:brightness(1.6);text-shadow:0 0 10px #fff0a0,0 0 25px #ffbf24,0 0 44px rgba(255,115,0,.6)}}
+@keyframes lampBlink{50%{opacity:.28}}
+/* Give monetary totals a premium luminous finish without changing their values. */
+strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba(255,203,72,.08)}
+@media(prefers-reduced-motion:reduce){.jackpot-number,.jackpot-lamp{animation:none!important}}
+
 `}</style>
 
+<div className="jackpot-floaters" aria-hidden="true">
+  <span className="jackpot-number">777</span><span className="jackpot-number">$888</span><span className="jackpot-number">+$1K</span><span className="jackpot-number">999</span><span className="jackpot-number">$WORTH</span><span className="jackpot-number">777</span>
+</div>
+
+<div className="jackpot-banner" aria-hidden="true"><span className="jackpot-lamp"/> JACKPOT WORTH <span className="jackpot-lamp"/></div>
 <h1 style={{margin:0, fontSize:"56px", fontWeight:"900"}}><span style={{color:"#D4AF37"}}>$</span><span style={{color:"white"}}>IM</span></h1>
 <div style={{color:"#D4AF37", fontSize:"32px", fontWeight:"900", letterSpacing:"6px"}}>WORTH</div>
 <div style={{width:"100%", maxWidth:"360px", marginTop:"40px", border:"1px solid #333", borderRadius:"24px", background:"#0a0a0a", padding:"24px"}}>
@@ -541,7 +566,32 @@ div[style*="border: 1px solid #2a2a2a"] {
     box-shadow: 0 0 0 1px rgba(255,225,130,.22), 0 0 22px rgba(212,175,55,.12);
   }
 }
+
+/* JACKPOT SLOT-MACHINE ATMOSPHERE */
+.jackpot-floaters{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;isolation:isolate}
+.jackpot-floaters:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 18%,rgba(255,194,45,.11),transparent 34%),radial-gradient(ellipse at 85% 72%,rgba(255,130,0,.07),transparent 28%);}
+.jackpot-number{position:absolute;display:block;font-family:'Orbitron',monospace;font-weight:900;line-height:1;white-space:nowrap;color:#ffe9a0;opacity:.17;text-shadow:0 0 7px #ffbf24,0 0 18px rgba(255,174,0,.85),0 0 36px rgba(255,115,0,.35);animation:jackpotDrift 11s ease-in-out infinite, jackpotPulse 2.8s ease-in-out infinite;will-change:transform,opacity}
+.jackpot-number:nth-child(2){left:3%;top:17%;font-size:clamp(18px,4vw,32px);animation-delay:-2s}
+.jackpot-number:nth-child(3){right:4%;top:31%;font-size:clamp(20px,5vw,38px);animation-delay:-5s}
+.jackpot-number:nth-child(4){left:5%;top:68%;font-size:clamp(17px,4vw,29px);animation-delay:-7s}
+.jackpot-number:nth-child(5){right:3%;top:79%;font-size:clamp(18px,4vw,31px);animation-delay:-3s}
+.jackpot-number:nth-child(6){left:35%;top:8%;font-size:clamp(13px,2.5vw,19px);opacity:.11;animation-delay:-4s}
+.jackpot-number:nth-child(7){right:22%;top:57%;font-size:clamp(14px,3vw,22px);opacity:.12;animation-delay:-8s}
+.jackpot-banner{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto 14px;padding:7px 12px;max-width:300px;border:1px solid rgba(255,205,74,.55);border-radius:999px;background:linear-gradient(180deg,rgba(82,49,0,.7),rgba(13,10,3,.9));box-shadow:0 0 12px rgba(255,180,0,.16),inset 0 1px 0 rgba(255,255,255,.18);color:#ffe49a;font:800 10px 'Orbitron',monospace;letter-spacing:.16em;text-transform:uppercase;}
+.jackpot-lamp{width:6px;height:6px;border-radius:50%;background:#fff1a8;box-shadow:0 0 6px #fff0a0,0 0 12px #ffb300;animation:lampBlink 1.1s steps(2,end) infinite}
+@keyframes jackpotDrift{0%,100%{transform:translate3d(0,0,0) rotate(-4deg)}50%{transform:translate3d(0,-18px,0) rotate(4deg)}}
+@keyframes jackpotPulse{0%,100%{filter:brightness(.8);text-shadow:0 0 7px #ffbf24,0 0 18px rgba(255,174,0,.65)}50%{filter:brightness(1.6);text-shadow:0 0 10px #fff0a0,0 0 25px #ffbf24,0 0 44px rgba(255,115,0,.6)}}
+@keyframes lampBlink{50%{opacity:.28}}
+/* Give monetary totals a premium luminous finish without changing their values. */
+strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba(255,203,72,.08)}
+@media(prefers-reduced-motion:reduce){.jackpot-number,.jackpot-lamp{animation:none!important}}
+
 `}</style>
+
+<div className="jackpot-floaters" aria-hidden="true">
+  <span className="jackpot-number">777</span><span className="jackpot-number">$888</span><span className="jackpot-number">+$1K</span><span className="jackpot-number">999</span><span className="jackpot-number">$WORTH</span><span className="jackpot-number">777</span>
+</div>
+
 
 {showChat && chatUser && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
