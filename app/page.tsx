@@ -71,6 +71,8 @@ const [showForgot, setShowForgot] = useState(false);
 const [forgotEmail, setForgotEmail] = useState("");
 const [forgotSent, setForgotSent] = useState(false);
 const [forgotLoading, setForgotLoading] = useState(false);
+const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 const [products, setProducts] = useState<Product[]>([]);
 const [profiles, setProfiles] = useState<any[]>([]);
 const [feedProducts, setFeedProducts] = useState<Product[]>([]);
@@ -971,7 +973,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 <div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px"}}>
 <button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px"}}>📷</button>
-<button onClick={async()=>{setProducts(products.filter(x=>x.id!==p.id)); await supabase.from("products").delete().eq("id", p.id); loadFeed();}} style={{background:"rgba(255,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"20px", height:"20px"}}>×</button>
+<button onClick={()=>{ setDeleteTargetId(p.id); setShowDeleteConfirm(true); }} style={{background:"rgba(255,0,0,0.8)", border:"none", color:"white", borderRadius:"50%", width:"20px", height:"20px", fontWeight:"900", cursor:"pointer"}}>×</button>
 </div>
 </div>
 ))}
@@ -979,6 +981,30 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 </div>
 )}
+
+{/* DELETE CONFIRM POPUP - Delete this Asset? */}
+{showDeleteConfirm && (
+<div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.9)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:99999, padding:"20px"}}>
+<div style={{background:"#111", border:"2px solid #D4AF37", borderRadius:"20px", padding:"28px", width:"100%", maxWidth:"340px", textAlign:"center"}}>
+<div style={{fontSize:"36px", marginBottom:"12px"}}>⚠️</div>
+<div style={{color:"white", fontWeight:"900", fontSize:"20px", marginBottom:"8px", fontFamily:"Orbitron"}}>Delete this Asset?</div>
+<div style={{color:"#aaa", fontSize:"13px", marginBottom:"24px"}}>Are you sure you want to delete this item?<br/>This cannot be undone.</div>
+<div style={{display:"flex", gap:"12px"}}>
+<button onClick={()=>{ setShowDeleteConfirm(false); setDeleteTargetId(null); }} style={{flex:1, background:"#222", color:"white", padding:"14px", borderRadius:"12px", border:"1px solid #333", fontWeight:"700", cursor:"pointer"}}>Cancel</button>
+<button onClick={async()=>{
+  if(deleteTargetId){
+    setProducts(products.filter(x=>x.id!==deleteTargetId));
+    await supabase.from("products").delete().eq("id", deleteTargetId);
+    loadFeed();
+    setShowDeleteConfirm(false);
+    setDeleteTargetId(null);
+  }
+}} style={{flex:1, background:"#ff4444", color:"white", padding:"14px", borderRadius:"12px", border:"none", fontWeight:"900", cursor:"pointer"}}>YES, DELETE</button>
+</div>
+</div>
+</div>
+)}
+
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
