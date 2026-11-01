@@ -983,11 +983,6 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 
 {showSplash && (
   <div style={{ height: '100vh', width: '100vw', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'fixed', top: 0, left: 0, zIndex: 9999 }}>
-    <img src="/splash.png" style={{ width: '280px', height: '280px', objectFit: 'contain' }} alt="splash" />
-    <p style={{ color: '#D4AF37', marginTop: '20px', letterSpacing: '8px', fontSize: '16px', fontWeight: '900' }}>$IM WORTH</p>
+    <img src="/splash.png" style={{ width: '100vw', height: '100vh', objectFit: 'cover' }} alt="splash" />
   </div>
 )}
-
-</div>
-);
-}
