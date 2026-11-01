@@ -359,23 +359,20 @@ const sendChatMessage = async ()=>{
 const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); };
 const savePhoto = async ()=>{
   try{
-    const res = await fetch(modalImage);
-    const blob = await res.blob();
-    const reader = new FileReader();
-    reader.onloadend = async ()=>{
-      try{
-        const { Filesystem, Directory } = await import('@capacitor/filesystem');
-        const base64 = (reader.result as string).split(',')[1];
-        const fileName = `SIM_Worth_${Date.now()}.jpg`;
-        await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Documents });
-        alert(`✅ Saved to Documents/${fileName} 📁`);
-      }catch{
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `sim_worth_${Date.now()}.jpg`; a.click(); URL.revokeObjectURL(url);
-      }
-    };
-    reader.readAsDataURL(blob);
-  }catch{ window.open(modalImage, '_blank'); }
+    const response = await fetch(modalImage);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SIM_Worth_${Date.now()}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    alert("✅ Saved to Downloads! 📥");
+  }catch{
+    window.open(modalImage, '_blank');
+  }
 };
 const filteredProfiles = profiles.filter(p=> p.handle.toLowerCase().includes(search.toLowerCase()) || p.name.toLowerCase().includes(search.toLowerCase()));
 const myFollowers = follows.filter(f=> f.following_handle===myHandle).length;
@@ -440,12 +437,7 @@ return(
 
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
-<div style={{position:"relative"}}>
 <img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
-{(modalInfo?.isMine || modalInfo?.handle===myHandle || !modalInfo?.handle || modalInfo?.owner_email===email) && (
-<div onClick={()=>{ setShowImageModal(false); setTimeout(()=> avatarInputRef.current?.click(), 300); }} style={{position:"absolute", top:"-10px", right:"-10px", background:"#D4AF37", width:"36px", height:"36px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px", border:"2px solid black", cursor:"pointer", boxShadow:"0 2px 10px black"}}>🖊️</div>
-)}
-</div>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
 <>
@@ -492,31 +484,30 @@ return(
 </div>
 )}
 </div>
-<div style={{display:"flex", gap:"10px", marginTop:"15px", justifyContent:"center"}}>
+<div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
 <button onClick={async()=>{
   try{
-    const res = await fetch(modalImage);
-    const blob = await res.blob();
-    const reader = new FileReader();
-    reader.onloadend = async ()=>{
-      try{
-        const { Filesystem, Directory } = await import('@capacitor/filesystem');
-        const base64 = (reader.result as string).split(',')[1];
-        const fileName = `SIM_Worth_${Date.now()}.jpg`;
-        await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Documents });
-        alert(`✅ Saved to Phone! Documents/${fileName} 📁`);
-      }catch{
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `sim_worth_${Date.now()}.jpg`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-        alert("✅ Saved to Downloads! 📥");
-      }
-    };
-    reader.readAsDataURL(blob);
-  }catch{ window.open(modalImage, '_blank'); }
+    const response = await fetch(modalImage, {mode:'cors'});
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `SIM_Worth_${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    alert("✅ Saved! Check Downloads folder 📁");
+  }catch(e){
+    // Fallback for APK WebView
+    const link = document.createElement('a');
+    link.href = modalImage;
+    link.download = `SIM_Worth_${Date.now()}.jpg`;
+    link.target = "_blank";
+    link.click();
+    alert("✅ Image opened - Long press to Save to Gallery! 📥");
+  }
 }} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
-{(modalInfo?.isMine || modalInfo?.handle===myHandle || !modalInfo?.handle || modalInfo?.owner_email===email) && (
-<button onClick={()=>{ setShowImageModal(false); setTimeout(()=> avatarInputRef.current?.click(), 300); }} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"10px 16px", borderRadius:"20px", border:"none"}}>Edit🖊️</button>
-)}
 <button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
 </div>
 </div>
