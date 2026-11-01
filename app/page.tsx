@@ -421,7 +421,12 @@ return(
 
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
+<div style={{position:"relative"}}>
 <img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
+{(modalInfo?.isMine || modalInfo?.handle===myHandle || !modalInfo?.handle || modalInfo?.owner_email===email) && (
+<div onClick={()=>{ setShowImageModal(false); setTimeout(()=> avatarInputRef.current?.click(), 300); }} style={{position:"absolute", top:"-10px", right:"-10px", background:"#D4AF37", width:"36px", height:"36px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px", border:"2px solid black", cursor:"pointer", boxShadow:"0 2px 10px black"}}>🖊️</div>
+)}
+</div>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
 <>
