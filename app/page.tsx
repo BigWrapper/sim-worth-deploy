@@ -134,10 +134,9 @@ const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
   let geoUrl = ""; if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; } else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; } else { alert("Add address first bro!"); return; } window.location.href = geoUrl;
 };
 
-// REAL BLUETOOTH TOGGLE ON/OFF LINKED TO PHONE
+// REAL BLUETOOTH - ONE COPY ONLY - NO DUPLICATES
 const handleBluetoothToggle = async ()=>{
   if(isBluetoothEnabled){
-    // TURN OFF
     setIsBluetoothEnabled(false);
     setIsOfflineMode(false);
     setNearbyUsers([]);
@@ -146,10 +145,8 @@ const handleBluetoothToggle = async ()=>{
     alert("📡 Bluetooth OFF - Offline mode disabled");
     return;
   }
-  // TURN ON - CHECK REAL PHONE BLUETOOTH
   if(!(navigator as any).bluetooth){
-    alert("⚠️ Your browser doesn't support Web Bluetooth. Using App User Discovery Mode (same app users nearby)!");
-    // FALLBACK TO APP USERS MODE
+    alert("⚠️ Your browser doesn't support Web Bluetooth. Using App User Discovery Mode!");
     setIsBluetoothEnabled(true);
     setIsOfflineMode(true);
     handleRealBluetoothScan(true);
@@ -157,19 +154,14 @@ const handleBluetoothToggle = async ()=>{
   }
   try{
     setIsBluetoothScanning(true);
-    // THIS TRIGGERS REAL PHONE BLUETOOTH PAIR DIALOG
-    const device = await (navigator as any).bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: ['battery_service']
-    });
+    const device = await (navigator as any).bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['battery_service'] });
     setBluetoothDevices(prev => [...prev, { id: device.id, name: device.name || "Unknown Device", paired: true }]);
     setIsBluetoothEnabled(true);
     setIsOfflineMode(true);
-    alert(`✅ Paired with ${device.name || "device"}! Bluetooth ON - Offline mesh active!`);
+    alert(`✅ Paired with ${device.name || "device"}! Bluetooth ON!`);
     handleRealBluetoothScan(true);
   }catch(e:any){
     if(e.name !== 'NotFoundError'){
-      alert("BT: " + e.message + " - Switching to App mode");
       setIsBluetoothEnabled(true);
       setIsOfflineMode(true);
       handleRealBluetoothScan(true);
@@ -180,55 +172,26 @@ const handleBluetoothToggle = async ()=>{
 
 const handleRealBluetoothScan = async (isFallback = false)=>{
   setIsBluetoothScanning(true);
-  // SCAN SAME APP USERS IN SUPABASE AS NEARBY
   const shuffled = [...profiles].filter(p=> p.handle !== myHandle).sort(()=>0.5-Math.random()).slice(0,8);
   setNearbyUsers(shuffled);
-  
-  // LOAD OFFLINE QUEUE FROM LOCALSTORAGE
   const savedQueue = localStorage.getItem("bt_offline_queue");
   if(savedQueue) setOfflineQueue(JSON.parse(savedQueue));
-  
   setIsBluetoothScanning(false);
   if(!isFallback) alert(`📡 Found ${shuffled.length} $IM users nearby! Ready for offline chat!`);
 };
 
-const handleBluetoothScan = handleBluetoothToggle; // KEEP OLD NAME WORKING
-
+const handleBluetoothScan = handleBluetoothToggle;
 const handleBluetoothChat = (user:any)=>{
   setChatUser(user);
   setShowChat(true);
   setIsOfflineMode(true);
 };
-
 const handleBluetoothPair = (user:any)=>{
   alert(`🔗 Paired with ${user.handle} via Bluetooth mesh! Offline chat enabled.`);
   setNearbyUsers(prev => prev.map(u=> u.handle===user.handle ? {...u, paired:true} : u));
-  handleBluetoothChat(user);
-};
-
-const openInSimMaps = (lat?:string, lng?:string, address?:string) => {
-  let geoUrl = ""; if(lat && lng && lat.trim() !== "" && lng.trim() !== ""){ geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(address || userLocation || "My Location")})`; } else if(address){ geoUrl = `geo:0,0?q=${encodeURIComponent(address)}`; } else { alert("Add address first bro!"); return; } window.location.href = geoUrl;
-};
-const handleBluetoothScan = async ()=>{
-  setIsBluetoothScanning(true);
-  setNearbyUsers([]);
-  try {
-    const shuffled = [...profiles].sort(()=>0.5-Math.random()).slice(0,5);
-    setNearbyUsers(shuffled);
-    setIsOfflineMode(true);
-    alert("📡 Bluetooth scan: Found " + shuffled.length + " nearby users - Offline mesh ON!");
-  } catch(e:any){
-    const shuffled = [...profiles].sort(()=>0.5-Math.random()).slice(0,5);
-    setNearbyUsers(shuffled);
-    setIsOfflineMode(true);
-  }
-  setIsBluetoothScanning(false);
-};
-
-const handleBluetoothChat = (user:any)=>{
   setChatUser(user);
   setShowChat(true);
-  alert("📡 BT chat with " + user.handle + " - offline mesh!");
+  setIsOfflineMode(true);
 };
 
 const handleLogout = async ()=>{ if(!confirm("Confirm Logout")) return; await supabase.auth.signOut(); localStorage.removeItem("im_session"); setLoggedIn(false); setEmail(""); setPassword(""); setView("accounts"); };
