@@ -486,10 +486,10 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 `}</style>
 
 <div className="jackpot-floaters" aria-hidden="true">
-  <span className="jackpot-number">777</span><span className="jackpot-number">$888</span><span className="jackpot-number">+$1K</span><span className="jackpot-number">999</span><span className="jackpot-number">$WORTH</span><span className="jackpot-number">777</span>
+  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">+$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">$1M WORTH</span><span className="jackpot-number">$1M</span>
 </div>
 
-<div className="jackpot-banner" aria-hidden="true"><span className="jackpot-lamp"/> JACKPOT WORTH <span className="jackpot-lamp"/></div>
+<div className="jackpot-banner" aria-hidden="true"><span className="jackpot-lamp"/> YOU ARE <span className="jackpot-lamp"/></div>
 <h1 style={{margin:0, fontSize:"56px", fontWeight:"900"}}><span style={{color:"#D4AF37"}}>$</span><span style={{color:"white"}}>IM</span></h1>
 <div style={{color:"#D4AF37", fontSize:"32px", fontWeight:"900", letterSpacing:"6px"}}>WORTH</div>
 <div style={{width:"100%", maxWidth:"360px", marginTop:"40px", border:"1px solid #333", borderRadius:"24px", background:"#0a0a0a", padding:"24px"}}>
@@ -589,7 +589,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 `}</style>
 
 <div className="jackpot-floaters" aria-hidden="true">
-  <span className="jackpot-number">777</span><span className="jackpot-number">$888</span><span className="jackpot-number">+$1K</span><span className="jackpot-number">999</span><span className="jackpot-number">$WORTH</span><span className="jackpot-number">777</span>
+  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">+$1M</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">WORTH</span><span className="jackpot-number">$1M</span>
 </div>
 
 
