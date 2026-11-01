@@ -59,6 +59,7 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
 }
 
 export default function FullApp(){
+const [showSplash, setShowSplash] = useState(true);
 const [loggedIn, setLoggedIn] = useState(false);
 const [view, setView] = useState("accounts");
 const [email, setEmail] = useState("");
@@ -228,6 +229,7 @@ const loadFeed = async ()=>{
 };
 
 useEffect(()=>{
+    const splashTimer = setTimeout(() => setShowSplash(false), 2500);
   const checkSession = async ()=>{
     const { data } = await supabase.auth.getSession();
     if(data.session?.user?.email_confirmed_at){ const em = data.session.user.email!; setEmail(em); setMyId(data.session.user.id); setLoggedIn(true); loadMyData(em); }
@@ -236,7 +238,7 @@ useEffect(()=>{
   };
   checkSession();
   const channel = supabase.channel('live-messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, ()=>{ loadFeed(); }).subscribe();
-  return ()=>{ supabase.removeChannel(channel); };
+    return ()=>{ clearTimeout(splashTimer); supabase.removeChannel(channel); };
 },[]);
 
 const loadMyData = async (em:string)=>{
@@ -978,6 +980,14 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="accounts" ? "900" : "400", background: view==="accounts" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="accounts" ? "1px solid #0a84ff" : "none"}}>🛒 $hop {isMarketRefreshing && "↻"}</div>
 <div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="profile" ? "900" : "400", background: view==="profile" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="profile" ? "1px solid #0a84ff" : "none"}}>💲 ₿anc</div>
 </div>
+
+{showSplash && (
+  <div style={{ height: '100vh', width: '100vw', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'fixed', top: 0, left: 0, zIndex: 9999 }}>
+    <img src="/splash.png" style={{ width: '280px', height: '280px', objectFit: 'contain' }} alt="splash" />
+    <p style={{ color: '#D4AF37', marginTop: '20px', letterSpacing: '8px', fontSize: '16px', fontWeight: '900' }}>$IM WORTH</p>
+  </div>
+)}
+
 </div>
 );
 }
