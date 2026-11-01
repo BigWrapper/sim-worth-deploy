@@ -402,6 +402,69 @@ const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !
 if(!loggedIn){
 return(
 <div style={{minHeight:"100vh", background:"black", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:"80px", padding:"20px"}}>
+
+<style>{`
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  --sim-gold: #e8c65a;
+  --sim-gold-bright: #fff0a6;
+  --sim-gold-deep: #9d7620;
+  --sim-black: #050505;
+  --sim-panel: #101010;
+}
+html, body {
+  background: #030303 !important;
+  color: #f5f2e8;
+  font-family: 'Rajdhani', 'Arial Narrow', sans-serif !important;
+}
+body {
+  background-image:
+    radial-gradient(ellipse at 50% -15%, rgba(212,175,55,.16), transparent 48%),
+    linear-gradient(135deg, #050505 0%, #101010 48%, #030303 100%) !important;
+}
+h1, h2, h3, strong, button {
+  font-family: 'Orbitron', 'Rajdhani', sans-serif !important;
+  letter-spacing: .035em;
+}
+h1, h2 {
+  text-shadow: 0 0 14px rgba(232,198,90,.18);
+}
+button {
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 4px 14px rgba(0,0,0,.35) !important;
+}
+button:hover {
+  filter: brightness(1.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 0 18px rgba(212,175,55,.22) !important;
+}
+button:active { transform: translateY(1px) scale(.99); }
+input, textarea, select {
+  font-family: 'Rajdhani', 'Arial Narrow', sans-serif !important;
+  font-size: 16px !important;
+  outline: none !important;
+  box-sizing: border-box;
+  transition: border-color .18s ease, box-shadow .18s ease !important;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--sim-gold) !important;
+  box-shadow: 0 0 0 2px rgba(212,175,55,.12), 0 0 16px rgba(212,175,55,.12) !important;
+}
+img { image-rendering: auto; }
+div[style*="border:1px solid #333"],
+div[style*="border: 1px solid #333"],
+div[style*="border:1px solid #2a2a2a"],
+div[style*="border: 1px solid #2a2a2a"] {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 8px 22px rgba(0,0,0,.22);
+}
+@media (prefers-reduced-motion: no-preference) {
+  img[alt="avatar"] {
+    box-shadow: 0 0 0 1px rgba(255,225,130,.22), 0 0 22px rgba(212,175,55,.12);
+  }
+}
+`}</style>
+
 <h1 style={{margin:0, fontSize:"56px", fontWeight:"900"}}><span style={{color:"#D4AF37"}}>$</span><span style={{color:"white"}}>IM</span></h1>
 <div style={{color:"#D4AF37", fontSize:"32px", fontWeight:"900", letterSpacing:"6px"}}>WORTH</div>
 <div style={{width:"100%", maxWidth:"360px", marginTop:"40px", border:"1px solid #333", borderRadius:"24px", background:"#0a0a0a", padding:"24px"}}>
@@ -417,6 +480,69 @@ return(
 
 return(
 <div style={{minHeight:"100vh", background: theme.bg, color: theme.text, maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
+
+<style>{`
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  --sim-gold: #e8c65a;
+  --sim-gold-bright: #fff0a6;
+  --sim-gold-deep: #9d7620;
+  --sim-black: #050505;
+  --sim-panel: #101010;
+}
+html, body {
+  background: #030303 !important;
+  color: #f5f2e8;
+  font-family: 'Rajdhani', 'Arial Narrow', sans-serif !important;
+}
+body {
+  background-image:
+    radial-gradient(ellipse at 50% -15%, rgba(212,175,55,.16), transparent 48%),
+    linear-gradient(135deg, #050505 0%, #101010 48%, #030303 100%) !important;
+}
+h1, h2, h3, strong, button {
+  font-family: 'Orbitron', 'Rajdhani', sans-serif !important;
+  letter-spacing: .035em;
+}
+h1, h2 {
+  text-shadow: 0 0 14px rgba(232,198,90,.18);
+}
+button {
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 4px 14px rgba(0,0,0,.35) !important;
+}
+button:hover {
+  filter: brightness(1.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 0 18px rgba(212,175,55,.22) !important;
+}
+button:active { transform: translateY(1px) scale(.99); }
+input, textarea, select {
+  font-family: 'Rajdhani', 'Arial Narrow', sans-serif !important;
+  font-size: 16px !important;
+  outline: none !important;
+  box-sizing: border-box;
+  transition: border-color .18s ease, box-shadow .18s ease !important;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--sim-gold) !important;
+  box-shadow: 0 0 0 2px rgba(212,175,55,.12), 0 0 16px rgba(212,175,55,.12) !important;
+}
+img { image-rendering: auto; }
+div[style*="border:1px solid #333"],
+div[style*="border: 1px solid #333"],
+div[style*="border:1px solid #2a2a2a"],
+div[style*="border: 1px solid #2a2a2a"] {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 8px 22px rgba(0,0,0,.22);
+}
+@media (prefers-reduced-motion: no-preference) {
+  img[alt="avatar"] {
+    box-shadow: 0 0 0 1px rgba(255,225,130,.22), 0 0 22px rgba(212,175,55,.12);
+  }
+}
+`}</style>
+
 {showChat && chatUser && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
 <div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
