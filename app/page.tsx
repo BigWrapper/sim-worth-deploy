@@ -66,6 +66,11 @@ const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [authMode, setAuthMode] = useState("login");
 const [err, setErr] = useState("");
+// FORGOT PASSWORD STATES
+const [showForgot, setShowForgot] = useState(false);
+const [forgotEmail, setForgotEmail] = useState("");
+const [forgotSent, setForgotSent] = useState(false);
+const [forgotLoading, setForgotLoading] = useState(false);
 const [products, setProducts] = useState<Product[]>([]);
 const [profiles, setProfiles] = useState<any[]>([]);
 const [feedProducts, setFeedProducts] = useState<Product[]>([]);
@@ -280,7 +285,25 @@ const doLogin = async ()=>{
     }
   } catch(e:any){ setErr(e.message); }
 };
-
+const handleForgotPassword = async () => {
+  if (!forgotEmail.includes("@")) {
+    setErr("Enter valid email for reset");
+    return;
+  }
+  setForgotLoading(true);
+  setErr("");
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+    setForgotSent(true);
+  } catch (e:any) {
+    setErr(e.message);
+  } finally {
+    setForgotLoading(false);
+  }
+};
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return; setAvatarPreview(URL.createObjectURL(file));
   try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; setAvatarPreview(publicUrl); await syncProfile(email, totalWorth, publicUrl); await loadFeed(); } catch(err:any){ alert("Upload failed: " + err.message); }
@@ -496,10 +519,34 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{color:"#D4AF37", fontSize:"32px", fontWeight:"900", letterSpacing:"6px"}}>WORTH</div>
 <div style={{width:"100%", maxWidth:"360px", marginTop:"40px", border:"1px solid #333", borderRadius:"24px", background:"#0a0a0a", padding:"24px"}}>
 {err && <div style={{color:"#f87171", fontSize:"12px", marginBottom:"12px", textAlign:"center"}}>{err}</div>}
-<input placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"12px"}}/>
+<input placeholder="Email" value={email} onChange={e=>{setEmail(e.target.value); setForgotEmail(e.target.value)}} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"12px"}}/>
 <input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"20px"}}/>
-<button onClick={doLogin} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"14px", borderRadius:"12px", border:"none"}}>{authMode==="signup"?"SIGN UP →":"LOGIN →"}</button>
-<div style={{textAlign:"center", color:"#666", fontSize:"13px", marginTop:"16px"}} onClick={()=>setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Have account? Login":"No account? Sign Up"}</div>
+<button onClick={doLogin} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"14px", borderRadius:"12px", border:"none", cursor:"pointer"}}>{authMode==="signup"?"SIGN UP →":"LOGIN →"}</button>
+
+<div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:"16px"}}>
+  <div style={{color:"#666", fontSize:"13px", cursor:"pointer"}} onClick={()=>setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Have account? Login":"No account? Sign Up"}</div>
+  <div style={{color:"#0a84ff", fontSize:"13px", cursor:"pointer", textDecoration:"underline"}} onClick={()=>setShowForgot(!showForgot)}>Forgot password?</div>
+</div>
+
+{showForgot && (
+  <div style={{marginTop:"16px", background:"#111", padding:"14px", borderRadius:"12px", border:"1px solid #2a2a2a"}}>
+    {!forgotSent ? (
+      <>
+        <div style={{fontSize:"12px", color:"#aaa", marginBottom:"8px"}}>Verification link will be sent to:</div>
+        <input value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)} placeholder="your@email.com" style={{width:"100%", background:"#000", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"10px", marginBottom:"10px"}}/>
+        <button onClick={handleForgotPassword} disabled={forgotLoading} style={{width:"100%", background: forgotLoading ? "#333" : "#0a84ff", color:"white", padding:"10px", borderRadius:"10px", border:"none", fontWeight:"700", cursor:"pointer"}}>
+          {forgotLoading ? "Sending..." : "Send Verification Link"}
+        </button>
+      </>
+    ) : (
+      <div style={{textAlign:"center"}}>
+        <div style={{color:"#00ff88", fontSize:"14px", fontWeight:"700"}}>✅ Link Sent!</div>
+        <div style={{color:"#888", fontSize:"11px", marginTop:"6px"}}>Check inbox & spam. Click link to reset.</div>
+        <div onClick={()=>{setForgotSent(false); setShowForgot(false)}} style={{color:"#0a84ff", fontSize:"12px", marginTop:"8px", cursor:"pointer"}}>Close</div>
+      </div>
+    )}
+  </div>
+)}
 </div>
 </div>
 );
