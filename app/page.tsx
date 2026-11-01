@@ -37,9 +37,10 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
         </div>
         <div style={{textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", position:"relative"}}>
           <div style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px"}}>$IM Worth</div>
-          <div style={{position:"relative"}}>
+                    <div style={{position:"relative"}}>
             <img src={avatarPreview} onClick={onAvatarClick} style={{width:"95px", height:"95px", borderRadius:"50%", border:"3px solid gold", objectFit:"cover", cursor:"pointer", filter: profileStatus==="sold" ? "grayscale(60%)" : "none"}} alt="avatar"/>
             <div style={{position:"absolute", bottom:"-8px", left:"50%", transform:"translateX(-50%)", background: badge.bg, color: badge.color, fontSize:"7px", fontWeight:"900", padding:"3px 8px", borderRadius:"12px", whiteSpace:"nowrap", border:"1px solid #222"}}>{badge.text}</div>
+            <div onClick={(e)=>{ e.stopPropagation(); document.querySelectorAll('input[type=file]')[0]?.click(); }} style={{position:"absolute", top:"-6px", right:"-6px", background:"#D4AF37", width:"30px", height:"30px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", border:"2px solid black", fontSize:"14px", cursor:"pointer", zIndex:20}}>🖊️</div>
           </div>
         </div>
         <div style={{textAlign:"center"}}>
