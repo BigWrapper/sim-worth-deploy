@@ -487,7 +487,6 @@ return(
 </div>
 <div style={{display:"flex", gap:"10px", marginTop:"15px", justifyContent:"center"}}>
 <button onClick={()=>{
-  // DIRECT 1-CLICK SAVE - NO BROWSER POPUP FOR PROFILE PICS
   const link = document.createElement('a');
   link.href = modalImage;
   link.download = `profile_${Date.now()}.jpg`;
@@ -495,7 +494,6 @@ return(
   link.click();
   document.body.removeChild(link);
 }} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
-<button onClick={()=>{ setShowImageModal(false); setTimeout(()=> (document.querySelectorAll('input[type=file]')[0] as HTMLInputElement)?.click(), 300); }} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"10px 16px", borderRadius:"20px", border:"none"}}>Edit🖊️</button>
 <button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
 </div>
 </div>
