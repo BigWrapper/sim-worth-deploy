@@ -339,13 +339,18 @@ const placeOffer = async ()=>{
 const sendChatMessage = async ()=>{
   if(!chatText.trim() || !chatUser) return;
   const msg = chatText; setChatText("");
-  const isBT = isOfflineMode;
-  setMessages(prev => [...prev, { id: Date.now().toString(), from_handle: myHandle, to_handle: chatUser.handle, text: msg, created_at: new Date().toISOString(), offline: isBT } as any]);
+  const isBT = isOfflineMode || isBluetoothEnabled;
+  setMessages(prev => [...prev, { id: Date.now().toString(), from_handle: myHandle, to_handle: chatUser.handle, text: msg, created_at: new Date().toISOString(), is_bt: isBT }]);
   if(isBT){
     const queue = JSON.parse(localStorage.getItem("bt_offline_queue") || "[]");
-    queue.push({ from_handle: myHandle, to_handle: chatUser.handle, text: msg, time: new Date().toISOString() });
+    queue.push({ from_handle: myHandle, to_handle: chatUser.handle, text: msg, time: new Date().toISOString(), is_bt: true });
     localStorage.setItem("bt_offline_queue", JSON.stringify(queue));
     setOfflineQueue(queue);
+    // ALSO save to bt_offline_chats for Inbox
+    const allChats = JSON.parse(localStorage.getItem("bt_offline_chats") || "{}");
+    if(!allChats[chatUser.handle]) allChats[chatUser.handle]=[];
+    allChats[chatUser.handle].push({from_handle: myHandle, to_handle: chatUser.handle, text: msg, created_at: new Date().toISOString()});
+    localStorage.setItem("bt_offline_chats", JSON.stringify(allChats));
   }else{
     await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, text: msg });
   }
