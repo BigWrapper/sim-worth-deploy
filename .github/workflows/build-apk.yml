@@ -41,6 +41,35 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
+      - name: Fix Icon and Splash - Copy from public (EASY METHOD)
+        run: |
+          echo "=== INJECTING CUSTOM ICON AND SPLASH ==="
+          mkdir -p android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/drawable
+          if [ -f public/icon.png ]; then
+            echo "Found public/icon.png - Copying to all mipmap..."
+            cp public/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+            cp public/icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+            cp public/icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            cp public/icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            cp public/icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            cp public/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+            cp public/icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+            cp public/icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+            cp public/icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+            cp public/icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            echo "✅ Icons injected!"
+          else
+            echo "⚠️ WARNING: public/icon.png NOT FOUND - Add it!"
+          fi
+          if [ -f public/splash.png ]; then
+            echo "Found public/splash.png - Copying..."
+            cp public/splash.png android/app/src/main/res/drawable/splash.png
+            echo "✅ Splash injected!"
+          else
+            echo "⚠️ No public/splash.png - splash will be default"
+          fi
+          ls -lh android/app/src/main/res/mipmap-xxxhdpi/
+
       - name: Build APK
         run: |
           if [ ! -f android/gradlew ]; then
