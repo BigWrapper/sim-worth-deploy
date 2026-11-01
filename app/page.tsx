@@ -513,7 +513,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 `}</style>
 
 <div className="jackpot-floaters" aria-hidden="true">
-  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">+$1M</span><span className="jackpot-number">$1M W0RTH</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">₿AN€</span>
+  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">+₿A₦€</span><span className="jackpot-number">$1M W0RTH</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">¥€$</span>
 </div>
 
 <div className="jackpot-banner" aria-hidden="true"><span className="jackpot-lamp"/> YOU ARE <span className="jackpot-lamp"/></div>
@@ -639,9 +639,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 
 `}</style>
 
-<div className="jackpot-floaters" aria-hidden="true">
-  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">+$1M</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">WORTH</span><span className="jackpot-number">$1M</span>
-</div>
+
 
 
 {showChat && chatUser && (
