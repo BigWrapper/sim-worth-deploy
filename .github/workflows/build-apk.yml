@@ -32,51 +32,44 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Capacitor Sync
-        run: |
-          npm install -D @capacitor/cli @capacitor/core @capacitor/android
-          npx cap sync android
-          ls -la out || ls -la .next
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-      - name: Fix Icon and Splash - Copy from public (EASY METHOD)
-        run: |
-          echo "=== INJECTING CUSTOM ICON AND SPLASH ==="
-          mkdir -p android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/drawable
-          if [ -f public/icon.png ]; then
-            echo "Found public/icon.png - Copying to all mipmap..."
-            cp public/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-            cp public/icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-            cp public/icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-            cp public/icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-            cp public/icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-            cp public/icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-            cp public/icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-            cp public/icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-            cp public/icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-            cp public/icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-            echo "✅ Icons injected!"
-          else
-            echo "⚠️ WARNING: public/icon.png NOT FOUND - Add it!"
-          fi
-          if [ -f public/splash.png ]; then
-            echo "Found public/splash.png - Copying..."
-            cp public/splash.png android/app/src/main/res/drawable/splash.png
-            echo "✅ Splash injected!"
-          else
-            echo "⚠️ No public/splash.png - splash will be default"
-          fi
-          ls -lh android/app/src/main/res/mipmap-xxxhdpi/
-
       - name: Build APK
         run: |
+          npm install -D @capacitor/cli @capacitor/core @capacitor/android
           if [ ! -f android/gradlew ]; then
             rm -rf android
             npx cap add android
           fi
           npx cap sync android
+
+          # ===== FIX ICON AND SPLASH HERE - AFTER cap add! =====
+          echo "=== INJECTING CUSTOM ICON AND SPLASH AFTER SYNC ==="
+          mkdir -p android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/drawable android/app/src/main/res/drawable-hdpi android/app/src/main/res/drawable-mdpi android/app/src/main/res/drawable-xhdpi android/app/src/main/res/drawable-xxhdpi android/app/src/main/res/drawable-xxxhdpi
+          
+          if [ -f public/icon.png ]; then
+            echo "Found public/icon.png - Overwriting ALL icons..."
+            for dir in mipmap-hdpi mipmap-mdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
+              cp public/icon.png android/app/src/main/res/$dir/ic_launcher.png
+              cp public/icon.png android/app/src/main/res/$dir/ic_launcher_round.png
+              cp public/icon.png android/app/src/main/res/$dir/ic_launcher_foreground.png || true
+            done
+            # Also kill adaptive icon background
+            echo "Overwriting splash..."
+            cp public/icon.png android/app/src/main/res/drawable/ic_launcher_background.png || true
+            cp public/icon.png android/app/src/main/res/drawable/ic_launcher_foreground.png || true
+            echo "✅ Icons injected AFTER cap add - Will survive!"
+          else
+            echo "⚠️ public/icon.png NOT FOUND"
+            ls -la public/
+          fi
+
+          if [ -f public/splash.png ]; then
+            cp public/splash.png android/app/src/main/res/drawable/splash.png
+            cp public/splash.png android/app/src/main/res/drawable-nodpi/splash.png 2>/dev/null || true
+            echo "✅ Splash injected!"
+          fi
+
+          ls -lh android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
           # Fix kotlin duplicate bug
           sed -i "s/kotlin_version = .*/kotlin_version = '1.8.22'/" android/variables.gradle
           echo "
