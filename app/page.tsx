@@ -492,6 +492,23 @@ return(
 <div style={{padding:"12px"}}>
 {offersTab==="chats" && (
 <div>
+{/* BT MESH - SHAREit OFFLINE - START */}
+{isBluetoothEnabled && (
+  <div style={{marginBottom:"12px", padding:"12px", background:"linear-gradient(135deg, #0a84ff22, #00ff8822)", border:"1px solid #0a84ff", borderRadius:"16px"}}>
+    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px"}}>
+      <div style={{fontWeight:"900", fontSize:"12px", color:"#0a84ff"}}>📡 BT Mesh - {nearbyUsers.length} Nearby Users {isBluetoothScanning ? "(Scanning...)" : ""}</div>
+      <button onClick={handleRealBluetoothScan} style={{background:"#0a84ff", color:"white", border:"none", padding:"5px 10px", borderRadius:"8px", fontWeight:"900", fontSize:"10px"}}>Rescan</button>
+    </div>
+    {offlineQueue.length>0 && <div style={{background:"#ffaa0022", border:"1px solid #ffaa00", padding:"6px 8px", borderRadius:"8px", fontSize:"10px", color:"#ffaa00", marginBottom:"6px"}}>⏳ {offlineQueue.length} offline msgs will sync when online</div>}
+    {nearbyUsers.map((u:any)=>(
+      <div key={u.handle} style={{background:"black", padding:"8px", borderRadius:"10px", marginTop:"6px", display:"flex", justifyContent:"space-between", alignItems:"center", border: u.paired ? "1px solid #00ff00" : "1px solid #222"}}>
+        <div style={{display:"flex", gap:"8px", alignItems:"center"}}><img src={u.avatar} style={{width:"28px", height:"28px", borderRadius:"50%"}} /><div><div style={{fontSize:"12px", fontWeight:"800"}}>{u.handle} {u.paired && "✅"}</div><div style={{fontSize:"9px", color:"#0f0"}}>{u.paired ? "Paired - LIVE" : "Nearby - Tap Pair"}</div></div></div>
+        <div style={{display:"flex", gap:"4px"}}>{!u.paired && <button onClick={()=>handleBluetoothPair(u)} style={{background:"#00ff00", color:"black", border:"none", padding:"5px 8px", borderRadius:"6px", fontWeight:"900", fontSize:"10px"}}>Pair</button>}<button onClick={()=>handleBluetoothChat(u)} style={{background:"#0a84ff", color:"white", border:"none", padding:"5px 8px", borderRadius:"6px", fontWeight:"900", fontSize:"10px"}}>{u.paired ? "LIVE CHAT" : "BT Chat"}</button></div>
+      </div>
+    ))}
+  </div>
+)}
+{/* BT MESH - END */}
 {conversations.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No chats yet! Make an offer to start 💬</div>}
 {conversations.map((handle:any)=>{
   const prof = profiles.find(p=> p.handle===handle);
