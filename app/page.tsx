@@ -357,7 +357,26 @@ const sendChatMessage = async ()=>{
 };
 
 const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); };
-const savePhoto = ()=>{ const link = document.createElement('a'); link.href = modalImage; link.download = `imworth-${Date.now()}.jpg`; link.target = "_blank"; link.click(); };
+const savePhoto = async ()=>{
+  try{
+    const res = await fetch(modalImage);
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onloadend = async ()=>{
+      try{
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        const base64 = (reader.result as string).split(',')[1];
+        const fileName = `SIM_Worth_${Date.now()}.jpg`;
+        await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Documents });
+        alert(`✅ Saved to Documents/${fileName} 📁`);
+      }catch{
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `sim_worth_${Date.now()}.jpg`; a.click(); URL.revokeObjectURL(url);
+      }
+    };
+    reader.readAsDataURL(blob);
+  }catch{ window.open(modalImage, '_blank'); }
+};
 const filteredProfiles = profiles.filter(p=> p.handle.toLowerCase().includes(search.toLowerCase()) || p.name.toLowerCase().includes(search.toLowerCase()));
 const myFollowers = follows.filter(f=> f.following_handle===myHandle).length;
 const myOffersReceived = offers.filter(o=> o.to_handle===myHandle);
