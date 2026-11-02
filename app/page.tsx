@@ -103,7 +103,6 @@ const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
 const [comments, setComments] = useState<any[]>([]);
 const [commentText, setCommentText] = useState("");
-const [viewingProfile, setViewingProfile] = useState<string|null>(null);
 const [offerAmount, setOfferAmount] = useState("");
 const [payMethod, setPayMethod] = useState("capitec");
 const [payHandle, setPayHandle] = useState("");
