@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; status?: string; };
+type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; status?: string; views?: number; likes?: number; };
 
 type HeaderProps = {
   avatarPreview: string; totalWorth: number; onAvatarClick: () => void; myUserId: string; myHandle: string;
@@ -79,6 +79,7 @@ const [feedProducts, setFeedProducts] = useState<Product[]>([]);
 const [search, setSearch] = useState("");
 const [marketSearch, setMarketSearch] = useState("");
 const [searchTab, setSearchTab] = useState("market");
+const [marketView, setMarketView] = useState("new"); // new or trending
 const [selectedUser, setSelectedUser] = useState<any>(null);
 const [selectedUserProducts, setSelectedUserProducts] = useState<Product[]>([]);
 const [follows, setFollows] = useState<any[]>([]);
@@ -214,7 +215,7 @@ const loadFeed = async ()=>{
     const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
     if(profs) setProfiles(profs.map((p:any)=>({ id: p.id, email: p.email || p.handle, handle: p.handle, name: p.display_name || p.handle?.replace('@',''), avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12", total_worth: p.net_worth || 0, bio: p.bio, about: p.about, location: p.location, latitude: p.latitude, longitude: p.longitude, pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link, profile_status: p.profile_status || "for_sale" })));
     const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
-    if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item", status: p.status || "for_sale"})));
+    if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item", status: p.status || "for_sale", views: p.views || 0, likes: p.likes || 0})));
     const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
     const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
     const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(500); 
@@ -384,7 +385,7 @@ const sendChatMessage = async ()=>{
   }
 };
 
-const openImageModal = (img:string, info:any=null)=>{ setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); };
+const openImageModal = (img:string, info:any=null)=>{ if(info?.id){ supabase.from("products").select("views").eq("id", info.id).single().then(({data})=>{ supabase.from("products").update({ views: (data?.views || 0) + 1 }).eq("id", info.id).then(()=>{}); }); } setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); };
 const savePhoto = async ()=>{
   try{
     const response = await fetch(modalImage);
@@ -426,6 +427,8 @@ const getStatusBadge = (status?:string)=>{
 };
 
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
+const trendingMarketItems = [...availableMarketItems].sort((a:any,b:any)=>(b.views||0)-(a.views||0));
+const displayMarketItems = marketView==="trending" ? trendingMarketItems : availableMarketItems;
 if(!loggedIn){
 return(
 <div style={{minHeight:"100vh", background:"black", display:"flex", flexDirection:"column", alignItems:"center", paddingTop:"80px", padding:"20px"}}>
@@ -782,7 +785,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
     ))}
   </div>
 )}
-{/* BT MESH - END */}
+{/* BT CHAT - END */}
 {conversations.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No chats yet! Make an offer to start 💬</div>}
 {conversations.map((handle:any)=>{
   const prof = profiles.find(p=> p.handle===handle);
@@ -1015,8 +1018,12 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 {searchTab==="market" && (
 <div style={{padding:"12px"}}>
+<div style={{display:"flex", gap:"8px", marginBottom:"12px"}}>
+<button onClick={()=>setMarketView("new")} style={{flex:1, background: marketView==="new" ? "#D4AF37" : "#111", color: marketView==="new" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>🆕 New</button>
+<button onClick={()=>setMarketView("trending")} style={{flex:1, background: marketView==="trending" ? "#D4AF37" : "#111", color: marketView==="trending" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>🔥 Trending</button>
+</div>
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
-{availableMarketItems.map((p:any)=>{
+{displayMarketItems.map((p:any)=>{
   const owner = profiles.find(pr=> pr.email===p.owner_email);
   return (
   <div key={p.id} onClick={()=>{ const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer"}}>
