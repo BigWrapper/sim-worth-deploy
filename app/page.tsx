@@ -103,6 +103,7 @@ const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
 const [comments, setComments] = useState<any[]>([]);
 const [commentText, setCommentText] = useState("");
+const [viewingProfile, setViewingProfile] = useState<string|null>(null);
 const [offerAmount, setOfferAmount] = useState("");
 const [payMethod, setPayMethod] = useState("capitec");
 const [payHandle, setPayHandle] = useState("");
@@ -738,7 +739,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </>
 )}
 </div>
-<div onClick={()=>{ const prof = profiles.find(pr=> pr.handle===modalInfo?.owner_handle || pr.email===modalInfo?.owner_email); if(prof){ setShowImageModal(false); if(prof.handle===myHandle){ setView("profile"); } else { loadPublicUser(prof); } } else if(modalInfo?.owner_handle){ setShowImageModal(false); const fakeUser = {handle: modalInfo.owner_handle, email: modalInfo.owner_email, avatar: "https://i.pravatar.cc/200", name: modalInfo.owner_handle}; loadPublicUser(fakeUser); } }} style={{fontSize:"11px", color:"#D4AF37", marginTop:"4px", cursor:"pointer", fontWeight:"900", textDecoration:"underline"}}>👤 @{modalInfo?.owner_handle || modalInfo?.handle || modalInfo?.email?.split("@")[0] || ""} - View Profile →</div>
+<div onClick={()=>{ const prof = profiles.find(pr=> pr.email===modalInfo?.owner_email); if(prof){ setShowImageModal(false); if(prof.handle===myHandle){ setView('profile'); } else { loadPublicUser(prof); } } }} style={{fontSize:'11px', color:'#D4AF37', marginTop:'4px', cursor:'pointer', fontWeight:'900', textDecoration:'underline'}}>👤 @{modalInfo?.owner_handle || modalInfo?.handle || ''} - View Profile →</div>
 {/* REACTIONS LIVE - 3 types */}
 <div style={{display:"flex", gap:"8px", marginTop:"12px", alignItems:"center"}}>
   <button onClick={()=>handleReaction('like')} style={{flex:1, background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👍 {reactions.filter((r:any)=>r.type==='like').length}</button>
