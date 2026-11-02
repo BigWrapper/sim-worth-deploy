@@ -650,7 +650,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
 <div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
 <img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px", display:"flex", gap:"6px", alignItems:"center"}}>{chatUser.handle} {isOfflineMode && <span style={{background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 6px", borderRadius:"10px"}}>BT 📡</span>}</div><div style={{fontSize:"11px", color: isOfflineMode ? "#0a84ff" : "#00ff88"}}>{isOfflineMode ? "📡 Bluetooth Mesh - Offline" : "● Online - Live ✓"}</div></div>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px", display:"flex", gap:"6px", alignItems:"center"}}>{chatUser.handle} {isOfflineMode && <span style={{background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 6px", borderRadius:"10px"}}>BT 📡</span>}</div><div style={{fontSize:"11px", color: isOfflineMode ? "#0a84ff" : "#00ff88"}}>{isOfflineMode ? "📡 Bluetooth CHAT - Offline" : "● Online - Live ✓"}</div></div>
 <button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from $IM Worth!`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
 </div>
 <div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px"}}>
@@ -769,11 +769,11 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{padding:"12px"}}>
 {offersTab==="chats" && (
 <div>
-{/* BT MESH - SHAREit OFFLINE - START */}
+{/* BT CHAT - SHAREit OFFLINE - START */}
 {isBluetoothEnabled && (
   <div style={{marginBottom:"12px", padding:"12px", background:"linear-gradient(135deg, #0a84ff22, #00ff8822)", border:"1px solid #0a84ff", borderRadius:"16px"}}>
     <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px"}}>
-      <div style={{fontWeight:"900", fontSize:"12px", color:"#0a84ff"}}>📡 BT Mesh - {nearbyUsers.length} Nearby Users {isBluetoothScanning ? "(Scanning...)" : ""}</div>
+      <div style={{fontWeight:"900", fontSize:"12px", color:"#0a84ff"}}>📡 BT CHAT - {nearbyUsers.length} Nearby Users {isBluetoothScanning ? "(Scanning...)" : ""}</div>
       <button onClick={handleRealBluetoothScan} style={{background:"#0a84ff", color:"white", border:"none", padding:"5px 10px", borderRadius:"8px", fontWeight:"900", fontSize:"10px"}}>Rescan</button>
     </div>
     {offlineQueue.length>0 && <div style={{background:"#ffaa0022", border:"1px solid #ffaa00", padding:"6px 8px", borderRadius:"8px", fontSize:"10px", color:"#ffaa00", marginBottom:"6px"}}>⏳ {offlineQueue.length} offline msgs will sync when online</div>}
@@ -1027,7 +1027,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   const owner = profiles.find(pr=> pr.email===p.owner_email);
   return (
   <div key={p.id} onClick={()=>{ const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer"}}>
-    <div style={{position:"relative"}}><img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/><div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div></div>
+    <div style={{position:"relative"}}><img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/><div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div><div style={{position:"absolute", top:"6px", right:"6px", background:"rgba(0,0,0,0.7)", color:"white", fontSize:"9px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>👁️ {p.views || 0}</div></div>
     <div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div style={{fontSize:"10px", color:"#888"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]}</div></div>
   </div>
   );
