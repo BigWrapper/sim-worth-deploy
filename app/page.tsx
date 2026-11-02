@@ -100,6 +100,9 @@ const [editingBio, setEditingBio] = useState(false);
 const [showImageModal, setShowImageModal] = useState(false);
 const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
+const [reactions, setReactions] = useState<any[]>([]);
+const [comments, setComments] = useState<any[]>([]);
+const [commentText, setCommentText] = useState("");
 const [offerAmount, setOfferAmount] = useState("");
 const [payMethod, setPayMethod] = useState("capitec");
 const [payHandle, setPayHandle] = useState("");
@@ -396,7 +399,36 @@ const openImageModal = async (img:string, info:any=null)=>{
       }
     }catch(e){}
   }
+  if(info?.id){
+    const { data: r } = await supabase.from("product_reactions").select("*").eq("product_id", info.id);
+    if(r) setReactions(r);
+    const { data: c } = await supabase.from("product_comments").select("*").eq("product_id", info.id).order("created_at", {ascending:true});
+    if(c) setComments(c);
+  } else {
+    setReactions([]); setComments([]);
+  }
   setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || "");
+};
+const handleReaction = async (type: 'like'|'love'|'dislike')=>{
+  if(!modalInfo?.id) return;
+  const existing = reactions.find((r:any)=> r.reactor_handle===myHandle);
+  if(existing){
+    if(existing.type===type){
+      await supabase.from("product_reactions").delete().eq("id", existing.id);
+      setReactions(reactions.filter((r:any)=> r.id!==existing.id));
+    } else {
+      await supabase.from("product_reactions").update({type}).eq("id", existing.id);
+      setReactions(reactions.map((r:any)=> r.id===existing.id ? {...r, type} : r));
+    }
+  } else {
+    const { data } = await supabase.from("product_reactions").insert({ product_id: modalInfo.id, reactor_handle: myHandle, reactor_email: email, type }).select().single();
+    if(data) setReactions([...reactions, data]);
+  }
+};
+const handleAddComment = async ()=>{
+  if(!commentText.trim() || !modalInfo?.id) return;
+  const { data } = await supabase.from("product_comments").insert({ product_id: modalInfo.id, commenter_handle: myHandle, commenter_email: email, text: commentText.trim() }).select().single();
+  if(data){ setComments([...comments, data]); setCommentText(""); }
 };
 const savePhoto = async ()=>{
   try{
@@ -707,7 +739,30 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 )}
 </div>
 <div style={{fontSize:"11px", color:"#888", marginTop:"4px"}}>{modalInfo?.email || modalInfo?.handle || modalInfo?.owner_handle || ""}</div>
-{modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
+{/* REACTIONS LIVE - 3 types */}
+<div style={{display:"flex", gap:"8px", marginTop:"12px", alignItems:"center"}}>
+  <button onClick={()=>handleReaction('like')} style={{flex:1, background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👍 {reactions.filter((r:any)=>r.type==='like').length}</button>
+  <button onClick={()=>handleReaction('love')} style={{flex:1, background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>❤️ {reactions.filter((r:any)=>r.type==='love').length}</button>
+  <button onClick={()=>handleReaction('dislike')} style={{flex:1, background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👎 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
+</div>
+{/* COMMENTS */}
+<div style={{marginTop:"16px", borderTop:"1px solid #222", paddingTop:"12px"}}>
+  <div style={{fontWeight:"900", fontSize:"13px", marginBottom:"8px", color:"#D4AF37"}}>💬 Comments ({comments.length})</div>
+  <div style={{maxHeight:"120px", overflowY:"auto", marginBottom:"10px"}}>
+    {comments.map((c:any)=>(
+      <div key={c.id} style={{background:"#111", padding:"8px 10px", borderRadius:"10px", marginBottom:"6px", border:"1px solid #222"}}>
+        <div style={{fontSize:"11px", color:"#D4AF37", fontWeight:"900"}}>{c.commenter_handle}</div>
+        <div style={{fontSize:"12px", color:"white"}}>{c.text}</div>
+      </div>
+    ))}
+    {comments.length===0 && <div style={{fontSize:"11px", color:"#666"}}>No comments yet - be first!</div>}
+  </div>
+  <div style={{display:"flex", gap:"6px"}}>
+    <input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment..." style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"20px", fontSize:"13px"}} onKeyDown={(e:any)=> e.key==='Enter' && handleAddComment()} />
+    <button onClick={handleAddComment} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"20px", border:"none"}}>Post</button>
+  </div>
+</div>
+  {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
 <div style={{marginTop:"10px"}}>
 <div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>YOUR ITEM - EDIT</div>
 <div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap"}}>
