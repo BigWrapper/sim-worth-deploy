@@ -98,6 +98,7 @@ const [bio, setBio] = useState("Im Totally Worthed!");
 const [about, setAbout] = useState("Entrepreneur");
 const [editingBio, setEditingBio] = useState(false);
 const [showImageModal, setShowImageModal] = useState(false);
+const [showCommentsFull, setShowCommentsFull] = useState(false);
 const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
@@ -811,6 +812,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
     setTimeout(()=> URL.revokeObjectURL(url), 1000);
     alert("✅ Saved! Check Downloads folder 📁");
   }catch(e){
+    // Fallback for APK WebView
     const link = document.createElement('a');
     link.href = modalImage;
     link.download = `SIM_Worth_${Date.now()}.jpg`;
@@ -818,9 +820,8 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
     link.click();
     alert("✅ Image opened - Long press to Save to Gallery! 📥");
   }
-}} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none", flex:1}}>Download⬇️</button>
-<button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333", flex:1}}>Close❌</button>
-</div>
+}} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
+<button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
 </div>
 </div>
 )}
