@@ -602,7 +602,6 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   </div>
   )}
 </div>
-</div>
 );
 }
 return(
