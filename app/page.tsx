@@ -1138,7 +1138,38 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
     <img src="/splash.png" style={{ width: '100vw', height: '100vh', objectFit: 'cover' }} alt="splash" />
   </div>
 )}
-
+{showCommentsFull && (
+<div style={{position:"fixed", inset:0, background: theme.bg, zIndex:10000, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
+<div style={{display:"flex", alignItems:"center", gap:"12px", padding:"14px", borderBottom:"1px solid #222", background: theme.cardBg}}>
+<div onClick={()=>setShowCommentsFull(false)} style={{fontSize:"22px", cursor:"pointer"}}>←</div>
+<div style={{fontWeight:"900", fontSize:"16px"}}>Comments ({comments.length})</div>
+</div>
+<div style={{flex:1, overflowY:"auto", padding:"12px"}}>
+{comments.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px"}}>No comments yet. Be first! 💬</div>}
+{comments.map((c:any)=>{
+  const commenter = profiles.find((p:any)=> p.handle===c.commenter_handle);
+  return (
+  <div key={c.id} style={{background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border:"1px solid #222"}}>
+    <div style={{display:"flex", gap:"8px", alignItems:"center"}}>
+      <img src={commenter?.avatar || "https://i.pravatar.cc/100"} style={{width:"32px", height:"32px", borderRadius:"50%"}} />
+      <div style={{flex:1}}>
+        <div style={{display:"flex", gap:"6px", alignItems:"center"}}>
+          <span style={{fontWeight:"900", fontSize:"13px", color:"#D4AF37", cursor:"pointer"}} onClick={()=>{ setShowCommentsFull(false); const u=profiles.find((p:any)=>p.handle===c.commenter_handle); if(u) loadPublicUser(u); }}>@{c.commenter_handle}</span>
+          <span style={{fontSize:"10px", color:"#666"}}>{new Date(c.created_at).toLocaleDateString()}</span>
+        </div>
+        <div style={{fontSize:"13px", color:"white", marginTop:"4px", wordBreak:"break-word", whiteSpace:"pre-wrap"}}>{c.text}</div>
+      </div>
+    </div>
+  </div>
+  );
+})}
+</div>
+<div style={{padding:"12px", borderTop:"1px solid #222", background: theme.cardBg, display:"flex", gap:"8px"}}>
+<input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment... @handle" style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"20px"}} onKeyDown={(e:any)=> e.key==='Enter' && handleAddComment()} />
+<button onClick={handleAddComment} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 20px", borderRadius:"20px", border:"none"}}>Post</button>
+</div>
+</div>
+)}
 </div>
 );
 }
