@@ -819,9 +819,39 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
     link.click();
     alert("✅ Image opened - Long press to Save to Gallery! 📥");
   }
-}} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
-<button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
+}} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none", flex:1}}>Download⬇️</button>
+<button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333", flex:1}}>Close❌</button>
 </div>
+</div>
+</div>
+)}
+
+{showCommentsFull && (
+<div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.98)", zIndex:9999, display:"flex", flexDirection:"column", maxWidth:"480px", margin:"0 auto"}}>
+  <div style={{display:"flex", alignItems:"center", gap:"10px", padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
+    <div onClick={()=>setShowCommentsFull(false)} style={{cursor:"pointer", fontSize:"20px", color:"white", padding:"5px 10px"}}>←</div>
+    <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"14px"}}>Comments ({comments.length})</div>
+  </div>
+  <div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"10px"}}>
+    {comments.map((c:any)=>{
+      const u = profiles.find((x:any)=>x.handle===c.commenter_handle);
+      return (
+        <div key={c.id} style={{background:"#111", padding:"12px", borderRadius:"14px", border:"1px solid #222", display:"flex", gap:"10px"}}>
+          <img src={u?.avatar || "https://via.placeholder.com/40"} style={{width:"36px", height:"36px", borderRadius:"50%", objectFit:"cover"}} alt="avatar"/>
+          <div style={{flex:1}}>
+            <div onClick={()=>{ const user = profiles.find((x:any)=>x.handle===c.commenter_handle); if(user){ setShowCommentsFull(false); setShowImageModal(false); loadPublicUser(user); } }} style={{fontSize:"12px", color:"#D4AF37", fontWeight:"900", cursor:"pointer", textDecoration:"underline"}}>@{c.commenter_handle}</div>
+            <div style={{fontSize:"13px", color:"white", marginTop:"4px", wordBreak:"break-word", whiteSpace:"normal"}}>{c.text}</div>
+            <div style={{fontSize:"10px", color:"#666", marginTop:"4px"}}>{c.created_at ? new Date(c.created_at).toLocaleTimeString() : ""}</div>
+          </div>
+        </div>
+      );
+    })}
+    {comments.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"40px", fontSize:"13px"}}>No comments yet - be first!</div>}
+  </div>
+  <div style={{padding:"12px", borderTop:"1px solid #222", display:"flex", gap:"8px", background:"#0a0a0a"}}>
+    <input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment..." style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"24px", fontSize:"13px"}} onKeyDown={(e:any)=> e.key==='Enter' && handleAddComment()} />
+    <button onClick={handleAddComment} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"24px", border:"none"}}>Post</button>
+  </div>
 </div>
 )}
 <input ref={avatarInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleAvatarChange}/>
