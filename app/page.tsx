@@ -749,21 +749,15 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   <button onClick={()=>handleReaction('dislike')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👎 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
 </div>
 {/* COMMENTS */}
-<div style={{marginTop:"16px", borderTop:"1px solid #222", paddingTop:"12px"}}>
-  <div style={{fontWeight:"900", fontSize:"13px", marginBottom:"8px", color:"#D4AF37"}}>💬 Comments ({comments.length})</div>
-  <div style={{maxHeight:"120px", overflowY:"auto", marginBottom:"10px"}}>
-    {comments.map((c:any)=>(
-      <div key={c.id} style={{background:"#111", padding:"8px 10px", borderRadius:"10px", marginBottom:"6px", border:"1px solid #222"}}>
-        <div style={{fontSize:"11px", color:"#D4AF37", fontWeight:"900"}}>{c.commenter_handle}</div>
-        <div style={{fontSize:"12px", color:"white"}}>{c.text}</div>
-      </div>
-    ))}
-    {comments.length===0 && <div style={{fontSize:"11px", color:"#666"}}>No comments yet - be first!</div>}
-  </div>
-  <div style={{display:"flex", gap:"6px"}}>
-    <input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment..." style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"20px", fontSize:"13px"}} onKeyDown={(e:any)=> e.key==='Enter' && handleAddComment()} />
-    <button onClick={handleAddComment} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"20px", border:"none"}}>Post</button>
-  </div>
+</div>
+{/* COMMENTS - COMPACT CLICKABLE */}
+<div onClick={()=>setShowCommentsFull(true)} style={{marginTop:"16px", borderTop:"1px solid #222", paddingTop:"12px", display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer"}}>
+  <div style={{fontWeight:"900", fontSize:"13px", color:"#D4AF37"}}>💬 Comments ({comments.length})</div>
+  <div style={{fontSize:"11px", color:"#D4AF37", fontWeight:"900", background:"#1a1a00", padding:"4px 10px", borderRadius:"12px", border:"1px solid #D4AF37"}}>View All {comments.length>0?`(${comments.length})`:''} →</div>
+</div>
+<div style={{display:"flex", gap:"6px", marginTop:"10px"}}>
+  <input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment..." style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"20px", fontSize:"13px"}} onKeyDown={(e:any)=> e.key==='Enter' && handleAddComment()} />
+  <button onClick={handleAddComment} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"20px", border:"none"}}>Post</button>
 </div>
   {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
 <div style={{marginTop:"10px"}}>
