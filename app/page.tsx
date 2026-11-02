@@ -733,7 +733,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 ) : (
 <>
-<div style={{fontWeight:"bold", color:"#D4AF37"}}>{modalInfo?.title || "Item"} - ${modalInfo?.price || ""}</div>
+<div style={{fontWeight:"bold", color:"#D4AF37", wordBreak:"break-word", overflowWrap:"anywhere", whiteSpace:"normal", maxWidth:"100%"}}>{modalInfo?.title || "Item"} - ${modalInfo?.price || ""}</div>
 <div style={{background: getStatusBadge(modalInfo?.status).bg, color: getStatusBadge(modalInfo?.status).color, fontSize:"10px", fontWeight:"900", padding:"4px 8px", borderRadius:"12px", border:"1px solid currentColor"}}>{getStatusBadge(modalInfo?.status).text}</div>
 </>
 )}
