@@ -740,7 +740,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   <div onClick={()=>{ const h=modalInfo?.owner_handle||modalInfo?.handle; const u=profiles.find((x:any)=>x.handle===h); if(u){ setShowImageModal(false); loadPublicUser(u); } }} style={{textAlign:"right", fontSize:"10px", color:"#D4AF37", fontWeight:"900", cursor:"pointer", textDecoration:"underline", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>@{modalInfo?.owner_handle||modalInfo?.handle||""}</div>
 </div>
 {/* MIDDLE - DESCRIPTION FULL WIDTH */}
-<div style={{fontWeight:"600", color:"#f5f2e8", wordBreak:"break-word", overflowWrap:"anywhere", whiteSpace:"normal", fontSize:"13px", lineHeight:"1.4", padding:"10px 0", borderTop:"1px solid #222", borderBottom:"1px solid #222", marginBottom:"12px", maxHeight:"100px", overflowY:"auto"}}>{modalInfo?.title || "Item"}</div>
+<div style={{fontWeight:"600", color:"#f5f2e8", wordBreak:"break-all", overflowWrap:"anywhere", whiteSpace:"normal", fontSize:"13px", lineHeight:"1.4", padding:"10px 0", borderTop:"1px solid #222", borderBottom:"1px solid #222", marginBottom:"12px", maxHeight:"100px", overflowY:"auto"}}>{modalInfo?.title || "Item"}</div>
 </>
 )}
 {/* BOTTOM ROW - 3 REACTIONS MATCHING TOP */}
@@ -1154,7 +1154,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
       <img src={commenter?.avatar || "https://i.pravatar.cc/100"} style={{width:"32px", height:"32px", borderRadius:"50%"}} />
       <div style={{flex:1}}>
         <div style={{display:"flex", gap:"6px", alignItems:"center"}}>
-          <span style={{fontWeight:"900", fontSize:"13px", color:"#D4AF37", cursor:"pointer"}} onClick={()=>{ setShowCommentsFull(false); const u=profiles.find((p:any)=>p.handle===c.commenter_handle); if(u) loadPublicUser(u); }}>@{c.commenter_handle}</span>
+          <span style={{fontWeight:"900", fontSize:"13px", color:"#D4AF37", cursor:"pointer"}} onClick={()=>{ setShowCommentsFull(false); setShowImageModal(false); const u=profiles.find((p:any)=>p.handle===c.commenter_handle); if(u) loadPublicUser(u); }}>@{c.commenter_handle}</span>
           <span style={{fontSize:"10px", color:"#666"}}>{new Date(c.created_at).toLocaleDateString()}</span>
         </div>
         <div style={{fontSize:"13px", color:"white", marginTop:"4px", wordBreak:"break-word", whiteSpace:"pre-wrap"}}>{c.text}</div>
