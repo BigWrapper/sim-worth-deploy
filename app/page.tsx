@@ -103,7 +103,6 @@ const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
 const [comments, setComments] = useState<any[]>([]);
 const [commentText, setCommentText] = useState("");
-const [viewingProfile, setViewingProfile] = useState<string|null>(null);
 const [offerAmount, setOfferAmount] = useState("");
 const [payMethod, setPayMethod] = useState("capitec");
 const [payHandle, setPayHandle] = useState("");
@@ -561,7 +560,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 `}</style>
 
 <div className="jackpot-floaters" aria-hidden="true">
-  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">₿A₦C</span><span className="jackpot-number">$1M W0RTH</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">¥€$</span>
+  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">+₿A₦€</span><span className="jackpot-number">$1M W0RTH</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">¥€$</span>
 </div>
 
 <div className="jackpot-banner" aria-hidden="true"><span className="jackpot-lamp"/> YOU ARE <span className="jackpot-lamp"/></div>
@@ -576,34 +575,32 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:"16px"}}>
   <div style={{color:"#666", fontSize:"13px", cursor:"pointer"}} onClick={()=>setAuthMode(authMode==="signup"?"login":"signup")}>{authMode==="signup"?"Have account? Login":"No account? Sign Up"}</div>
   <div style={{color:"#0a84ff", fontSize:"13px", cursor:"pointer", textDecoration:"underline"}} onClick={()=>setShowForgot(!showForgot)}>Forgot password?</div>
-  </div>
-  )}
+</div>
 
-  {showForgot && (
-  <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:9999, padding:"20px"}}>
-    <div style={{background: theme.cardBg, borderRadius:"16px", padding:"20px", width:"100%", maxWidth:"320px", border:`1px solid ${theme.border}`}}>
-      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px"}}>
-        <div style={{fontWeight:"800", fontSize:"14px"}}>Reset Password</div>
-        <div onClick={()=>{setShowForgot(false); setForgotSent(false); setForgotEmail("")}} style={{cursor:"pointer", fontSize:"18px"}}>✕</div>
-      </div>
-      {!forgotSent ? (
-      <div>
-        <input value={forgotEmail} onChange={(e)=>setForgotEmail(e.target.value)} placeholder="Enter your email" style={{width:"100%", padding:"12px", borderRadius:"10px", border:`1px solid ${theme.border}`, background: theme.bg, color: theme.text, fontSize:"12px", outline:"none"}} />
-        <button onClick={handleForgotPassword} disabled={authLoading} style={{width:"100%", marginTop:"10px", padding:"12px", borderRadius:"10px", border:"none", background:"#D4AF37", color:"#000", fontWeight:"800", fontSize:"12px", cursor:"pointer"}}>{authLoading ? "Sending..." : "Send Reset Link"}</button>
-      </div>
-      ) : (
+{showForgot && (
+  <div style={{marginTop:"16px", background:"#111", padding:"14px", borderRadius:"12px", border:"1px solid #2a2a2a"}}>
+    {!forgotSent ? (
+      <>
+        <div style={{fontSize:"12px", color:"#aaa", marginBottom:"8px"}}>Verification link will be sent to:</div>
+        <input value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)} placeholder="your@email.com" style={{width:"100%", background:"#000", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"10px", marginBottom:"10px"}}/>
+        <button onClick={handleForgotPassword} disabled={forgotLoading} style={{width:"100%", background: forgotLoading ? "#333" : "#0a84ff", color:"white", padding:"10px", borderRadius:"10px", border:"none", fontWeight:"700", cursor:"pointer"}}>
+          {forgotLoading ? "Sending..." : "Send Verification Link"}
+        </button>
+      </>
+    ) : (
       <div style={{textAlign:"center"}}>
         <div style={{color:"#00ff88", fontSize:"14px", fontWeight:"700"}}>✅ Link Sent!</div>
         <div style={{color:"#888", fontSize:"11px", marginTop:"6px"}}>Check inbox & spam. Click link to reset.</div>
-        <div onClick={()=>{setForgotSent(false); setShowForgot(false)}} style={{color:"#0a84ff", fontSize:"12px", marginTop:"8px", cursor:"pointer", textDecoration:"underline"}}>Close</div>
+        <div onClick={()=>{setForgotSent(false); setShowForgot(false)}} style={{color:"#0a84ff", fontSize:"12px", marginTop:"8px", cursor:"pointer"}}>Close</div>
       </div>
-      )}
-    </div>
+    )}
   </div>
-  )}
+)}
+</div>
 </div>
 );
 }
+
 return(
 <div style={{minHeight:"100vh", background: theme.bg, color: theme.text, maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
 
@@ -697,7 +694,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{padding:"12px", borderBottom:"1px solid #222", display:"flex", alignItems:"center", gap:"10px", background:"#0a0a0a"}}>
 <div onClick={()=>setShowChat(false)} style={{fontSize:"20px", cursor:"pointer"}}>←</div>
 <img src={chatUser.avatar} style={{width:"36px", height:"36px", borderRadius:"50%"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px", display:"flex", gap:"6px", alignItems:"center"}}>{chatUser.handle} {isOfflineMode && <span style={{background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 6px", borderRadius:"10px"}}>BT 📡</span>}</div><div style={{fontSize:"11px", color: isOfflineMode ? "#0a84ff" : "#00ff88"}}>{isOfflineMode ? "📡 Bluetooth CHAT - Offline}</div></div>
+<div style={{flex:1}}><div style={{fontWeight:"900", fontSize:"14px", display:"flex", gap:"6px", alignItems:"center"}}>{chatUser.handle} {isOfflineMode && <span style={{background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 6px", borderRadius:"10px"}}>BT 📡</span>}</div><div style={{fontSize:"11px", color: isOfflineMode ? "#0a84ff" : "#00ff88"}}>{isOfflineMode ? "📡 Bluetooth CHAT - Offline" : "● Online - Live ✓"}</div></div>
 <button onClick={()=> window.open(`https://wa.me/?text=Hi ${chatUser.handle} from $IM Worth!`, '_blank')} style={{background:"#25D366", color:"white", border:"none", padding:"6px 12px", borderRadius:"20px", fontWeight:"900", fontSize:"11px"}}>WhatsApp</button>
 </div>
 <div style={{flex:1, overflowY:"auto", padding:"12px", display:"flex", flexDirection:"column", gap:"8px"}}>
@@ -741,7 +738,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </>
 )}
 </div>
-<div onClick={()=>{ const prof = profiles.find(pr=> pr.handle===modalInfo?.owner_handle || pr.email===modalInfo?.owner_email); if(prof){ setShowImageModal(false); if(prof.handle===myHandle){ setView("profile"); } else { loadPublicUser(prof); } } else if(modalInfo?.owner_handle){ setShowImageModal(false); const fakeUser = {handle: modalInfo.owner_handle, email: modalInfo.owner_email, avatar: "https://i.pravatar.cc/200", name: modalInfo.owner_handle}; loadPublicUser(fakeUser); } }} style={{fontSize:"11px", color:"#D4AF37", marginTop:"4px", cursor:"pointer", fontWeight:"900", textDecoration:"underline"}}>👤 @{modalInfo?.owner_handle || modalInfo?.handle || modalInfo?.email?.split("@")[0] || ""} - View Profile →</div>
+<div onClick={()=>{ const h=modalInfo?.owner_handle||modalInfo?.handle; if(!h) return; const u=profiles.find((x:any)=>x.handle===h); if(u){ setShowImageModal(false); loadPublicUser(u); } }} style={{fontSize:"11px", color:"#D4AF37", marginTop:"6px", fontWeight:"900", cursor:"pointer", textDecoration:"underline"}}>@{modalInfo?.owner_handle||modalInfo?.handle||""} - View Full Profile →</div>
 {/* REACTIONS LIVE - 3 types */}
 <div style={{display:"flex", gap:"8px", marginTop:"12px", alignItems:"center"}}>
   <button onClick={()=>handleReaction('like')} style={{flex:1, background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👍 {reactions.filter((r:any)=>r.type==='like').length}</button>
@@ -787,12 +784,11 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 )}
 </>
 ) : (
-  <div style={{textAlign:"center"}}>
-  <div style={{fontWeight:"bold", color:"#D4AF37", fontSize:"16px"}}>{modalInfo?.handle || "Profile Photo"} - <span style={{color: getStatusColor(modalInfo?.status)}}>{modalInfo?.status || ""}</span></div>
-  <div style={{fontSize:"11px", color:"#888", marginTop:"4px"}}>{modalInfo?.bio || ""}</div>
-  <div onClick={()=>{ setShowImageModal(false); const p=profiles.find((x:any)=>x.handle===modalInfo?.handle || x.email===modalInfo?.owner_email); if(p){ if(p.handle===myHandle){ setView('profile'); } else { loadPublicUser(p); } } }} style={{fontSize:"11px", color:"#D4AF37", marginTop:"8px", cursor:"pointer", fontWeight:"900", textDecoration:"underline"}}>View @{modalInfo?.handle || 'user'} Full Profile →</div>
-  </div>
-  )}
+<div style={{textAlign:"center"}}>
+<div style={{fontWeight:"bold", color:"#D4AF37", fontSize:"16px"}}>{modalInfo?.handle || "Profile Photo"} - <span style={{color: getStatusBadge(modalInfo?.profile_status || profileStatus).color}}>{getStatusBadge(modalInfo?.profile_status || profileStatus).text}</span></div>
+<div style={{fontSize:"11px", color:"#888", marginTop:"4px"}}>{modalInfo?.bio || ""}</div>
+</div>
+)}
 </div>
 <div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
 <button onClick={async()=>{
@@ -879,7 +875,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   const fromProfile = profiles.find(p=> p.handle===o.from_handle);
   return (
   <div key={o.id} style={{background:"#111", border:"1px solid #2a2a2a", borderLeft:"4px solid #D4AF37", padding:"12px", borderRadius:"12px", marginBottom:"10px", position:"relative"}}>
-    
+    <div onClick={()=>deleteOffer(o.id)} style={{position:"absolute", top:"8px", right:"8px", background:"#ff4444", color:"white", width:"24px", height:"24px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"12px", fontWeight:"900", cursor:"pointer"}}>✕</div>
     <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
       <img src={fromProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
       <div style={{flex:1, paddingRight:"30px"}}><div style={{fontWeight:"900"}}>{o.from_handle} offered <span style={{color:"#D4AF37"}}>${o.amount}</span></div></div>
@@ -1099,7 +1095,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   return (
   <div key={p.id} onClick={()=>{ const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer"}}>
     <div style={{position:"relative"}}><img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/><div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div><div style={{position:"absolute", top:"6px", right:"6px", background:"rgba(0,0,0,0.7)", color:"white", fontSize:"9px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>👁️ {p.views || 0}</div></div>
-    <div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div onClick={(e)=>{e.stopPropagation(); const prof = profiles.find(pr=> pr.email===p.owner_email); if(prof){ if(prof.handle===myHandle){ setView("profile"); } else { loadPublicUser(prof); } } }} style={{fontSize:"10px", color:"#D4AF37", cursor:"pointer", fontWeight:"900", textDecoration:"underline"}}>@{owner ? owner.handle : p.owner_email?.split("@")[0]}</div></div>
+    <div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div style={{fontSize:"10px", color:"#888"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]}</div></div>
   </div>
   );
 })}
