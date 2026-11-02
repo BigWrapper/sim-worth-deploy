@@ -385,7 +385,19 @@ const sendChatMessage = async ()=>{
   }
 };
 
-const openImageModal = (img:string, info:any=null)=>{ if(info?.id){ supabase.from("products").select("views").eq("id", info.id).single().then(({data})=>{ supabase.from("products").update({ views: (data?.views || 0) + 1 }).eq("id", info.id).then(()=>{}); }); } setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); };
+const openImageModal = async (img:string, info:any=null)=>{
+  if(info?.id && info?.owner_email !== email){
+    try{
+      const { data: existing } = await supabase.from("product_views").select("id").eq("product_id", info.id).eq("viewer_handle", myHandle).maybeSingle();
+      if(!existing){
+        await supabase.from("product_views").insert({ product_id: info.id, viewer_handle: myHandle, viewer_email: email });
+        const { data: curr } = await supabase.from("products").select("views").eq("id", info.id).single();
+        await supabase.from("products").update({ views: (curr?.views || 0) + 1 }).eq("id", info.id);
+      }
+    }catch(e){}
+  }
+  setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || "");
+};
 const savePhoto = async ()=>{
   try{
     const response = await fetch(modalImage);
