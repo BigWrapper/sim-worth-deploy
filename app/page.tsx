@@ -599,6 +599,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 </div>
 );
+}
 
 return(
 <div style={{minHeight:"100vh", background: theme.bg, color: theme.text, maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
@@ -747,8 +748,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   <button onClick={()=>handleReaction('love')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>❤️ {reactions.filter((r:any)=>r.type==='love').length}</button>
   <button onClick={()=>handleReaction('dislike')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👎 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
 </div>
-</div>
-{/* COMMENTS - UPGRADED FACEBOOK STYLE */}
+{/* COMMENTS */}
 <div style={{marginTop:"16px", borderTop:"1px solid #222", paddingTop:"12px"}}>
   <div onClick={()=>setShowCommentsFull(true)} style={{fontWeight:"900", fontSize:"13px", marginBottom:"8px", color:"#D4AF37", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
     <span>💬 Comments ({comments.length})</span>
@@ -756,12 +756,12 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   </div>
   <div style={{maxHeight:"50px", overflow:"hidden", marginBottom:"10px", opacity:0.8}}>
     {comments.slice(0,1).map((c:any)=>(
-      <div key={c.id} style={{background:"#111", padding:"8px 10px", borderRadius:"10px", marginBottom:"6px", border:"1px solid #222"}}>
+      <div key={c.id} style={{background:"#111", padding:"8px 10px", borderRadius:"10px", border:"1px solid #222"}}>
         <div style={{fontSize:"11px", color:"#D4AF37", fontWeight:"900"}}>{c.commenter_handle}</div>
         <div style={{fontSize:"12px", color:"white", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{c.text}</div>
       </div>
     ))}
-    {comments.length===0 && <div style={{fontSize:"11px", color:"#666"}}>No comments yet - tap View All to be first!</div>}
+    {comments.length===0 && <div style={{fontSize:"11px", color:"#666"}}>No comments yet - tap View All!</div>}
   </div>
   <div style={{display:"flex", gap:"6px"}}>
     <input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment..." style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"20px", fontSize:"13px"}} onKeyDown={(e:any)=> e.key==='Enter' && handleAddComment()} />
