@@ -721,29 +721,32 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
 <img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
-<div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333", overflow:"hidden", overflowWrap:"anywhere"}}>
+<div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
 <>
-<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
 {modalEditingTitle ? (
-<div style={{display:"flex", gap:"6px", flex:1}}>
+<div style={{display:"flex", gap:"6px", flex:1, marginBottom:"10px"}}>
 <input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"8px", borderRadius:"8px"}}/>
 <button onClick={()=>updateTitle(modalInfo.id)} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"8px 12px", borderRadius:"8px", border:"none"}}>Save</button>
 <button onClick={()=>setModalEditingTitle(false)} style={{background:"#222", color:"white", padding:"8px 12px", borderRadius:"8px", border:"1px solid #333"}}>Cancel</button>
 </div>
 ) : (
 <>
-<div style={{fontWeight:"bold", color:"#D4AF37", wordBreak:"break-word", overflowWrap:"anywhere", whiteSpace:"normal", maxWidth:"100%"}}>{modalInfo?.title || "Item"} - ${modalInfo?.price || ""}</div>
-<div style={{background: getStatusBadge(modalInfo?.status).bg, color: getStatusBadge(modalInfo?.status).color, fontSize:"10px", fontWeight:"900", padding:"4px 8px", borderRadius:"12px", border:"1px solid currentColor"}}>{getStatusBadge(modalInfo?.status).text}</div>
+{/* TOP ROW - FOR SALE | PRICE | HANDLE - matches 3 reactions */}
+<div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"6px", alignItems:"center", marginBottom:"12px"}}>
+  <div style={{background: getStatusBadge(modalInfo?.status).bg, color: getStatusBadge(modalInfo?.status).color, fontSize:"9px", fontWeight:"900", padding:"6px 8px", borderRadius:"12px", border:"1px solid currentColor", textAlign:"center"}}>{getStatusBadge(modalInfo?.status).text}</div>
+  <div style={{textAlign:"center", fontWeight:"900", color:"#D4AF37", fontSize:"14px"}}>${modalInfo?.price || ""}</div>
+  <div onClick={()=>{ const h=modalInfo?.owner_handle||modalInfo?.handle; const u=profiles.find((x:any)=>x.handle===h); if(u){ setShowImageModal(false); loadPublicUser(u); } }} style={{textAlign:"right", fontSize:"10px", color:"#D4AF37", fontWeight:"900", cursor:"pointer", textDecoration:"underline", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>@{modalInfo?.owner_handle||modalInfo?.handle||""}</div>
+</div>
+{/* MIDDLE - DESCRIPTION FULL WIDTH */}
+<div style={{fontWeight:"600", color:"#f5f2e8", wordBreak:"break-word", overflowWrap:"anywhere", whiteSpace:"normal", fontSize:"13px", lineHeight:"1.4", padding:"10px 0", borderTop:"1px solid #222", borderBottom:"1px solid #222", marginBottom:"12px", maxHeight:"100px", overflowY:"auto"}}>{modalInfo?.title || "Item"}</div>
 </>
 )}
-</div>
-<div onClick={()=>{ const h=modalInfo?.owner_handle||modalInfo?.handle; if(!h) return; const u=profiles.find((x:any)=>x.handle===h); if(u){ setShowImageModal(false); loadPublicUser(u); } }} style={{fontSize:"11px", color:"#D4AF37", marginTop:"6px", fontWeight:"900", cursor:"pointer", textDecoration:"underline"}}>@{modalInfo?.owner_handle||modalInfo?.handle||""} - View Full Profile →</div>
-{/* REACTIONS LIVE - 3 types */}
-<div style={{display:"flex", gap:"8px", marginTop:"12px", alignItems:"center"}}>
-  <button onClick={()=>handleReaction('like')} style={{flex:1, background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👍 {reactions.filter((r:any)=>r.type==='like').length}</button>
-  <button onClick={()=>handleReaction('love')} style={{flex:1, background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>❤️ {reactions.filter((r:any)=>r.type==='love').length}</button>
-  <button onClick={()=>handleReaction('dislike')} style={{flex:1, background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👎 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
+{/* BOTTOM ROW - 3 REACTIONS MATCHING TOP */}
+<div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px", alignItems:"center"}}>
+  <button onClick={()=>handleReaction('like')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👍 {reactions.filter((r:any)=>r.type==='like').length}</button>
+  <button onClick={()=>handleReaction('love')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>❤️ {reactions.filter((r:any)=>r.type==='love').length}</button>
+  <button onClick={()=>handleReaction('dislike')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>👎 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
 </div>
 {/* COMMENTS */}
 <div style={{marginTop:"16px", borderTop:"1px solid #222", paddingTop:"12px"}}>
