@@ -773,7 +773,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
   {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
 <div style={{marginTop:"10px"}}>
-<div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>A$$ET - $TATU$</div>
+<div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>A$$ET $TATU$</div>
 <div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap"}}>
 <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#00ff88" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ For Sale</button>
 <button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Sold Out</button>
@@ -790,7 +790,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{marginTop:"10px"}}>
 {modalInfo?.status==="sold" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 SOLD OUT</div>
 : modalInfo?.status==="not_for_sale" ? <div style={{background:"#333", color:"#888", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>💎 NOT FOR SALE</div>
-: <div><div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>PLACE AN OFFER</div><div style={{display:"flex", gap:"6px", marginTop:"8px"}}><input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer R" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/><button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button></div></div>}
+: <div><div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>PLACE AN OFFER</div><div style={{display:"flex", gap:"6px", marginTop:"8px"}}><input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/><button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button></div></div>}
 </div>
 )}
 </>
@@ -1177,30 +1177,45 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:10001, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px"}}>
 <div style={{background:"#111", border:"2px solid #D4AF37", borderRadius:"16px", padding:"16px", width:"280px"}}>
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px"}}>
-<div style={{fontWeight:"900", color:"#D4AF37"}}>⌨ $1M Count</div>
+<div style={{fontWeight:"900", color:"#D4AF37"}}>$1M Count</div>
 <div onClick={()=>setShowCalculator(false)} style={{cursor:"pointer", color:"white", fontSize:"22px", fontWeight:"900"}}>❌</div>
 </div>
 <div style={{background:"black", color:"#D4AF37", padding:"12px", borderRadius:"10px", textAlign:"right", fontSize:"28px", fontWeight:"900", marginBottom:"12px", minHeight:"48px", wordBreak:"break-all", border:"1px solid #222"}}>{calcDisplay}</div>
 <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"8px"}}>
 {[
-  {l:"C", c:"#333"}, {l:"⌫", c:"#333"}, {l:"%", c:"#333"}, {l:"➗", c:"#D4AF37"},
-  {l:"7", c:"#222"}, {l:"8", c:"#222"}, {l:"9", c:"#222"}, {l:"✖️", c:"#D4AF37"},
-  {l:"4", c:"#222"}, {l:"5", c:"#222"}, {l:"6", c:"#222"}, {l:"➖", c:"#D4AF37"},
-  {l:"1", c:"#222"}, {l:"2", c:"#222"}, {l:"3", c:"#222"}, {l:"➕", c:"#D4AF37"},
-  {l:"0", c:"#222"}, {l:"●", c:"#222"}, {l:"🟰", c:"#D4AF37"}, {l:"", c:""},
+  {l:"C", c:"#333", v:"C"}, {l:"⌫", c:"#333", v:"⌫"}, {l:"%", c:"#333", v:"%"}, {l:"➗", c:"#D4AF37", v:"/"},
+  {l:"7", c:"#222", v:"7"}, {l:"8", c:"#222", v:"8"}, {l:"9", c:"#222", v:"9"}, {l:"✖️", c:"#D4AF37", v:"*"},
+  {l:"4", c:"#222", v:"4"}, {l:"5", c:"#222", v:"5"}, {l:"6", c:"#222", v:"6"}, {l:"➖", c:"#D4AF37", v:"-"},
+  {l:"1", c:"#222", v:"1"}, {l:"2", c:"#222", v:"2"}, {l:"3", c:"#222", v:"3"}, {l:"➕", c:"#D4AF37", v:"+"},
+  {l:"0", c:"#222", v:"0"}, {l:"●", c:"#222", v:"."}, {l:"🟰", c:"#D4AF37", v:"="}, {l:"", c:"", v:""},
 ].map((b,i)=>{
   if(!b.l) return <div key={i}></div>;
   return (
   <button key={i} onClick={()=>{
-    if(b.l==="C") setCalcDisplay("0");
-    else if(b.l==="⌫") setCalcDisplay(p=> p.length>1 ? p.slice(0,-1) : "0");
-    else if(b.l==="="){ try{ let r = eval(calcDisplay.replace(/%/g,"/100")); setCalcDisplay(String(r).slice(0,10)); }catch{ setCalcDisplay("Error"); } }
-    else setCalcDisplay(p=> p==="0" && b.l!=="." ? b.l : p+b.l);
-  }} style={{background:b.c, color: b.l==="=" || b.l==="/" || b.l==="*" || b.l==="-" || b.l==="+" ? "black" : "white", border:"1px solid #333", padding:"14px 0", borderRadius:"10px", fontWeight:"900", fontSize:"18px", cursor:"pointer"}}>{b.l}</button>
+    if(b.v==="C") setCalcDisplay("0");
+    else if(b.v==="⌫") setCalcDisplay(p=> p.length>1 ? p.slice(0,-1) : "0");
+    else if(b.v==="="){ 
+      try{ 
+        let exp = calcDisplay.replace(/%/g,"/100").replace(/÷/g,"/").replace(/×/g,"*"); 
+        // eval safe for calc
+        let r = Function('"use strict";return ('+exp+')')(); 
+        setCalcDisplay(String(r).slice(0,10)); 
+      }catch{ 
+        setCalcDisplay("Error"); 
+      } 
+    }
+    else {
+      setCalcDisplay(p=> {
+        if(p==="0" && ![".", "%", "/", "*", "-", "+"].includes(b.v)) return b.v;
+        if(p==="Error") return b.v;
+        return p + b.v;
+      });
+    }
+  }} style={{background:b.c, color: b.c==="#D4AF37" ? "black" : "white", border:"1px solid #333", padding:"14px 0", borderRadius:"10px", fontWeight:"900", fontSize:"18px", cursor:"pointer"}}>{b.l}</button>
   );
 })}
 </div>
-<button onClick={()=>setShowCalculator(false)} style={{width:"100%", marginTop:"10px", background:"#D4AF37", color:"black", border:"none", padding:"12px", borderRadius:"20px", fontWeight:"900", cursor:"pointer"}}>Done - Use{calcDisplay}</button>
+<button onClick={()=>setShowCalculator(false)} style={{width:"100%", marginTop:"10px", background:"#D4AF37", color:"black", border:"none", padding:"12px", borderRadius:"20px", fontWeight:"900", cursor:"pointer"}}>Done - Use {calcDisplay}</button>
 </div>
 </div>
 )}
