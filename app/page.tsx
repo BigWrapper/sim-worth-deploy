@@ -465,6 +465,9 @@ const filteredProfiles = (()=> {
   }
 })();
 const myFollowers = follows.filter(f=> f.following_handle===myHandle).length;
+const myFollowersHandles = follows.filter((f:any)=> f.following_handle===myHandle).map((f:any)=> f.follower_handle);
+const myFollowersProfiles = profiles.filter((p:any)=> myFollowersHandles.includes(p.handle));
+const myFollowingProfiles = profiles.filter((p:any)=> myFollowingHandles.includes(p.handle));
 const myOffersReceived = offers.filter(o=> o.to_handle===myHandle);
 const myOffersSent = offers.filter(o=> o.from_handle===myHandle);
 const myOffersCount = myOffersReceived.length;
@@ -1092,29 +1095,11 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$H0P LI$T🛒 Available🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
 <input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
-<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 ₿UYER$ ({availableMarketItems.length})</button>
-<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>💳 $ELLER$ ({filteredProfiles.length})</button>
+<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>💰 Buyers ({myFollowersProfiles.length})</button>
+<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>💳 Sellers ({myFollowingProfiles.length})</button>
 </div>
 </div>
-{searchTab==="market" && (
-<div style={{padding:"12px"}}>
-<div style={{display:"flex", gap:"8px", marginBottom:"12px"}}>
-<button onClick={()=>setMarketView("new")} style={{flex:1, background: marketView==="new" ? "#D4AF37" : "#111", color: marketView==="new" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>⬆️ NEW ➡️ OLD ⬇️</button>
-<button onClick={()=>setMarketView("trending")} style={{flex:1, background: marketView==="trending" ? "#D4AF37" : "#111", color: marketView==="trending" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>👀Most🔍Viewed👀</button>
-</div>
-<div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
-{displayMarketItems.map((p:any)=>{
-  const owner = profiles.find(pr=> pr.email===p.owner_email);
-  return (
-  <div key={p.id} onClick={()=>{ const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border:"1px solid #2a2a2a", cursor:"pointer"}}>
-    <div style={{position:"relative"}}><img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/><div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div><div style={{position:"absolute", top:"6px", right:"6px", background:"rgba(0,0,0,0.7)", color:"white", fontSize:"9px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>👁️ {p.views || 0}</div></div>
-    <div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div style={{fontSize:"10px", color:"#888"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]}</div></div>
-  </div>
-  );
-})}
-</div>
-</div>
-)}
+
 {searchTab==="users" && (
 <div style={{padding:"15px"}}>
 <input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"12px", marginBottom:"12px"}}/>
@@ -1138,7 +1123,42 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="accounts" ? "900" : "400", background: view==="accounts" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="accounts" ? "1px solid #0a84ff" : "none"}}>📦 $tore {isMarketRefreshing && "↻"}</div>
 <div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="profile" ? "900" : "400", background: view==="profile" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="profile" ? "1px solid #0a84ff" : "none"}}>🏛️ ₿anc</div>
 </div>
-
+{searchTab==="market" && (
+<div style={{padding:"12px"}}>
+<div style={{display:"flex", gap:"8px", marginBottom:"12px"}}>
+<button onClick={()=>setMarketView("new")} style={{flex:1, background: marketView==="new" ? "#D4AF37" : "#111", color: marketView==="new" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>⬆️ NEW ➡️ OLD ⬇️</button>
+<button onClick={()=>setMarketView("trending")} style={{flex:1, background: marketView==="trending" ? "#D4AF37" : "#111", color: marketView==="trending" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>👀Most🔍Viewed👀</button>
+</div>
+<div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
+{displayMarketItems.map((p:any)=>{
+  const owner = profiles.find(pr=> pr.email===p.owner_email);
+  const isMine = p.owner_email===email;
+  return (
+  <div key={p.id} onClick={()=>{ const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="perfect" ? "1.5px solid #D4AF37" : "1px solid #2a2a2a", cursor:"pointer"}}>
+    <div style={{position:"relative"}}>
+      <img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/>
+      <div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div>
+      <div style={{position:"absolute", top:"6px", right:"6px", background:"rgba(0,0,0,0.7)", color:"white", fontSize:"9px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>👁️ {p.views || 0}</div>
+      {p.status==="perfect" && <div style={{position:"absolute", top:"6px", left:"6px", background:"#D4AF37", color:"black", fontSize:"8px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>⭐ PERFECT</div>}
+    </div>
+    <div style={{padding:"8px"}}>
+      <div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div>
+      <div style={{fontSize:"10px", color:"#888", marginBottom: isMine ? "6px" : "0"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]}</div>
+      
+      {/* PERFECT BUTTON NEXT TO RENAME - ONLY FOR YOUR ITEMS */}
+      {isMine && (
+        <div style={{display:"flex", gap:"4px", marginTop:"4px"}}>
+          <button onClick={(e)=>{ e.stopPropagation(); handleRenameProduct(p); }} style={{flex:1, background:"#222", color:"white", border:"1px solid #333", padding:"5px 0", borderRadius:"8px", fontSize:"9px", fontWeight:"900", cursor:"pointer"}}>✏️ Rename</button>
+          <button onClick={(e)=>{ e.stopPropagation(); handleTogglePerfect(p); }} style={{flex:1, background: p.status==="perfect" ? "#D4AF37" : "#111", color: p.status==="perfect" ? "black" : "#D4AF37", border: p.status==="perfect" ? "1px solid #D4AF37" : "1px solid #D4AF37", padding:"5px 0", borderRadius:"8px", fontSize:"9px", fontWeight:"900", cursor:"pointer"}}>{p.status==="perfect" ? "✅ Perfect" : "⭐ Perfect?"}</button>
+        </div>
+      )}
+    </div>
+  </div>
+  );
+})}
+</div>
+</div>
+)}
 {showSplash && (
   <div style={{ height: '100vh', width: '100vw', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'fixed', top: 0, left: 0, zIndex: 9999 }}>
     <img src="/splash.png" style={{ width: '100vw', height: '100vh', objectFit: 'cover' }} alt="splash" />
