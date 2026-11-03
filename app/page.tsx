@@ -100,7 +100,7 @@ const [editingBio, setEditingBio] = useState(false);
 const [showImageModal, setShowImageModal] = useState(false);
 const [showCommentsFull, setShowCommentsFull] = useState(false);
 const [showCalculator, setShowCalculator] = useState(false);
-const [calcDisplay, setCalcDisplay] = useState("0");
+const [countDisplay, setCountDisplay] = useState("0");
 const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
@@ -1193,8 +1193,8 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   <button key={i} onClick={()=>{
     if(b.l==="C") setCountDisplay("0");
     else if(b.l==="⌫") setCountDisplay(p=> p.length>1 ? p.slice(0,-1) : "0");
-    else if(b.l==="="){ try{ let r = eval(countDisplay.replace(/%/g,"/100")); setCountDisplay(String(r).slice(0,10)); }catch{ setCountDisplay("Error"); } }
-    else setCountDisplay(p=> p==="0" && b.l!=="." ? b.l : p+b.l);
+    else if(b.l==="🟰"){ try{ let r = eval(countDisplay.replace(/%/g,"/100")); setCountDisplay(String(r).slice(0,10)); }catch{ setCountDisplay("Error"); } }
+    else setCountDisplay(p=> p==="0" && b.l!=="●" ? b.l : p+b.l);
   }} style={{background:b.c, color: b.l==="🟰" || b.l==="➗" || b.l==="✖️" || b.l==="➖" || b.l==="➕" ? "black" : "white", border:"1px solid #333", padding:"14px 0", borderRadius:"10px", fontWeight:"900", fontSize:"18px", cursor:"pointer"}}>{b.l}</button>
   );
 })}
