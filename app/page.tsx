@@ -103,6 +103,7 @@ const [showCalculator, setShowCalculator] = useState(false);
 const [calcDisplay, setCalcDisplay] = useState("0");
 const [zarRate, setZarRate] = useState(18.72);
 const [convertedZAR, setConvertedZAR] = useState("");
+const [cmCycle, setCmCycle] = useState(0);
 const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
@@ -1179,29 +1180,35 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:10001, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px"}}>
 <div style={{background:"#111", border:"2px solid #D4AF37", borderRadius:"16px", padding:"16px", width:"280px"}}>
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px"}}>
-<div style={{fontWeight:"900", color:"#D4AF37"}}>$1M Count • ${zarRate}</div>
-<div onClick={()=>{setShowCalculator(false); setConvertedZAR("");}} style={{cursor:"pointer", color:"white", fontSize:"22px", fontWeight:"900"}}>❌</div>
+<div style={{fontWeight:"900", color:"#D4AF37", fontSize:"12px"}}>$1M Count • ${zarRate} • {["cm","mm","in","ft"][cmCycle]}</div>
+<div onClick={()=>{setShowCalculator(false); setConvertedZAR(""); setCmCycle(0);}} style={{cursor:"pointer", color:"white", fontSize:"22px", fontWeight:"900"}}>❌</div>
 </div>
 
 <div style={{background:"black", color:"#D4AF37", padding:"12px", borderRadius:"10px", textAlign:"right", fontSize:"28px", fontWeight:"900", marginBottom:"4px", minHeight:"48px", wordBreak:"break-all", border:"1px solid #222"}}>{calcDisplay}</div>
 
 {convertedZAR && (
-  <div style={{background:"#0a2a0a", color:"#00ff88", padding:"8px 12px", borderRadius:"8px", textAlign:"right", fontSize:"16px", fontWeight:"900", marginBottom:"12px", border:"1px solid #00ff88"}}>
-    🇿🇦 R {convertedZAR}
+  <div style={{background:"#0a2a0a", color:"#00ff88", padding:"8px 12px", borderRadius:"8px", textAlign:"right", fontSize:"12px", fontWeight:"900", marginBottom:"12px", border:"1px solid #00ff88", whiteSpace:"pre-line", lineHeight:"1.4"}}>
+    {convertedZAR}
   </div>
 )}
 
 <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"8px"}}>
 {[
+  {l:["cm→mm","mm→in","in→ft","ft→cm"][cmCycle], c:"#1a1a3a", v:"CM", t:"cycle"},
+  {l:"lb→kg", c:"#1a1a3a", v:"LB"},
+  {l:"kg→cup", c:"#1a1a3a", v:"KGCUP"},
+  {l:"g→tsp", c:"#1a1a3a", v:"GTSP"},
+
   {l:"C", c:"#333", v:"C"}, {l:"⌫", c:"#333", v:"⌫"}, {l:"%", c:"#333", v:"%"}, {l:"➗", c:"#D4AF37", v:"/"},
   {l:"7", c:"#222", v:"7"}, {l:"8", c:"#222", v:"8"}, {l:"9", c:"#222", v:"9"}, {l:"✖️", c:"#D4AF37", v:"*"},
   {l:"4", c:"#222", v:"4"}, {l:"5", c:"#222", v:"5"}, {l:"6", c:"#222", v:"6"}, {l:"➖", c:"#D4AF37", v:"-"},
   {l:"1", c:"#222", v:"1"}, {l:"2", c:"#222", v:"2"}, {l:"3", c:"#222", v:"3"}, {l:"➕", c:"#D4AF37", v:"+"},
-  {l:"0", c:"#222", v:"0"}, {l:"●", c:"#222", v:"."}, {l:"🟰", c:"#D4AF37", v:"="}, {l:"$→R", c:"#00c875", v:"$→R"},
+  {l:"0", c:"#222", v:"0"}, {l:"●", c:"#222", v:"."}, {l:"$→R", c:"#00c875", v:"$→R"}, {l:"🟰", c:"#D4AF37", v:"="},
 ].map((b,i)=>{
   return (
   <button key={i} onClick={async()=>{
-    if(b.v==="C") { setCalcDisplay("0"); setConvertedZAR(""); }
+    const num = parseFloat(calcDisplay);
+    if(b.v==="C") { setCalcDisplay("0"); setConvertedZAR(""); setCmCycle(0); }
     else if(b.v==="⌫") { setCalcDisplay(p=> p.length>1 ? p.slice(0,-1) : "0"); setConvertedZAR(""); }
     else if(b.v==="="){ 
       try{ 
@@ -1209,49 +1216,64 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
         let r = Function('"use strict";return ('+exp+')')(); 
         let res = String(r).slice(0,10);
         setCalcDisplay(res);
-        // auto convert on =
-        let num = parseFloat(res);
-        if(!isNaN(num)) {
+        if(!isNaN(parseFloat(res))) {
           try {
             let resp = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
             let data = await resp.json();
             let rate = data.rates.ZAR || 18.72;
             setZarRate(rate.toFixed(2));
-            setConvertedZAR((num * rate).toFixed(2));
-          } catch {
-            setConvertedZAR((num * 18.72).toFixed(2));
-          }
+            setConvertedZAR(`🇿🇦 R ${(parseFloat(res) * rate).toFixed(2)}`);
+          } catch { setConvertedZAR(`🇿🇦 R ${(parseFloat(res) * zarRate).toFixed(2)}`); }
         }
       }catch{ setCalcDisplay("Error"); } 
     }
+    else if(b.v==="CM"){
+      if(isNaN(num)) return;
+      if(cmCycle===0){ // cm -> mm
+        setConvertedZAR(`📏 ${num} cm = ${num*10} mm`);
+        setCmCycle(1);
+      } else if(cmCycle===1){ // mm -> inch (assuming input was original cm, but now we show mm to inch logic)
+        setConvertedZAR(`📏 ${num} cm = ${(num/2.54).toFixed(2)} inch\n= ${(num*10/25.4).toFixed(2)} inch (from mm)`);
+        setCmCycle(2);
+      } else if(cmCycle===2){ // inch -> feet
+        let inch = num/2.54;
+        setConvertedZAR(`📏 ${num} cm = ${inch.toFixed(2)} in = ${(inch/12).toFixed(3)} ft`);
+        setCmCycle(3);
+      } else { // ft -> cm (cycle back)
+        let inch = num/2.54;
+        let ft = inch/12;
+        setConvertedZAR(`📏 ${num} cm = ${ft.toFixed(4)} ft\nCycle back → cm`);
+        setCmCycle(0);
+      }
+    }
+    else if(b.v==="LB"){ if(isNaN(num)) return; setConvertedZAR(`⚖️ ${num} lb = ${(num*0.453592).toFixed(3)} kg`); }
+    else if(b.v==="KGCUP"){ if(isNaN(num)) return; setConvertedZAR(`🥣 ${num} kg ≈ ${(num*4.22675).toFixed(2)} cups`); }
+    else if(b.v==="GTSP"){ if(isNaN(num)) return; setConvertedZAR(`🥄 ${num} g = ${(num/5).toFixed(1)} tsp = ${(num/15).toFixed(1)} tbsp`); }
     else if(b.v==="$→R"){
-      let num = parseFloat(calcDisplay);
       if(isNaN(num)) return;
       try {
         let resp = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
         let data = await resp.json();
         let rate = data.rates.ZAR || 18.72;
         setZarRate(rate.toFixed(2));
-        setConvertedZAR((num * rate).toFixed(2));
-      } catch {
-        setConvertedZAR((num * zarRate).toFixed(2));
-      }
+        setConvertedZAR(`🇿🇦 R ${(num * rate).toFixed(2)}`);
+      } catch { setConvertedZAR(`🇿🇦 R ${(num * zarRate).toFixed(2)}`); }
     }
     else {
-      setCalcDisplay(p=> {
-        if(p==="0" && ![".", "%", "/", "*", "-", "+"].includes(b.v)) return b.v;
-        if(p==="Error") return b.v;
-        setConvertedZAR("");
-        return p + b.v;
-      });
+      setCalcDisplay(p=> { if(p==="0" && ![".", "%", "/", "*", "-", "+"].includes(b.v)) return b.v; if(p==="Error") return b.v; setConvertedZAR(""); return p + b.v; });
     }
-  }} style={{background:b.c, color: b.c==="#D4AF37" || b.c==="#00c875" ? "black" : "white", border:"1px solid #333", padding:"14px 0", borderRadius:"10px", fontWeight:"900", fontSize: b.l==="$→R" ? "13px" : "18px", cursor:"pointer"}}>{b.l}</button>
+  }} style={{
+    background:b.c, color: b.c==="#D4AF37" || b.c==="#00c875" ? "black" : "white", 
+    border: b.c==="#1a1a3a" ? "1px solid #5555ff" : "1px solid #333", 
+    padding: b.v==="CM"||b.v==="LB"||b.v==="KGCUP"||b.v==="GTSP" ? "10px 0" : "14px 0", 
+    borderRadius:"10px", fontWeight:"900", 
+    fontSize: b.v==="CM" ? "10px" : b.v==="LB"||b.v==="KGCUP"||b.v==="GTSP" ? "10px" : b.l==="$→R" ? "13px" : "18px", 
+    cursor:"pointer"
+  }}>{b.l}</button>
   );
 })}
 </div>
-
-<button onClick={()=>{setShowCalculator(false); setConvertedZAR("");}} style={{width:"100%", marginTop:"10px", background:"#D4AF37", color:"black", border:"none", padding:"12px", borderRadius:"20px", fontWeight:"900", cursor:"pointer"}}>Done - Use R{convertedZAR || calcDisplay}</button>
-<div style={{textAlign:"center", color:"#666", fontSize:"10px", marginTop:"6px"}}>Live: 1$ = R{zarRate} • Auto updates on =</div>
+<div style={{textAlign:"center", color:"#666", fontSize:"9px", marginTop:"10px"}}>Tap cm button to cycle: cm → mm → inch → feet • ❌ to close</div>
 </div>
 </div>
 )}
