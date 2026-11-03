@@ -1180,14 +1180,14 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{fontWeight:"900", color:"#D4AF37"}}>⌨ $1M Count</div>
 <div onClick={()=>setShowCalculator(false)} style={{cursor:"pointer", color:"white", fontSize:"22px", fontWeight:"900"}}>❌</div>
 </div>
-<div style={{background:"black", color:"#D4AF37", padding:"12px", borderRadius:"10px", textAlign:"right", fontSize:"28px", fontWeight:"900", marginBottom:"12px", minHeight:"48px", wordBreak:"break-all", border:"1px solid #222"}}>{countDisplay}</div>
+<div style={{background:"black", color:"#D4AF37", padding:"12px", borderRadius:"10px", textAlign:"right", fontSize:"28px", fontWeight:"900", marginBottom:"12px", minHeight:"48px", wordBreak:"break-all", border:"1px solid #222"}}>{calcDisplay}</div>
 <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"8px"}}>
 {[
-  {l:"C", c:"#333"}, {l:"⌫", c:"#333"}, {l:"%", c:"#333"}, {l:"/", c:"#D4AF37"},
-  {l:"7", c:"#222"}, {l:"8", c:"#222"}, {l:"9", c:"#222"}, {l:"*", c:"#D4AF37"},
-  {l:"4", c:"#222"}, {l:"5", c:"#222"}, {l:"6", c:"#222"}, {l:"-", c:"#D4AF37"},
-  {l:"1", c:"#222"}, {l:"2", c:"#222"}, {l:"3", c:"#222"}, {l:"+", c:"#D4AF37"},
-  {l:"0", c:"#222"}, {l:".", c:"#222"}, {l:"=", c:"#D4AF37"}, {l:"", c:""},
+  {l:"C", c:"#333"}, {l:"⌫", c:"#333"}, {l:"%", c:"#333"}, {l:"➗", c:"#D4AF37"},
+  {l:"7", c:"#222"}, {l:"8", c:"#222"}, {l:"9", c:"#222"}, {l:"✖️", c:"#D4AF37"},
+  {l:"4", c:"#222"}, {l:"5", c:"#222"}, {l:"6", c:"#222"}, {l:"➖", c:"#D4AF37"},
+  {l:"1", c:"#222"}, {l:"2", c:"#222"}, {l:"3", c:"#222"}, {l:"➕", c:"#D4AF37"},
+  {l:"0", c:"#222"}, {l:"●", c:"#222"}, {l:"🟰", c:"#D4AF37"}, {l:"", c:""},
 ].map((b,i)=>{
   if(!b.l) return <div key={i}></div>;
   return (
@@ -1196,7 +1196,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
     else if(b.l==="⌫") setCalcDisplay(p=> p.length>1 ? p.slice(0,-1) : "0");
     else if(b.l==="="){ try{ let r = eval(calcDisplay.replace(/%/g,"/100")); setCalcDisplay(String(r).slice(0,10)); }catch{ setCalcDisplay("Error"); } }
     else setCalcDisplay(p=> p==="0" && b.l!=="." ? b.l : p+b.l);
-  }} style={{background:b.c, color: b.l==="🟰" || b.l==="➗" || b.l==="✖️" || b.l==="➖" || b.l==="➕" ? "black" : "white", border:"1px solid #333", padding:"14px 0", borderRadius:"10px", fontWeight:"900", fontSize:"18px", cursor:"pointer"}}>{b.l}</button>
+  }} style={{background:b.c, color: b.l==="=" || b.l==="/" || b.l==="*" || b.l==="-" || b.l==="+" ? "black" : "white", border:"1px solid #333", padding:"14px 0", borderRadius:"10px", fontWeight:"900", fontSize:"18px", cursor:"pointer"}}>{b.l}</button>
   );
 })}
 </div>
