@@ -563,7 +563,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 `}</style>
 
 <div className="jackpot-floaters" aria-hidden="true">
-  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">+₿A₦€</span><span className="jackpot-number">$1M W0RTH</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">¥€$</span>
+  <span className="jackpot-number">$1M</span><span className="jackpot-number">$1M</span><span className="jackpot-number">₿a₦c</span><span className="jackpot-number">$1M W0RTH</span><span className="jackpot-number">$1000000</span><span className="jackpot-number">¥€$</span>
 </div>
 
 <div className="jackpot-banner" aria-hidden="true"><span className="jackpot-lamp"/> YOU ARE <span className="jackpot-lamp"/></div>
@@ -773,7 +773,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
   {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
 <div style={{marginTop:"10px"}}>
-<div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>YOUR ITEM - EDIT</div>
+<div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>YOUR A$$ET - $TATU$</div>
 <div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap"}}>
 <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#00ff88" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ For Sale</button>
 <button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Sold Out</button>
@@ -885,7 +885,6 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   const fromProfile = profiles.find(p=> p.handle===o.from_handle);
   return (
   <div key={o.id} style={{background:"#111", border:"1px solid #2a2a2a", borderLeft:"4px solid #D4AF37", padding:"12px", borderRadius:"12px", marginBottom:"10px", position:"relative"}}>
-    <div onClick={()=>deleteOffer(o.id)} style={{position:"absolute", top:"8px", right:"8px", background:"#ff4444", color:"white", width:"24px", height:"24px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"12px", fontWeight:"900", cursor:"pointer"}}>✕</div>
     <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
       <img src={fromProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
       <div style={{flex:1, paddingRight:"30px"}}><div style={{fontWeight:"900"}}>{o.from_handle} offered <span style={{color:"#D4AF37"}}>${o.amount}</span></div></div>
@@ -957,7 +956,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {view==="feed" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 $IM Worth 👑 Investor$ 🏆</h2>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 W0RTH 👑 LI$T 🏆</h2>
 <div onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color: isMarketRefreshing ? "white" : "black", fontWeight:"900", cursor:"pointer", display:"inline-block", marginTop:"8px"}}>{isMarketRefreshing ? "↻ Syncing Live..." : "↻ Refresh Real-Time"}</div>
 </div>
 <div style={{padding:"12px"}}>
@@ -1086,11 +1085,11 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM Worth $tore 🛒 Available 🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "🌙 Dark" : "☀️ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
+<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM $tore 🛒 Available 🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "🌙 Dark" : "☀️ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
 <input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
-<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 Sell List ({availableMarketItems.length})</button>
-<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>💰 Buyers ({filteredProfiles.length})</button>
+<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 ₿uyer$ ({availableMarketItems.length})</button>
+<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>💳 $eller$ ({filteredProfiles.length})</button>
 </div>
 </div>
 {searchTab==="market" && (
@@ -1177,30 +1176,30 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:10001, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px"}}>
 <div style={{background:"#111", border:"2px solid #D4AF37", borderRadius:"16px", padding:"16px", width:"280px"}}>
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px"}}>
-<div style={{fontWeight:"900", color:"#D4AF37"}}>🧮 SIM Calc</div>
-<div onClick={()=>setShowCalculator(false)} style={{cursor:"pointer", color:"white", fontSize:"22px", fontWeight:"900"}}>✕</div>
+<div style={{fontWeight:"900", color:"#D4AF37"}}>⌨ $1M Count</div>
+<div onClick={()=>setShowCalculator(false)} style={{cursor:"pointer", color:"white", fontSize:"22px", fontWeight:"900"}}>❌</div>
 </div>
-<div style={{background:"black", color:"#D4AF37", padding:"12px", borderRadius:"10px", textAlign:"right", fontSize:"28px", fontWeight:"900", marginBottom:"12px", minHeight:"48px", wordBreak:"break-all", border:"1px solid #222"}}>{calcDisplay}</div>
+<div style={{background:"black", color:"#D4AF37", padding:"12px", borderRadius:"10px", textAlign:"right", fontSize:"28px", fontWeight:"900", marginBottom:"12px", minHeight:"48px", wordBreak:"break-all", border:"1px solid #222"}}>{countDisplay}</div>
 <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"8px"}}>
 {[
-  {l:"C", c:"#333"}, {l:"⌫", c:"#333"}, {l:"%", c:"#333"}, {l:"/", c:"#D4AF37"},
-  {l:"7", c:"#222"}, {l:"8", c:"#222"}, {l:"9", c:"#222"}, {l:"*", c:"#D4AF37"},
-  {l:"4", c:"#222"}, {l:"5", c:"#222"}, {l:"6", c:"#222"}, {l:"-", c:"#D4AF37"},
-  {l:"1", c:"#222"}, {l:"2", c:"#222"}, {l:"3", c:"#222"}, {l:"+", c:"#D4AF37"},
-  {l:"0", c:"#222"}, {l:".", c:"#222"}, {l:"=", c:"#D4AF37"}, {l:"", c:""},
+  {l:"C", c:"#333"}, {l:"⌫", c:"#333"}, {l:"%", c:"#333"}, {l:"➗", c:"#D4AF37"},
+  {l:"7", c:"#222"}, {l:"8", c:"#222"}, {l:"9", c:"#222"}, {l:"✖️", c:"#D4AF37"},
+  {l:"4", c:"#222"}, {l:"5", c:"#222"}, {l:"6", c:"#222"}, {l:"➖", c:"#D4AF37"},
+  {l:"1", c:"#222"}, {l:"2", c:"#222"}, {l:"3", c:"#222"}, {l:"➕", c:"#D4AF37"},
+  {l:"0", c:"#222"}, {l:"●", c:"#222"}, {l:"🟰", c:"#D4AF37"}, {l:"", c:""},
 ].map((b,i)=>{
   if(!b.l) return <div key={i}></div>;
   return (
   <button key={i} onClick={()=>{
-    if(b.l==="C") setCalcDisplay("0");
-    else if(b.l==="⌫") setCalcDisplay(p=> p.length>1 ? p.slice(0,-1) : "0");
-    else if(b.l==="="){ try{ let r = eval(calcDisplay.replace(/%/g,"/100")); setCalcDisplay(String(r).slice(0,10)); }catch{ setCalcDisplay("Error"); } }
-    else setCalcDisplay(p=> p==="0" && b.l!=="." ? b.l : p+b.l);
-  }} style={{background:b.c, color: b.l==="=" || b.l==="/" || b.l==="*" || b.l==="-" || b.l==="+" ? "black" : "white", border:"1px solid #333", padding:"14px 0", borderRadius:"10px", fontWeight:"900", fontSize:"18px", cursor:"pointer"}}>{b.l}</button>
+    if(b.l==="C") setCountDisplay("0");
+    else if(b.l==="⌫") setCountDisplay(p=> p.length>1 ? p.slice(0,-1) : "0");
+    else if(b.l==="="){ try{ let r = eval(countDisplay.replace(/%/g,"/100")); setCountDisplay(String(r).slice(0,10)); }catch{ setCountDisplay("Error"); } }
+    else setCountDisplay(p=> p==="0" && b.l!=="." ? b.l : p+b.l);
+  }} style={{background:b.c, color: b.l==="🟰" || b.l==="➗" || b.l==="✖️" || b.l==="➖" || b.l==="➕" ? "black" : "white", border:"1px solid #333", padding:"14px 0", borderRadius:"10px", fontWeight:"900", fontSize:"18px", cursor:"pointer"}}>{b.l}</button>
   );
 })}
 </div>
-<button onClick={()=>setShowCalculator(false)} style={{width:"100%", marginTop:"10px", background:"#D4AF37", color:"black", border:"none", padding:"12px", borderRadius:"20px", fontWeight:"900", cursor:"pointer"}}>Done - Use ${calcDisplay}</button>
+<button onClick={()=>setShowCalculator(false)} style={{width:"100%", marginTop:"10px", background:"#D4AF37", color:"black", border:"none", padding:"12px", borderRadius:"20px", fontWeight:"900", cursor:"pointer"}}>Done - Use ${countDisplay}</button>
 </div>
 </div>
 )}
