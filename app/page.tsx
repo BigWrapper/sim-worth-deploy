@@ -466,7 +466,33 @@ const savePhoto = async ()=>{
     window.open(modalImage, '_blank');
   }
 };
-const myFollowingHandles = follows.filter((f:any)=> f.follower_handle===myHandle).map((f:any)=> f.following_handle);
+const handleRenameProduct = async (product:any) => {
+  const newTitle = prompt("Rename product:", product.title);
+  if(!newTitle || !newTitle.trim()) return;
+  const tempTitle = newTitle.trim();
+  
+  // 1. Instant UI for YOU (optimistic)
+  setProducts(prev => prev.map(p=> p.id===product.id ? {...p, title: tempTitle} : p));
+  setFeedProducts(prev => prev.map(p=> p.id===product.id ? {...p, title: tempTitle} : p));
+  setSelectedUserProducts(prev => prev.map(p=> p.id===product.id ? {...p, title: tempTitle} : p));
+  
+  // 2. Save to Supabase + Live for EVERYONE
+  const { error } = await supabase.from("products").update({ title: tempTitle }).eq("id", product.id);
+  if(error) alert("Rename failed: "+error.message);
+};
+
+const handleTogglePerfect = async (product:any) => {
+  const newStatus = product.status==="perfect" ? "for_sale" : "perfect";
+  
+  // 1. Instant UI
+  setProducts(prev => prev.map(p=> p.id===product.id ? {...p, status: newStatus} : p));
+  setFeedProducts(prev => prev.map(p=> p.id===product.id ? {...p, status: newStatus} : p));
+  
+  // 2. Supabase + Realtime broadcast
+  const { error } = await supabase.from("products").update({ status: newStatus }).eq("id", product.id);
+  if(error) alert("Perfect toggle failed: "+error.message);
+};
+  const myFollowingHandles = follows.filter((f:any)=> f.follower_handle===myHandle).map((f:any)=> f.following_handle);
 const filteredProfiles = (()=> {
   const q = search.toLowerCase().trim();
   if(!q){
