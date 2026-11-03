@@ -901,7 +901,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   const toProfile = profiles.find(p=> p.handle===o.to_handle);
   return (
   <div key={o.id} style={{background:"#111", border:"1px solid #2a2a2a", borderLeft:"4px solid #00ff88", padding:"12px", borderRadius:"12px", marginBottom:"10px", position:"relative"}}>
-    <div onClick={()=>deleteOffer(o.id)} style={{position:"absolute", top:"8px", right:"8px", background:"#ff4444", color:"white", width:"24px", height:"24px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"12px", fontWeight:"900", cursor:"pointer"}}>✕</div>
+    <div onClick={()=>deleteOffer(o.id)} style={{position:"absolute", top:"8px", right:"8px", background:"#ff4444", color:"white", wi
     <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
       <img src={toProfile?.avatar || "https://i.pravatar.cc/200"} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
       <div style={{flex:1, paddingRight:"30px"}}><div style={{fontWeight:"900"}}>You → {o.to_handle} <span style={{color:"#D4AF37"}}>${o.amount}</span></div></div>
@@ -982,7 +982,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
 
 <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#0a1a0f"}}>
-<div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>💎 PROFILE STATUS</div>
+<div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>PROFILE STATUS</div>
 <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
 <button onClick={()=>setProfileStatus("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ For Sale</button>
 <button onClick={()=>setProfileStatus("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Sold Out</button>
@@ -993,7 +993,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup - $IM ₿anc</div>
 <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
-<option value="capitec">Capitec</option><option value="payshap">PayShap</option><option value="bank">EFT</option><option value="paypal">FNB</option><option value="custom">Custom Link</option>
+<option value="capitec">Capitec</option><option value="payshap">PayShap</option><option value="bank">EFT</option><option value="fnb">FNB</option><option value="custom">Custom Link</option>
 </select>
 <input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="Enter PayShap 082..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
 <input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
@@ -1085,18 +1085,18 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM $tore 🛒 Available 🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "🌙 Dark" : "☀️ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
+<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$IM $tore 🛒 Available 🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
 <input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
-<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 ₿uyer$ ({availableMarketItems.length})</button>
-<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>💳 $eller$ ({filteredProfiles.length})</button>
+<button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"12px"}}>🛒 ₿UYER$ ({availableMarketItems.length})</button>
+<button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>💳 $ELLER$ ({filteredProfiles.length})</button>
 </div>
 </div>
 {searchTab==="market" && (
 <div style={{padding:"12px"}}>
 <div style={{display:"flex", gap:"8px", marginBottom:"12px"}}>
-<button onClick={()=>setMarketView("new")} style={{flex:1, background: marketView==="new" ? "#D4AF37" : "#111", color: marketView==="new" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>🆕 New</button>
-<button onClick={()=>setMarketView("trending")} style={{flex:1, background: marketView==="trending" ? "#D4AF37" : "#111", color: marketView==="trending" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>🔥 Trending</button>
+<button onClick={()=>setMarketView("new")} style={{flex:1, background: marketView==="new" ? "#D4AF37" : "#111", color: marketView==="new" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>⬆️ NEW ➡️ OLD ⬇️</button>
+<button onClick={()=>setMarketView("trending")} style={{flex:1, background: marketView==="trending" ? "#D4AF37" : "#111", color: marketView==="trending" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>👀Most🔍Viewed👀</button>
 </div>
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
 {displayMarketItems.map((p:any)=>{
@@ -1131,8 +1131,8 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background: theme.navBg, borderTop:"2px solid #0a84ff", display:"flex", justifyContent:"space-around", padding:"10px"}}>
 <div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#0a84ff" : "#888", cursor:"pointer", position:"relative", fontWeight: view==="offers" ? "900" : "400", background: view==="offers" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="offers" ? "1px solid #0a84ff" : "none"}}>💬 $IM {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>} {isOfflineMode && <span style={{position:"absolute", top:"-6px", left:"-8px", background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 4px", borderRadius:"10px"}}>BT</span>}</div>
 <div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "400", background: view==="feed" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="feed" ? "1px solid #0a84ff" : "none"}}>👑 Worth</div>
-<div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="accounts" ? "900" : "400", background: view==="accounts" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="accounts" ? "1px solid #0a84ff" : "none"}}>🛒 $hop {isMarketRefreshing && "↻"}</div>
-<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="profile" ? "900" : "400", background: view==="profile" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="profile" ? "1px solid #0a84ff" : "none"}}>💲 ₿anc</div>
+<div onClick={()=>setView("accounts")} style={{color: view==="accounts" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="accounts" ? "900" : "400", background: view==="accounts" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="accounts" ? "1px solid #0a84ff" : "none"}}>📦 $tore {isMarketRefreshing && "↻"}</div>
+<div onClick={()=>setView("profile")} style={{color: view==="profile" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="profile" ? "900" : "400", background: view==="profile" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="profile" ? "1px solid #0a84ff" : "none"}}>🏛️ ₿anc</div>
 </div>
 
 {showSplash && (
@@ -1199,7 +1199,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   );
 })}
 </div>
-<button onClick={()=>setShowCalculator(false)} style={{width:"100%", marginTop:"10px", background:"#D4AF37", color:"black", border:"none", padding:"12px", borderRadius:"20px", fontWeight:"900", cursor:"pointer"}}>Done - Use ${countDisplay}</button>
+<button onClick={()=>setShowCalculator(false)} style={{width:"100%", marginTop:"10px", background:"#D4AF37", color:"black", border:"none", padding:"12px", borderRadius:"20px", fontWeight:"900", cursor:"pointer"}}>Done - Use{countDisplay}</button>
 </div>
 </div>
 )}
