@@ -1132,7 +1132,6 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$H0P LI$T🛒 Available🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
-<input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", marginTop:"12px", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px"}}/>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
 <button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"11px"}}>💰 Buyers ({myFollowersProfiles.length})</button>
 <button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"11px"}}>💳 Sellers ({myFollowingProfiles.length})</button>
@@ -1158,11 +1157,12 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 
 {searchTab==="market" && (
 <div style={{padding:"15px", paddingBottom:"90px"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"14px", marginBottom:"12px"}}>💰 Buyers ({myFollowersProfiles.length}) - People who follow YOU ✅</div>
-{myFollowersProfiles.length===0 ? (
-<div style={{textAlign:"center", color:"#666", marginTop:"30px", background:"#111", padding:"20px", borderRadius:"12px"}}>No Buyers yet - Share your profile!</div>
+<input placeholder="Search @username..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px", marginBottom:"12px"}}/>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"14px", marginBottom:"12px"}}>💰 Buyers ({myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.toLowerCase()) || u.name?.toLowerCase().includes(search.toLowerCase()))).length}) - People who follow YOU ✅</div>
+{myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.toLowerCase()) || u.name?.toLowerCase().includes(search.toLowerCase()))).length===0 ? (
+<div style={{textAlign:"center", color:"#666", marginTop:"30px", background:"#111", padding:"20px", borderRadius:"12px"}}>No Buyers found</div>
 ) : (
-myFollowersProfiles.map((u:any)=>(
+myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.toLowerCase()) || u.name?.toLowerCase().includes(search.toLowerCase()))).map((u:any)=>(
 <div key={u.handle} style={{display:"flex", gap:"10px", background:"#111", padding:"12px", borderRadius:"12px", marginBottom:"10px", border:"1px solid #222"}}>
 <div style={{display:"flex", gap:"10px", flex:1, cursor:"pointer"}} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }}>
 <img src={u.avatar} style={{width:"44px", height:"44px", borderRadius:"50%"}}/>
@@ -1176,7 +1176,8 @@ myFollowersProfiles.map((u:any)=>(
 )}
 
 {searchTab==="shop" && (
-<div style={{padding:"12px", paddingBottom:"90px"}}>
+<div style={{padding:"15px", paddingBottom:"90px"}}>
+<input placeholder="🔍 Search items by name..." value={marketSearch} onChange={e=>setMarketSearch(e.target.value)} style={{width:"100%", background:"#111", border:"1px solid #D4AF37", color:"white", padding:"12px", borderRadius:"12px", marginBottom:"12px"}}/>
 <div style={{display:"flex", gap:"8px", marginBottom:"12px"}}>
 <button onClick={()=>setMarketView("new")} style={{flex:1, background: marketView==="new" ? "#D4AF37" : "#111", color: marketView==="new" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>⬆️ NEW ➡️ OLD ⬇️</button>
 <button onClick={()=>setMarketView("trending")} style={{flex:1, background: marketView==="trending" ? "#D4AF37" : "#111", color: marketView==="trending" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"12px"}}>👀Most🔍Viewed👀</button>
