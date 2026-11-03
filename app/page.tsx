@@ -254,7 +254,20 @@ useEffect(()=>{
     loadFeed();
   };
   checkSession();
-  const channel = supabase.channel('live-messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, ()=>{ loadFeed(); }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, ()=>{ loadFeed(); }).subscribe();
+  const channel = supabase.channel('live-messages')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, ()=>{ loadFeed(); })
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, ()=>{ loadFeed(); })
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload)=>{
+    if(payload.eventType==='UPDATE'){
+      const u = payload.new;
+      setProducts(prev=> prev.map(p=> p.id===u.id ? {...p, title:u.title, status:u.status, price:u.price} : p));
+      setFeedProducts(prev=> prev.map(p=> p.id===u.id ? {...p, title:u.title, status:u.status, price:u.price} : p));
+      setSelectedUserProducts(prev=> prev.map(p=> p.id===u.id ? {...p, title:u.title, status:u.status, price:u.price} : p));
+    }
+    if(payload.eventType==='INSERT'){
+      loadFeed(); // new item added
+    }
+  }).subscribe();
     return ()=>{ clearTimeout(splashTimer); supabase.removeChannel(channel); };
 },[]);
 
@@ -365,7 +378,7 @@ const updateTitle = async (id:string)=>{
 };
 
 const handleFollow = async (targetHandle:string)=>{
-  if(myHandle === targetHandle) { alert("Can't follow yourself bro!"); return; } if(!myHandle || myHandle === "@" ) return; const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle); if(existing){ setFollows(prev => prev.filter(f=> f.id !== existing.id)); const { error } = await supabase.from("follows").delete().eq("id", existing.id); if(error){ setFollows(prev => [...prev, existing]); } } else { const temp = { id: Date.now().toString(), follower_handle: myHandle, following_handle: targetHandle }; setFollows(prev => [...prev, temp]); const { data, error } = await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }).select().single(); if(error){ setFollows(prev => prev.filter(f=> f.id !== temp.id)); } else if(data){ setFollows(prev => prev.map(f=> f.id===temp.id ? data : f)); } }
+  if(myHandle === targetHandle) { alert("You Can't follow yourself😑"); return; } if(!myHandle || myHandle === "@" ) return; const existing = follows.find(f=> f.follower_handle===myHandle && f.following_handle===targetHandle); if(existing){ setFollows(prev => prev.filter(f=> f.id !== existing.id)); const { error } = await supabase.from("follows").delete().eq("id", existing.id); if(error){ setFollows(prev => [...prev, existing]); } } else { const temp = { id: Date.now().toString(), follower_handle: myHandle, following_handle: targetHandle }; setFollows(prev => [...prev, temp]); const { data, error } = await supabase.from("follows").insert({ follower_handle: myHandle, following_handle: targetHandle }).select().single(); if(error){ setFollows(prev => prev.filter(f=> f.id !== temp.id)); } else if(data){ setFollows(prev => prev.map(f=> f.id===temp.id ? data : f)); } }
 };
 
 const placeOffer = async ()=>{
