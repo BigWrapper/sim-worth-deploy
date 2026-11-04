@@ -297,38 +297,63 @@ const saveBio = async ()=>{
   setEditingBio(false); loadFeed(); alert("Profile Saved Successfully ✓");
 };
 const doLogin = async ()=>{
-  setErr(""); if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
+  setErr(""); 
+  if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
   try {
     if(authMode==="signup"){
-      const { data, error } = await supabase.auth.signUp({ email: email.trim().toLowerCase(), password: password, options: { data: { handle: "@" + email.split("@")[0].toLowerCase() } } });
-      if(error) throw error; if(!data.session){ setErr("✅ Verification email sent! Check your inbox & spam to confirm, then LOGIN."); setAuthMode("login"); return; }
-      localStorage.setItem("im_session", email); await syncProfile(email, 0, avatarPreview); setLoggedIn(true); await loadMyData(email); await loadFeed();
+      // 1. Check if handle already exists in profiles table
+      const wantedHandle = "@" + email.split("@")[0].toLowerCase().trim();
+      const { data: existingHandle } = await supabase.from("profiles").select("handle").eq("handle", wantedHandle).maybeSingle();
+      if(existingHandle){
+        setErr("❌ Handle already exists - pick different email or Login");
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({ 
+        email: email.trim().toLowerCase(), 
+        password: password, 
+        options: { data: { handle: wantedHandle } } 
+      });
+      
+      if(error) throw error;
+      
+      // FIX: Check if identities empty = duplicate email
+      if(data.user && data.user.identities && data.user.identities.length === 0){
+        setErr("❌ Handle already exists - this Gmail already signed up. Check inbox for verification or LOGIN");
+        setAuthMode("login");
+        return;
+      }
+
+      if(!data.session){ 
+        setErr("✅ Verification email sent! Check your inbox & spam to confirm, then LOGIN."); 
+        setAuthMode("login"); 
+        return; 
+      }
+      localStorage.setItem("im_session", email); 
+      await syncProfile(email, 0, avatarPreview); 
+      setLoggedIn(true); 
+      await loadMyData(email); 
+      await loadFeed();
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
-      if(error) throw error; if(!data.user?.email_confirmed_at){ setErr("⚠️ Email not verified."); await supabase.auth.signOut(); return; }
-      localStorage.setItem("im_session", email); setMyId(data.user.id); await loadMyData(email); setLoggedIn(true); await loadFeed();
+      if(error) throw error; 
+      if(!data.user?.email_confirmed_at){ setErr("⚠️ Email not verified. Check inbox & spam."); await supabase.auth.signOut(); return; }
+      localStorage.setItem("im_session", email); 
+      setMyId(data.user.id); 
+      await loadMyData(email); 
+      setLoggedIn(true); 
+      await loadFeed();
     }
-  } catch(e:any){ setErr(e.message); }
-};
-const handleForgotPassword = async () => {
-  if (!forgotEmail.includes("@")) {
-    setErr("Enter valid email for reset");
-    return;
+  } catch(e:any){ 
+    // Catch Supabase "already registered" error
+    if(e.message.toLowerCase().includes("already registered")){
+      setErr("❌ Handle already exists - this Gmail already has account. Just LOGIN");
+      setAuthMode("login");
+    } else {
+      setErr(e.message); 
+    }
   }
-  setForgotLoading(true);
-  setErr("");
-  try {
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) throw error;
-    setForgotSent(true);
-  } catch (e:any) {
-    setErr(e.message);
-  } finally {
-    setForgotLoading(false);
-  }
-};
+}; 
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return; setAvatarPreview(URL.createObjectURL(file));
   try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; setAvatarPreview(publicUrl); await syncProfile(email, totalWorth, publicUrl); await loadFeed(); } catch(err:any){ alert("Upload failed: " + err.message); }
