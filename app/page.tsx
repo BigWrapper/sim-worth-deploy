@@ -444,6 +444,13 @@ const setProductStatus = async (id:string, newStatus:string)=>{
   if(error){ alert("⚠️ Run SQL: ALTER TABLE products ADD COLUMN status TEXT DEFAULT 'for_sale'; Error: "+error.message); loadFeed(); }
 };
 
+const setProfileStatusDirect = async (newStatus:string)=>{
+  setProfileStatus(newStatus);
+  const { error } = await supabase.from("profiles").update({ profile_status: newStatus }).eq("handle", myHandle);
+  if(error){ alert("Run SQL: ALTER TABLE profiles ADD COLUMN profile_status TEXT; "+error.message); }
+  loadFeed();
+};
+
 const deleteOffer = async (offerId:string)=>{ if(!confirm("Delete this offer bro?")) return; setOffers(prev => prev.filter(o=> o.id!==offerId)); await supabase.from("offers").delete().eq("id", offerId); };
 const deleteChat = async (otherHandle:string)=>{ if(!confirm(`Delete ALL messages with ${otherHandle}?`)) return; setMessages(prev => prev.filter(m=> !((m.from_handle===myHandle && m.to_handle===otherHandle) || (m.from_handle===otherHandle && m.to_handle===myHandle)))); await supabase.from("messages").delete().or(`and(from_handle.eq.${myHandle},to_handle.eq.${otherHandle}),and(from_handle.eq.${otherHandle},to_handle.eq.${myHandle})`); };
 const deleteMessage = async (msgId:string)=>{ if(!confirm("Delete this message?")) return; setMessages(prev => prev.filter(m=> m.id!==msgId)); await supabase.from("messages").delete().eq("id", msgId); };
@@ -1154,13 +1161,15 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
 <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
 <div style={{display:"flex", gap:"6px", marginTop:"10px"}}>
+<button onClick={()=>setProfileStatusDirect("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Sale</button>
+<button onClick={()=>setProfileStatusDirect("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Sold</button>
 </div>
 )}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
 <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
 <div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount} → View</div>
 </div>
 </div>
 </div>
