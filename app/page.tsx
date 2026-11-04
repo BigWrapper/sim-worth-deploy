@@ -328,7 +328,6 @@ const handleForgotPassword = async ()=>{
   setForgotLoading(false);
 };
 const doLogin = async ()=>{
- const doLogin = async ()=>{
   setErr(""); 
   if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
   
