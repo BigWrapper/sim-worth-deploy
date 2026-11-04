@@ -64,11 +64,14 @@ const [loggedIn, setLoggedIn] = useState(false);
 const [view, setView] = useState("accounts");
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
+const [worthPin, setWorthPin] = useState("");
+const [worthPinConfirm, setWorthPinConfirm] = useState("");
 const [authMode, setAuthMode] = useState("login");
 const [err, setErr] = useState("");
 // FORGOT PASSWORD STATES
 const [showForgot, setShowForgot] = useState(false);
 const [forgotEmail, setForgotEmail] = useState("");
+const [forgotWorthPin, setForgotWorthPin] = useState("");
 const [forgotSent, setForgotSent] = useState(false);
 const [forgotLoading, setForgotLoading] = useState(false);
 const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
