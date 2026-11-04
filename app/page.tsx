@@ -289,8 +289,14 @@ const loadPublicUser = async (user:any)=>{
   setView("publicProfile");
 };
 
-const syncProfile = async (em:string, worth:number, av:string)=>{
-  if(!em || !em.includes("@")) return; const handle = "@" + em.split("@")[0].toLowerCase().trim(); if(handle === "@" || handle.length < 3) return; const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation; const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle(); if(existing){ await supabase.from("profiles").update({ avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus }).eq("id", existing.id); } else { await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus }); }
+const syncProfile = async (em:string, worth:number, av:string, pin?:string)=>{
+  if(!em || !em.includes("@")) return; const handle = "@" + em.split("@")[0].toLowerCase().trim(); if(handle === "@" || handle.length < 3) return; const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation; const pinHash = pin ? btoa(pin) : undefined; const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle(); if(existing){ 
+    const updateData:any = { avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus };
+    if(pinHash) updateData.worth_pin_hash = pinHash;
+    await supabase.from("profiles").update(updateData).eq("id", existing.id); 
+  } else { 
+    await supabase.from("profiles").insert({ handle: handle, display_name: em.split("@")[0], avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus, worth_pin_hash: pinHash, failed_attempts: 0 }); 
+  }
 };
 
 const saveBio = async ()=>{
