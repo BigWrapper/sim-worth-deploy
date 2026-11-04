@@ -302,6 +302,19 @@ const saveBio = async ()=>{
 const doLogin = async ()=>{
   setErr(""); 
   if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
+  
+  // NEW: WORTH PIN validation for signup only
+  if(authMode==="signup"){
+    if(!worthPin || worthPin.length !== 4 || !/^\d{4}$/.test(worthPin)){
+      setErr("WORTH PIN must be 4 digits like ATM PIN e.g. 1999");
+      return;
+    }
+    if(worthPin !== worthPinConfirm){
+      setErr("WORTH PINs don't match - type same 4 digits twice");
+      return;
+    }
+  }
+
   try {
     if(authMode==="signup"){
       // 1. Check if handle already exists in profiles table
@@ -333,13 +346,33 @@ const doLogin = async ()=>{
         return; 
       }
       localStorage.setItem("im_session", email); 
-      await syncProfile(email, 0, avatarPreview); 
+      // NEW: Save worth_pin_hash + init failed_attempts
+      await syncProfile(email, 0, avatarPreview, worthPin); 
       setLoggedIn(true); 
       await loadMyData(email); 
       await loadFeed();
     } else {
+      // LOGIN with 5min lockout check
+      const wantedHandle = "@" + email.split("@")[0].toLowerCase().trim();
+      const { data: profileCheck } = await supabase.from("profiles").select("failed_attempts, lockout_until").eq("handle", wantedHandle).maybeSingle();
+      if(profileCheck?.lockout_until && new Date(profileCheck.lockout_until) > new Date()){
+        const mins = Math.ceil((new Date(profileCheck.lockout_until).getTime() - Date.now())/60000);
+        setErr(`⏳ Too many tries. Try again in ${mins} min - high guy chill!`);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
-      if(error) throw error; 
+      if(error){
+        // Increment failed_attempts
+        const fails = (profileCheck?.failed_attempts || 0) + 1;
+        const lockout = fails >= 5 ? new Date(Date.now() + 5*60*1000).toISOString() : null;
+        await supabase.from("profiles").update({ failed_attempts: fails, lockout_until: lockout }).eq("handle", wantedHandle);
+        if(fails >=5) throw new Error("5 attempts failed - 5 min lock!");
+        throw error;
+      }
+      // Reset on success
+      await supabase.from("profiles").update({ failed_attempts: 0, lockout_until: null }).eq("handle", wantedHandle);
+
       if(!data.user?.email_confirmed_at){ setErr("⚠️ Email not verified. Check inbox & spam."); await supabase.auth.signOut(); return; }
       localStorage.setItem("im_session", email); 
       setMyId(data.user.id); 
@@ -348,7 +381,6 @@ const doLogin = async ()=>{
       await loadFeed();
     }
   } catch(e:any){ 
-    // Catch Supabase "already registered" error
     if(e.message.toLowerCase().includes("already registered")){
       setErr("❌ Handle already exists - this Gmail already has account. Just LOGIN");
       setAuthMode("login");
@@ -356,7 +388,7 @@ const doLogin = async ()=>{
       setErr(e.message); 
     }
   }
-}; 
+};  
 const handleAvatarChange = async (e:any)=>{
   const file = e.target.files?.[0]; if(!file) return; setAvatarPreview(URL.createObjectURL(file));
   try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; setAvatarPreview(publicUrl); await syncProfile(email, totalWorth, publicUrl); await loadFeed(); } catch(err:any){ alert("Upload failed: " + err.message); }
