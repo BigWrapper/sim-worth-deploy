@@ -1127,9 +1127,9 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#0a1a0f"}}>
 <div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>PROFILE STATUS</div>
 <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
-<button onClick={()=>setProfileStatus("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ For Sale</button>
-<button onClick={()=>setProfileStatus("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Sold Out</button>
-<button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💎 Not For Sale</button>
+<button onClick={()=>setProfileStatus("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ $ELL</button>
+<button onClick={()=>setProfileStatus("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 $OLD!</button>
+<button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💎 PRICELE$$</button>
 </div>
 </div>
 
@@ -1161,17 +1161,13 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
 <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
 <div style={{display:"flex", gap:"6px", marginTop:"10px"}}>
-<button onClick={()=>setProfileStatusDirect("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Sale</button>
-<button onClick={()=>setProfileStatusDirect("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Sold</button>
-<button onClick={()=>setProfileStatusDirect("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Not4Sale</button>
-</div>
 </div>
 )}
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>NET WORTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
 <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
 <div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount} → View</div>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
 </div>
 </div>
 </div>
