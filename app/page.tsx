@@ -683,7 +683,14 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{width:"100%", maxWidth:"360px", marginTop:"40px", border:"1px solid #333", borderRadius:"24px", background:"#0a0a0a", padding:"24px"}}>
 {err && <div style={{color:"#f87171", fontSize:"12px", marginBottom:"12px", textAlign:"center"}}>{err}</div>}
 <input placeholder="Email" value={email} onChange={e=>{setEmail(e.target.value); setForgotEmail(e.target.value)}} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"12px"}}/>
-<input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"20px"}}/>
+<input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"12px"}}/>
+{authMode==="signup" && (
+  <>
+    <input placeholder="WORTH PIN (4 digits e.g. 1999)" type="password" inputMode="numeric" maxLength={4} value={worthPin} onChange={e=>setWorthPin(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
+    <input placeholder="Confirm WORTH PIN" type="password" inputMode="numeric" maxLength={4} value={worthPinConfirm} onChange={e=>setWorthPinConfirm(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
+    <div style={{fontSize:"10px", color:"#D4AF37", marginBottom:"14px", textAlign:"center", border:"1px solid #222", padding:"6px", borderRadius:"8px"}}>🔐 WORTH PIN = Bank PIN for recovery. Don't lose! 4 digits only.</div>
+  </>
+)}
 <button onClick={doLogin} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"14px", borderRadius:"12px", border:"none", cursor:"pointer"}}>{authMode==="signup"?"SIGN UP →":"LOGIN →"}</button>
 
 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:"16px"}}>
