@@ -305,7 +305,30 @@ const saveBio = async ()=>{
   if(error){ alert("Run SQL: ALTER TABLE profiles ADD COLUMN profile_status TEXT DEFAULT 'for_sale'; Error:"+error.message); }
   setEditingBio(false); loadFeed(); alert("Profile Saved Successfully ✓");
 };
+const handleForgotPassword = async ()=>{
+  if(!forgotEmail.includes("@")){ setErr("Enter valid email"); return; }
+  if(!forgotWorthPin || forgotWorthPin.length !== 4){ setErr("Enter your 4-digit WORTH PIN to reset"); return; }
+  setForgotLoading(true);
+  try{
+    const wantedHandle = "@" + forgotEmail.split("@")[0].toLowerCase().trim();
+    const { data: profile } = await supabase.from("profiles").select("worth_pin_hash").eq("handle", wantedHandle).maybeSingle();
+    if(!profile || profile.worth_pin_hash !== btoa(forgotWorthPin)){
+      setErr("❌ Wrong WORTH PIN - can't reset without it.");
+      setForgotLoading(false);
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(), {
+      redirectTo: window.location.origin
+    });
+    if(error) throw error;
+    setForgotSent(true);
+  }catch(e:any){
+    setErr(e.message);
+  }
+  setForgotLoading(false);
+};
 const doLogin = async ()=>{
+ const doLogin = async ()=>{
   setErr(""); 
   if(!email.includes("@") || password.length < 6){ setErr("Valid email + 6 chars password"); return; }
   
@@ -699,13 +722,15 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 
 {showForgot && (
-  <div style={{marginTop:"16px", background:"#111", padding:"14px", borderRadius:"12px", border:"1px solid #2a2a2a"}}>
+  <div style={{marginTop:"16px", background:"#111", padding:"14px", borderRadius:"12px", border:"1px solid #D4AF37"}}>
     {!forgotSent ? (
       <>
+        <div style={{fontSize:"12px", color:"#D4AF37", marginBottom:"8px", fontWeight:"900"}}>🔐 Reset with WORTH PIN:</div>
         <div style={{fontSize:"12px", color:"#aaa", marginBottom:"8px"}}>Verification link will be sent to:</div>
         <input value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)} placeholder="your@email.com" style={{width:"100%", background:"#000", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"10px", marginBottom:"10px"}}/>
+        <input value={forgotWorthPin} onChange={e=>setForgotWorthPin(e.target.value.replace(/\D/g,""))} placeholder="WORTH PIN (4 digits)" type="password" inputMode="numeric" maxLength={4} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"12px", borderRadius:"10px", marginBottom:"10px", fontWeight:"900", letterSpacing:"4px"}}/>
         <button onClick={handleForgotPassword} disabled={forgotLoading} style={{width:"100%", background: forgotLoading ? "#333" : "#0a84ff", color:"white", padding:"10px", borderRadius:"10px", border:"none", fontWeight:"700", cursor:"pointer"}}>
-          {forgotLoading ? "Sending..." : "Send Verification Link"}
+          {forgotLoading ? "Checking PIN..." : "Verify PIN & Send Link"}
         </button>
       </>
     ) : (
