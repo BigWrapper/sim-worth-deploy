@@ -444,13 +444,6 @@ const setProductStatus = async (id:string, newStatus:string)=>{
   if(error){ alert("⚠️ Run SQL: ALTER TABLE products ADD COLUMN status TEXT DEFAULT 'for_sale'; Error: "+error.message); loadFeed(); }
 };
 
-const setProfileStatusDirect = async (newStatus:string)=>{
-  setProfileStatus(newStatus);
-  const { error } = await supabase.from("profiles").update({ profile_status: newStatus }).eq("handle", myHandle);
-  if(error){ alert("Run SQL: ALTER TABLE profiles ADD COLUMN profile_status TEXT; "+error.message); }
-  loadFeed();
-};
-
 const deleteOffer = async (offerId:string)=>{ if(!confirm("Delete this offer bro?")) return; setOffers(prev => prev.filter(o=> o.id!==offerId)); await supabase.from("offers").delete().eq("id", offerId); };
 const deleteChat = async (otherHandle:string)=>{ if(!confirm(`Delete ALL messages with ${otherHandle}?`)) return; setMessages(prev => prev.filter(m=> !((m.from_handle===myHandle && m.to_handle===otherHandle) || (m.from_handle===otherHandle && m.to_handle===myHandle)))); await supabase.from("messages").delete().or(`and(from_handle.eq.${myHandle},to_handle.eq.${otherHandle}),and(from_handle.eq.${otherHandle},to_handle.eq.${myHandle})`); };
 const deleteMessage = async (msgId:string)=>{ if(!confirm("Delete this message?")) return; setMessages(prev => prev.filter(m=> m.id!==msgId)); await supabase.from("messages").delete().eq("id", msgId); };
