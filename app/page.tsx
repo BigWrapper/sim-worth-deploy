@@ -600,10 +600,16 @@ const myOffersSent = offers.filter(o=> o.from_handle===myHandle);
 const myOffersCount = myOffersReceived.length;
 const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_handle), ...myOffersSent.map(o=>o.to_handle), ...messages.filter(m=>m.to_handle===myHandle || m.from_handle===myHandle).map(m=> m.from_handle===myHandle ? m.to_handle : m.from_handle)])).filter(h=> h!==myHandle);
 
-const getStatusBadge = (status?:string)=>{
-  if(status==="sold") return { text:"SOLD OUT 🔴", color:"#ff4444", bg:"rgba(255,68,68,0.9)" };
-  if(status==="not_for_sale") return { text:"NOT FOR SALE 💎", color:"#888", bg:"rgba(0,0,0,0.85)" };
-  return { text:"FOR SALE ✅", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
+const getStatusBadge = (status?: string) => {
+  const s = (status || "").toLowerCase();
+  // $earching - accept ALL the old words so it never flips to FREE
+  if (s === "sold" || s === "love" || s === "searching" || s === "$earching")
+    return { text: "$earching ♥️", color: "white", bg: "rgba(255,68,68,0.9)" };
+
+  if (s === "not_for_sale" || s === "taken")
+    return { text: "Taken 💍", color: "white", bg: "rgba(0,0,0,0.85)" };
+
+  return { text: "FREE! ✅", color: "#00ff88", bg: "rgba(0,255,136,0.15)" };
 };
 
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
@@ -889,9 +895,9 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 )}
 {/* BOTTOM ROW - 3 REACTIONS MATCHING TOP */}
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px", alignItems:"center"}}>
-  <button onClick={()=>handleReaction('like')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>💪 {reactions.filter((r:any)=>r.type==='like').length}</button>
-  <button onClick={()=>handleReaction('love')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>❤️ {reactions.filter((r:any)=>r.type==='love').length}</button>
-  <button onClick={()=>handleReaction('dislike')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>😂 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
+  <button onClick={()=>handleReaction('like')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>♥️ {reactions.filter((r:any)=>r.type==='like').length}</button>
+  <button onClick={()=>handleReaction('love')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>😂 {reactions.filter((r:any)=>r.type==='love').length}</button>
+  <button onClick={()=>handleReaction('dislike')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>💪 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
 </div>
 {/* COMMENTS */}
 <div style={{marginTop:"16px", borderTop:"1px solid #222", paddingTop:"12px"}}>
@@ -918,7 +924,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>A$$ET $TATU$</div>
 <div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap"}}>
 <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ell</button>
-<button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending..</button>
+<button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending...</button>
 <button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ SOLD!</button>
 
 </div>
@@ -946,25 +952,53 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
 <button onClick={async()=>{
   try{
-    const response = await fetch(modalImage, {mode:'cors'});
+    <button onClick={async () => {
+  try {
+    const fileName = `SIM_Worth_${Date.now()}.jpg`;
+    const response = await fetch(modalImage, { mode: 'cors' });
     const blob = await response.blob();
+
+    // 1. APK - Capacitor - Saves STRAIGHT to phone, no browser
+    // @ts-ignore
+    if (window.Capacitor?.Plugins?.Filesystem) {
+      // @ts-ignore
+      const { Filesystem, Directory } = window.Capacitor.Plugins;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache });
+        // @ts-ignore
+        if (window.Capacitor?.Plugins?.Media) {
+          // @ts-ignore
+          await window.Capacitor.Plugins.Media.savePhoto({ path: fileName });
+        }
+        alert("✅ Saved to Gallery 📸");
+      };
+      reader.readAsDataURL(blob);
+      return;
+    }
+
+    // 2. APK - Normal Android WebView - Share Sheet saves straight to Gallery
+    const file = new File([blob], fileName, { type: 'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'SIM Worth' });
+      return;
+    }
+
+    // 3. Last fallback - Real download, NO _blank, NO browser open
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `SIM_Worth_${Date.now()}.jpg`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(()=> URL.revokeObjectURL(url), 1000);
-    alert("✅ Saved! Check Downloads folder 📁");
-  }catch(e){
-    // Fallback for APK WebView
-    const link = document.createElement('a');
-    link.href = modalImage;
-    link.download = `SIM_Worth_${Date.now()}.jpg`;
-    link.target = "_blank";
-    link.click();
-    alert("✅ Image opened - Long press to Save to Gallery! 📥");
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    alert("✅ Download started - Check Downloads 📁");
+
+  } catch (e) {
+    alert("❌ Couldn't save - Try long-press image");
+    console.log(e);
   }
 }} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
 <button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
