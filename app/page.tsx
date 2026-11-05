@@ -9,6 +9,7 @@ type HeaderProps = {
   avatarPreview: string; totalWorth: number; onAvatarClick: () => void; myUserId: string; myHandle: string;
   userLocation?: string; userLat?: string; userLng?: string; streetAddress?: string; suburb?: string; city?: string;
   payLink?: string; payHandle?: string; payMethod?: string; profileStatus?: string;
+  onSettingsClick: () => void;
 };
 
 function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod, profileStatus }: HeaderProps) {
@@ -36,7 +37,7 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
           <div onClick={handlePayMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: payHandle || payLink ? "#1a1a00" : "black"}}>Pay Me</div>
         </div>
         <div style={{textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", position:"relative"}}>
-          <div style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px"}}>$IM Worth</div>
+          <div onClick={onSettingsClick} style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px", cursor:"pointer"}}>$IM Worth ⚙️</div>
                     <div style={{position:"relative"}}>
             <img src={avatarPreview} onClick={onAvatarClick} style={{width:"95px", height:"95px", borderRadius:"50%", border:"3px solid gold", objectFit:"cover", cursor:"pointer", filter: profileStatus==="sold" ? "grayscale(60%)" : "none"}} alt="avatar"/>
             <div style={{position:"absolute", bottom:"-8px", left:"50%", transform:"translateX(-50%)", background: badge.bg, color: badge.color, fontSize:"7px", fontWeight:"900", padding:"3px 8px", borderRadius:"12px", whiteSpace:"nowrap", border:"1px solid #222"}}>{badge.text}</div>
@@ -1159,50 +1160,13 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 ) : (
 <div>
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-    <div style={{ color: "#D4AF37", fontWeight: "bold", fontSize: "12px" }}>ABOUT ME</div>
+<div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div>
+  <button onClick={()=>setShowCalculator(true)} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>🧮 Count</button>
 
-    {/* All 3 buttons in ONE row now */}
-    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-      <div
-        onClick={() => setShowCalculator(true)}
-        style={{ color: "#D4AF37", fontSize: "12px", cursor: "pointer", border: "1px solid #D4AF37", padding: "4px 10px", borderRadius: "12px" }}
-      >
-        🧮 Count
-      </div>
-
-      <div
-        onClick={() => setEditingBio(true)}
-        style={{ color: "#D4AF37", fontSize: "12px", cursor: "pointer", border: "1px solid #D4AF37", padding: "4px 10px", borderRadius: "12px" }}
-      >
-        Edit Profile ✏️
-      </div>
-
-      <div
-        onClick={handleLogout}
-        style={{ color: "#ff4444", fontSize: "12px", cursor: "pointer", border: "1px solid #ff4444", padding: "4px 10px", borderRadius: "12px" }}
-      >
-        Logout ⎋
-      </div>
-    </div>
-  </div>
-
-  <div style={{ color: "white", fontSize: "13px", marginTop: "8px" }}>{bio}</div>
-  <div style={{ color: "#888", fontSize: "11px" }}>{about}</div>
-
-  <div style={{ display: "flex", gap: "6px", marginTop: "10px" }}>
-    <button
-      onClick={() => setProfileStatusDirect("for_sale")}
-      style={{
-        background: profileStatus === "for_sale" ? "#00ff88" : "#222",
-        color: profileStatus === "for_sale" ? "black" : "white",
-        border: "none",
-        borderRadius: "6px",
-        padding: "4px 8px",
-        fontSize: "9px",
-        fontWeight: "900",
-        cursor: "pointer",
-      }}
+  
+  <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
+<div style={{color:"#888", fontSize:"11px"}}>{about}</div>
+<div style={{display:"flex", gap:"6px", marginTop:"10px"}}>
 
   
   <button onClick={()=>setProfileStatusDirect("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>FREE</button>
