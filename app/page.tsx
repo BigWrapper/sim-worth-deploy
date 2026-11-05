@@ -22,11 +22,11 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
     if (userLat && userLng) { window.location.href = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || myHandle)})`; }
     else if (finalAddress) { window.location.href = `geo:0,0?q=${encodeURIComponent(finalAddress)}`; }
   };
-  const getProfileBadge = (status?: string) => {
-    if (status === "love") return { text: "$earching ♥️", color: "white", bg: "#ff4444" };
-    if (status === "not_for_sale") return { text: "Taken 💍", color: "white", bg: "#555" };
-    return { text: "FREE! ✅", color: "black", bg: "#00ff88" };
-};
+  const getProfileBadge = (status?:string)=>{
+    if(status==="sold") return { text:"SOLD OUT 🔴", color:"#ff4444", bg:"#ff4444" };
+    if(status==="not_for_sale") return { text:"NOT FOR SALE 💎", color:"white", bg:"#555" };
+    return { text:"FOR SALE ✅", color:"black", bg:"#00ff88" };
+  };
   const badge = getProfileBadge(profileStatus);
   return (
     <div style={{background:"black", padding:"10px"}}>
@@ -600,16 +600,10 @@ const myOffersSent = offers.filter(o=> o.from_handle===myHandle);
 const myOffersCount = myOffersReceived.length;
 const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_handle), ...myOffersSent.map(o=>o.to_handle), ...messages.filter(m=>m.to_handle===myHandle || m.from_handle===myHandle).map(m=> m.from_handle===myHandle ? m.to_handle : m.from_handle)])).filter(h=> h!==myHandle);
 
-const getStatusBadge = (status?: string) => {
-  const s = (status || "").toLowerCase();
-  // $earching - accept ALL the old words so it never flips to FREE
-  if (s === "sold" || s === "love" || s === "searching" || s === "$earching")
-    return { text: "$earching ♥️", color: "white", bg: "rgba(255,68,68,0.9)" };
-
-  if (s === "not_for_sale" || s === "taken")
-    return { text: "Taken 💍", color: "white", bg: "rgba(0,0,0,0.85)" };
-
-  return { text: "FREE! ✅", color: "#00ff88", bg: "rgba(0,255,136,0.15)" };
+const getStatusBadge = (status?:string)=>{
+  if(status==="sold") return { text:"PENDING 🔴", color:"#ff4444", bg:"rgba(255,68,68,0.9)" };
+  if(status==="not_for_sale") return { text:"NOT FOR SALE 💎", color:"#888", bg:"rgba(0,0,0,0.85)" };
+  return { text:"FOR SALE ✅", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
 
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
@@ -895,15 +889,15 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 )}
 {/* BOTTOM ROW - 3 REACTIONS MATCHING TOP */}
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px", alignItems:"center"}}>
-  <button onClick={()=>handleReaction('like')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>♥️ {reactions.filter((r:any)=>r.type==='like').length}</button>
+  <button onClick={()=>handleReaction('like')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>❤ {reactions.filter((r:any)=>r.type==='like').length}</button>
   <button onClick={()=>handleReaction('love')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>😂 {reactions.filter((r:any)=>r.type==='love').length}</button>
-  <button onClick={()=>handleReaction('dislike')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>💪 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
+  <button onClick={()=>handleReaction('laugh')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='laugh') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>💪 {reactions.filter((r:any)=>r.type==='laugh').length}</button>
 </div>
 {/* COMMENTS */}
 <div style={{marginTop:"16px", borderTop:"1px solid #222", paddingTop:"12px"}}>
   <div onClick={()=>setShowCommentsFull(true)} style={{fontWeight:"900", fontSize:"13px", marginBottom:"8px", color:"#D4AF37", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
     <span>💬 Comments ({comments.length})</span>
-    <span style={{fontSize:"10px", background:"#1a1a00", padding:"4px 8px", borderRadius:"10px", border:"1px solid #D4AF37"}}>View All →</span>
+    <span style={{fontSize:"10px", background:"#1a1a00", padding:"4px 8px", borderRadius:"10px", border:"1px solid #D4AF37"}}>View All</span>
   </div>
   <div style={{maxHeight:"50px", overflow:"hidden", marginBottom:"10px", opacity:0.8}}>
     {comments.slice(0,1).map((c:any)=>(
@@ -923,9 +917,9 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{marginTop:"10px"}}>
 <div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>A$$ET $TATU$</div>
 <div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap"}}>
-<button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ell</button>
-<button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending...</button>
-<button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ SOLD!</button>
+<button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ELL</button>
+<button onClick={()=> setProductStatus(modalInfo.id, "pending")} style={{background: modalInfo.status==="pending" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending</button>
+<button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ $0LD!</button>
 
 </div>
 <div style={{display:"flex", gap:"6px", marginTop:"8px"}}>
@@ -936,7 +930,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 ) : (
 <div style={{marginTop:"10px"}}>
-{modalInfo?.status==="pending" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 Pending...</div>
+{modalInfo?.status==="pending" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 Pending</div>
 : modalInfo?.status==="not_for_sale" ? <div style={{background:"#333", color:"#888", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>💎 NOT FOR SALE</div>
 : <div><div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>PLACE AN OFFER</div><div style={{display:"flex", gap:"6px", marginTop:"8px"}}><input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/><button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button></div></div>}
 </div>
@@ -1133,9 +1127,9 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#0a1a0f"}}>
 <div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>PROFILE $TATU$</div>
 <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
-<button onClick={()=>setProfileStatus("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ FREE!</button>
-<button onClick={()=>setProfileStatus("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>♥️ $earching</button>
-<button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💍 Taken</button>
+<button onClick={()=>setProfileStatus("free")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="free" ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ FREE!</button>
+<button onClick={()=>setProfileStatus("searching")} style={{background: profileStatus==="searching" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>♥️ $earching</button>
+<button onClick={()=>setProfileStatus("taken")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💍 Taken</button>
 </div>
 </div>
 
@@ -1167,9 +1161,9 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
 <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
 <div style={{display:"flex", gap:"6px", marginTop:"10px"}}>
-<button onClick={()=>setProfileStatusDirect("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>$ELL</button>
-<button onClick={()=>setProfileStatusDirect("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>$OLD!</button>
-<button onClick={()=>setProfileStatusDirect("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>PRICELE$$</button>
+<button onClick={()=>setProfileStatusDirect("free")} style={{background: profileStatus==="free" ? "#00ff88" : "#222", color: profileStatus==="free" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>FREE</button>
+<button onClick={()=>setProfileStatusDirect("searching")} style={{background: profileStatus==="searching" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>$EARCHING!</button>
+<button onClick={()=>setProfileStatusDirect("taken")} style={{background: profileStatus==="taken" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>TAKEN</button>
 </div>
 </div>
 )}
@@ -1183,7 +1177,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginTop:"10px"}}>
 {products.map((p)=>(
-<div key={p.id} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #555" : "1px solid #2a2a2a", position:"relative"}}>
+<div key={p.id} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="pending" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #555" : "1px solid #2a2a2a", position:"relative"}}>
 <div style={{position:"relative"}}>
 <img src={p.img} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true, status:p.status})} style={{width:"100%", height:"100px", objectFit:"cover", cursor:"pointer", filter: p.status==="pending.." ? "grayscale(60%)" : "none"}}/>
 <div style={{position:"absolute", top:"6px", left:"6px", background: getStatusBadge(p.status).bg, color: getStatusBadge(p.status).color, fontSize:"7px", fontWeight:"900", padding:"2px 5px", borderRadius:"10px", border:"1px solid currentColor"}}>{getStatusBadge(p.status).text}</div>
@@ -1193,8 +1187,8 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color: p.status==="pending.." ? "#FFA500" : p.status==="not_for_sale" ? "#888" : "#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
 <div style={{display:"flex", gap:"3px", marginTop:"6px"}}>
 <button onClick={()=>setProductStatus(p.id, "for_sale")} style={{flex:1, background: p.status==="for_sale" || !p.status ? "#00ff88" : "#222", color: p.status==="for_sale" || !p.status ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$ELL</button>
-<button onClick={()=>setProductStatus(p.id, "pending")} style={{flex:1, background: p.status==="pending" ? "#FFA500" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Pending..</button>
-<button onClick={()=>setProductStatus(p.id, "not_for_sale")} style={{flex:1, background: p.status==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$OLD!</button>
+<button onClick={()=>setProductStatus(p.id, "pending")} style={{flex:1, background: p.status==="pending" ? "#FFA500" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Pending</button>
+<button onClick={()=>setProductStatus(p.id, "not_for_sale")} style={{flex:1, background: p.status==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$0LD</button>
 </div>
 </div>
 <div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px"}}>
