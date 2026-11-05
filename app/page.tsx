@@ -603,7 +603,7 @@ const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_hand
 const getStatusBadge = (status?:string)=>{
   if(status==="sold") return { text:"$earching..♥️", color:"#ff4444", bg:"rgba(255,68,68,0.9)" };
   if(status==="not_for_sale") return { text:"TAKEN 💍", color:"#888", bg:"rgba(0,0,0,0.85)" };
-  return { text:"Taken 💍", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
+  return { text:"$ALE 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
 
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
