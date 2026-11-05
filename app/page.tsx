@@ -1118,9 +1118,32 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 )}
 
+{view==="settings" && (
+<div style={{padding:"15px"}}>
+<div style={{display:"flex", alignItems:"center", gap:"10px", marginBottom:"15px"}}>
+<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900"}}>← Back</button>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>⚙️ $ETTING$</h2>
+</div>
+
+<div style={{border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
+<div style={{color:"white", fontWeight:"900", fontSize:"16px", marginBottom:"4px"}}>{email?.split("@")[0] || "user"}</div>
+<div style={{color:"#888", fontSize:"12px"}}>{email}</div>
+<div style={{color:"#D4AF37", fontWeight:"900", marginTop:"8px"}}>$ {Number(totalWorth||0).toFixed(0)} WORTH</div>
+</div>
+
+<div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", display:"flex", flexDirection:"column", gap:"10px"}}>
+<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>👤 Edit Profile</button>
+<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>💰 Pay Me Setup</button>
+<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔔 Notifications</button>
+<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔒 Privacy & Safety</button>
+</div>
+
+<div style={{color:"#888", fontSize:"11px", textAlign:"center", marginTop:"20px"}}>SIM-WORTH v1.0 • Made for the Banc</div>
+</div>
+)}
 {view==="profile" && (
 <div>
-<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} />
+<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} />
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
 {editingBio ? (
 <div>
