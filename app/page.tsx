@@ -603,7 +603,7 @@ const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_hand
 const getStatusBadge = (status?:string)=>{
   if(status==="sold") return { text:"$earching..♥️", color:"#ff4444", bg:"rgba(255,68,68,0.9)" };
   if(status==="not_for_sale") return { text:"TAKEN 💍", color:"#888", bg:"rgba(0,0,0,0.85)" };
-  return { text:"$ALE 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
+  return { text:"$ALE! 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
 
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
@@ -927,7 +927,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{display:"flex", gap:"6px", marginTop:"8px"}}>
 <button onClick={()=>{ setActiveProductId(modalInfo.id); productInputRef.current?.click(); }} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px"}}>📷 Change</button>
 <button onClick={()=>{ setTempTitle(modalInfo.title||""); setModalEditingTitle(true); }} style={{background:"#D4AF37", color:"black", fontWeight:"900", border:"1px solid #D4AF37", padding:"8px 12px", borderRadius:"8px"}}>✏️ Describe</button>
-<button onClick={()=>setShowCalculator(true)} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>🧮 Count</button>
+
 </div>
 </div>
 ) : (
@@ -1160,6 +1160,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 ) : (
 <div>
 <div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div>
+  <button onClick={()=>setShowCalculator(true)} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>🧮 Count</button>
 
   
   <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
@@ -1195,7 +1196,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color: p.status==="pending.." ? "#FFA500" : p.status==="not_for_sale" ? "#888" : "#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
 <div style={{display:"flex", gap:"3px", marginTop:"6px"}}>
 <button onClick={()=>setProductStatus(p.id, "for_sale")} style={{flex:1, background: p.status==="for_sale" || !p.status ? "#00ff88" : "#222", color: p.status==="for_sale" || !p.status ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$ELL</button>
-<button onClick={()=>setProductStatus(p.id, "pending")} style={{flex:1, background: p.status==="pending" ? "#FFA500" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Pending..</button>
+<button onClick={()=>setProductStatus(p.id, "pending")} style={{flex:1, background: p.status==="pending" ? "#FFA500" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Pending</button>
 <button onClick={()=>setProductStatus(p.id, "not_for_sale")} style={{flex:1, background: p.status==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$OLD!</button>
 </div>
 </div>
@@ -1236,7 +1237,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$H0P LI$T🛒 Available 🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
+<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$H0P LI$T🛒 Available🌍</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
 <button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"11px"}}>💰 Buyers ({myFollowersProfiles.length})</button>
 <button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"11px"}}>💳 Sellers ({myFollowingProfiles.length})</button>
