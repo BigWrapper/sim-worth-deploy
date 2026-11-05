@@ -451,7 +451,7 @@ const setProfileStatusDirect = async (newStatus:string)=>{
   loadFeed();
 };
 
-const deleteOffer = async (offerId:string)=>{ if(!confirm("Delete this offer bro?")) return; setOffers(prev => prev.filter(o=> o.id!==offerId)); await supabase.from("offers").delete().eq("id", offerId); };
+const deleteOffer = async (offerId:string)=>{ if(!confirm("Delete this offer?")) return; setOffers(prev => prev.filter(o=> o.id!==offerId)); await supabase.from("offers").delete().eq("id", offerId); };
 const deleteChat = async (otherHandle:string)=>{ if(!confirm(`Delete ALL messages with ${otherHandle}?`)) return; setMessages(prev => prev.filter(m=> !((m.from_handle===myHandle && m.to_handle===otherHandle) || (m.from_handle===otherHandle && m.to_handle===myHandle)))); await supabase.from("messages").delete().or(`and(from_handle.eq.${myHandle},to_handle.eq.${otherHandle}),and(from_handle.eq.${otherHandle},to_handle.eq.${myHandle})`); };
 const deleteMessage = async (msgId:string)=>{ if(!confirm("Delete this message?")) return; setMessages(prev => prev.filter(m=> m.id!==msgId)); await supabase.from("messages").delete().eq("id", msgId); };
 
@@ -539,19 +539,49 @@ const handleAddComment = async ()=>{
 };
 const savePhoto = async ()=>{
   try{
+    const savePhoto = async () => {
+  try {
+    const fileName = `SIM_Worth_${Date.now()}.jpg`;
     const response = await fetch(modalImage);
     const blob = await response.blob();
+
+    // 1. APK - Capacitor - Saves STRAIGHT to Gallery, no browser
+    // @ts-ignore
+    if (window.Capacitor?.Plugins?.Filesystem) {
+      // @ts-ignore
+      const { Filesystem, Directory } = window.Capacitor.Plugins;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache });
+        alert("✅ Saved to Gallery 📸");
+      };
+      reader.readAsDataURL(blob);
+      return;
+    }
+
+    // 2. APK - Android WebView - Share Sheet saves straight to phone
+    const file = new File([blob], fileName, { type: 'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'SIM Worth' });
+      return;
+    }
+
+    // 3. Last fallback - Real download, NO _blank, NO window.open
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `SIM_Worth_${Date.now()}.jpg`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(()=> URL.revokeObjectURL(url), 1000);
-    alert("✅ Saved to Downloads! 📥");
-  }catch{
-    window.open(modalImage, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    alert("✅ Download started - Check Downloads 📁");
+
+  } catch (e) {
+    // NO window.open here anymore - that's what was opening browser
+    alert("❌ Couldn't save - Long press image to save");
+    console.log(e);
   }
 };
 const handleRenameProduct = async (product:any) => {
@@ -714,9 +744,9 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"12px"}}/>
 {authMode==="signup" && (
   <>
-    <input placeholder="WORTH PIN (4 digits e.g. 1999)" type="password" inputMode="numeric" maxLength={4} value={worthPin} onChange={e=>setWorthPin(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
+    <input placeholder="WORTH PIN (4 digits)" type="password" inputMode="numeric" maxLength={4} value={worthPin} onChange={e=>setWorthPin(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
     <input placeholder="Confirm WORTH PIN" type="password" inputMode="numeric" maxLength={4} value={worthPinConfirm} onChange={e=>setWorthPinConfirm(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
-    <div style={{fontSize:"10px", color:"#D4AF37", marginBottom:"14px", textAlign:"center", border:"1px solid #222", padding:"6px", borderRadius:"8px"}}>🔐 WORTH PIN = Bank PIN for recovery. Don't lose! 4 digits only.</div>
+    <div style={{fontSize:"10px", color:"#D4AF37", marginBottom:"14px", textAlign:"center", border:"1px solid #222", padding:"6px", borderRadius:"8px"}}>🔐 WORTH PIN keep Doors LOCKED when Gate is OPEN</div>
   </>
 )}
 <button onClick={doLogin} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"14px", borderRadius:"12px", border:"none", cursor:"pointer"}}>{authMode==="signup"?"SIGN UP →":"LOGIN →"}</button>
@@ -936,7 +966,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 ) : (
 <div style={{marginTop:"10px"}}>
-{modalInfo?.status==="sold" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 SOLD OUT</div>
+{modalInfo?.status==="pending" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 Pending...</div>
 : modalInfo?.status==="not_for_sale" ? <div style={{background:"#333", color:"#888", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>💎 NOT FOR SALE</div>
 : <div><div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>PLACE AN OFFER</div><div style={{display:"flex", gap:"6px", marginTop:"8px"}}><input value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} type="number" placeholder="Your offer $" style={{flex:1, background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/><button onClick={placeOffer} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"8px", border:"none"}}>💰 Offer</button></div></div>}
 </div>
@@ -952,53 +982,25 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
 <button onClick={async()=>{
   try{
-    <button onClick={async () => {
-  try {
-    const fileName = `SIM_Worth_${Date.now()}.jpg`;
-    const response = await fetch(modalImage, { mode: 'cors' });
+    const response = await fetch(modalImage, {mode:'cors'});
     const blob = await response.blob();
-
-    // 1. APK - Capacitor - Saves STRAIGHT to phone, no browser
-    // @ts-ignore
-    if (window.Capacitor?.Plugins?.Filesystem) {
-      // @ts-ignore
-      const { Filesystem, Directory } = window.Capacitor.Plugins;
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(',')[1];
-        await Filesystem.writeFile({ path: fileName, data: base64, directory: Directory.Cache });
-        // @ts-ignore
-        if (window.Capacitor?.Plugins?.Media) {
-          // @ts-ignore
-          await window.Capacitor.Plugins.Media.savePhoto({ path: fileName });
-        }
-        alert("✅ Saved to Gallery 📸");
-      };
-      reader.readAsDataURL(blob);
-      return;
-    }
-
-    // 2. APK - Normal Android WebView - Share Sheet saves straight to Gallery
-    const file = new File([blob], fileName, { type: 'image/jpeg' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: 'SIM Worth' });
-      return;
-    }
-
-    // 3. Last fallback - Real download, NO _blank, NO browser open
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName;
+    link.download = `SIM_Worth_${Date.now()}.jpg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-    alert("✅ Download started - Check Downloads 📁");
-
-  } catch (e) {
-    alert("❌ Couldn't save - Try long-press image");
-    console.log(e);
+    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    alert("✅ Saved! Check Downloads folder 📁");
+  }catch(e){
+    // Fallback for APK WebView
+    const link = document.createElement('a');
+    link.href = modalImage;
+    link.download = `SIM_Worth_${Date.now()}.jpg`;
+    link.target = "_blank";
+    link.click();
+    alert("✅ Image opened - Long press to Save to Gallery! 📥");
   }
 }} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
 <button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
@@ -1120,7 +1122,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{position:"relative"}}>
 <img src={p.img} style={{width:"100%", height:"120px", objectFit:"cover", filter: p.status==="sold" ? "grayscale(80%)" : "none"}}/>
 <div style={{position:"absolute", top:"6px", left:"6px", background: getStatusBadge(p.status).bg, color: getStatusBadge(p.status).color, fontSize:"8px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px", border:"1px solid currentColor"}}>{getStatusBadge(p.status).text}</div>
-{p.status==="sold" && <div style={{position:"absolute", inset:0, background:"rgba(255,0,0,0.15)", display:"flex", alignItems:"center", justifyContent:"center"}}><div style={{background:"#ff4444", color:"white", fontWeight:"900", padding:"4px 10px", borderRadius:"20px", fontSize:"12px", transform:"rotate(-15deg)"}}>SOLD</div></div>}
+{p.status==="sold" && <div style={{position:"absolute", inset:0, background:"rgba(255,0,0,0.15)", display:"flex", alignItems:"center", justifyContent:"center"}}><div style={{background:"#ff4444", color:"white", fontWeight:"900", padding:"4px 10px", borderRadius:"20px", fontSize:"12px", transform:"rotate(-15deg)"}}>$OLD</div></div>}
 {p.status==="not_for_sale" && <div style={{position:"absolute", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center"}}><div style={{background:"#222", color:"#888", border:"1px solid #555", fontWeight:"900", padding:"4px 10px", borderRadius:"20px", fontSize:"10px"}}>NOT FOR SALE</div></div>}
 </div>
 <div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div style={{fontWeight:"900", color: p.status==="sold" ? "#ff4444" : p.status==="not_for_sale" ? "#888" : "#D4AF37"}}>${Number(p.price).toFixed(2)}</div></div>
@@ -1204,7 +1206,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
 <div><div style={{color:"#888", fontSize:"10px"}}>NET W0RTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>$ {totalWorth.toFixed(2)}</div></div>
 <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
-<div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
+<div style={{color:"#888", fontSize:"10px"}}>OFFER${myOffersCount>0 && "💰"}</div>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
 </div>
 </div>
@@ -1262,7 +1264,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$H0P LI$T 🛒 Available🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
+<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$H0P LI$T🛒 Available🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
 <button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"11px"}}>💰 Buyers ({myFollowersProfiles.length})</button>
 <button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"11px"}}>💳 Sellers ({myFollowingProfiles.length})</button>
