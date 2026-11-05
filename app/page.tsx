@@ -1159,21 +1159,84 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 ) : (
 <div>
-<div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div><button onClick={()=>setShowCalculator(true)} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>🧮 Count</button></div>
-  
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{ color: "#D4AF37", fontWeight: "bold", fontSize: "12px" }}>ABOUT ME</div>
+    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <button
+        onClick={() => setShowCalculator(true)}
+        style={{ background: "#111", border: "1px solid #D4AF37", color: "#D4AF37", padding: "6px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "900", cursor: "pointer" }}
+      >
+        🧮 Count
+      </button>
+      <div
+        onClick={() => setEditingBio(true)}
+        style={{ color: "#D4AF37", fontSize: "12px", cursor: "pointer", border: "1px solid #D4AF37", padding: "4px 10px", borderRadius: "12px" }}
+      >
+        Edit Profile ✏️
+      </div>
+      <div
+        onClick={handleLogout}
+        style={{ color: "#ff4444", fontSize: "12px", cursor: "pointer", border: "1px solid #ff4444", padding: "4px 10px", borderRadius: "12px" }}
+      >
+        Logout ⎋
+      </div>
+    </div>
+  </div>
 
-  
-  <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
-<div style={{color:"#888", fontSize:"11px"}}>{about}</div>
-<div style={{display:"flex", gap:"6px", marginTop:"10px"}}>
+  <div style={{ color: "white", fontSize: "13px", marginTop: "8px" }}>{bio}</div>
+  <div style={{ color: "#888", fontSize: "11px" }}>{about}</div>
 
-  
-  <button onClick={()=>setProfileStatusDirect("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>FREE</button>
-<button onClick={()=>setProfileStatusDirect("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>$earching</button>
-<button onClick={()=>setProfileStatusDirect("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Taken</button>
+  <div style={{ display: "flex", gap: "6px", marginTop: "10px" }}>
+    {/* FREE - SEARCHING - TAKEN - in the right order now */}
+    <button
+      onClick={() => setProfileStatusDirect("for_sale")}
+      style={{
+        background: profileStatus === "for_sale" ? "#00ff88" : "#222",
+        color: profileStatus === "for_sale" ? "black" : "white",
+        border: "none",
+        borderRadius: "6px",
+        padding: "4px 8px",
+        fontSize: "9px",
+        fontWeight: "900",
+        cursor: "pointer",
+      }}
+    >
+      FREE
+    </button>
+
+    <button
+      onClick={() => setProfileStatusDirect("searching")}
+      style={{
+        background: profileStatus === "searching" ? "#D4AF37" : "#222",
+        color: profileStatus === "searching" ? "black" : "white",
+        border: "none",
+        borderRadius: "6px",
+        padding: "4px 8px",
+        fontSize: "9px",
+        fontWeight: "900",
+        cursor: "pointer",
+      }}
+    >
+      SEARCHING
+    </button>
+
+    <button
+      onClick={() => setProfileStatusDirect("taken")}
+      style={{
+        background: profileStatus === "taken" ? "#ff4444" : "#222",
+        color: "white",
+        border: "none",
+        borderRadius: "6px",
+        padding: "4px 8px",
+        fontSize: "9px",
+        fontWeight: "900",
+        cursor: "pointer",
+      }}
+    >
+      TAKEN
+    </button>
+  </div>
 </div>
-</div>
-)}
 
   
   <div style={{marginTop:"10px", borderTop:"1px solid #222", paddingTop:"10px", display:"flex", justifyContent:"space-between"}}>
