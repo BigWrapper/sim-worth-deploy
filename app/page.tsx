@@ -25,7 +25,7 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
   const getProfileBadge = (status?: string) => {
     if (status === "sold") return { text: "$earching ♥️", color: "white", bg: "#ff4444" };
     if (status === "not_for_sale") return { text: "Taken 💍", color: "white", bg: "#555" };
-    return { text: "Taken 💍", color: "black", bg: "#00ff88" };
+    return { text: "FREE! 💚", color: "black", bg: "#00ff88" };
 };
   const badge = getProfileBadge(profileStatus);
   return (
