@@ -1490,6 +1490,5 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
 </div>
 </div>
 )}
-</div>
 );
 }
