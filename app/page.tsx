@@ -22,11 +22,11 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
     if (userLat && userLng) { window.location.href = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || myHandle)})`; }
     else if (finalAddress) { window.location.href = `geo:0,0?q=${encodeURIComponent(finalAddress)}`; }
   };
-  const getProfileBadge = (status?:string)=>{
-    if(status==="sold") return { text:"SOLD OUT 🔴", color:"#ff4444", bg:"#ff4444" };
-    if(status==="not_for_sale") return { text:"NOT FOR SALE 💎", color:"white", bg:"#555" };
-    return { text:"FOR SALE ✅", color:"black", bg:"#00ff88" };
-  };
+  const getProfileBadge = (status?: string) => {
+    if (status === "love") return { text: "$earching ♥️", color: "white", bg: "#ff4444" };
+    if (status === "not_for_sale") return { text: "Taken 💍", color: "white", bg: "#555" };
+    return { text: "FREE! ✅", color: "black", bg: "#00ff88" };
+};
   const badge = getProfileBadge(profileStatus);
   return (
     <div style={{background:"black", padding:"10px"}}>
