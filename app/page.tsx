@@ -24,8 +24,8 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
   };
   const getProfileBadge = (status?: string) => {
     if (status === "sold") return { text: "$earching ♥️", color: "white", bg: "#ff4444" };
-    if (status === "taken") return { text: "Taken 💍", color: "white", bg: "#555" };
-    return { text: "FREE! ✅", color: "black", bg: "#00ff88" };
+    if (status === "not_for_sale") return { text: "Taken 💍", color: "white", bg: "#555" };
+    return { text: "Taken 💍", color: "black", bg: "#00ff88" };
 };
   const badge = getProfileBadge(profileStatus);
   return (
@@ -603,7 +603,7 @@ const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_hand
 const getStatusBadge = (status?:string)=>{
   if(status==="sold") return { text:"$earching..♥️", color:"#ff4444", bg:"rgba(255,68,68,0.9)" };
   if(status==="not_for_sale") return { text:"TAKEN 💍", color:"#888", bg:"rgba(0,0,0,0.85)" };
-  return { text:"FREE! ✅", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
+  return { text:"Taken 💍", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
 
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
@@ -1230,7 +1230,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {view==="accounts" && (
 <div>
 <div style={{padding:"15px", borderBottom:"1px solid #222"}}>
-<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$H0P LI$T 🛒 Available🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
+<div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>$H0P LI$T🛒 Available 🟢</h2><div style={{display:"flex", gap:"6px"}}><button onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", color: isMarketRefreshing ? "white" : "black", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", border:"none", cursor:"pointer"}}>{isMarketRefreshing ? "Refreshing..." : "↻ Refresh"}</button><button onClick={()=>setIsLightMode(!isLightMode)} style={{background: theme.cardBg, border:"1px solid "+theme.cardBorder, color: theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isLightMode ? "☯︎ Dark" : "☯︎ Light"}</button><button onClick={handleBluetoothScan} style={{background: isOfflineMode ? "#0a84ff" : theme.cardBg, border:"1px solid "+(isOfflineMode ? "#0a84ff" : theme.cardBorder), color: isOfflineMode ? "white" : theme.text, padding:"6px 10px", borderRadius:"20px", fontSize:"11px"}}>{isBluetoothScanning ? "..." : "📡 BT"}</button></div></div>
 <div style={{marginTop:"12px", display:"flex", gap:"8px"}}>
 <button onClick={()=>setSearchTab("market")} style={{flex:1, background: searchTab==="market" ? "#D4AF37" : "#111", color: searchTab==="market" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #D4AF37", fontWeight:"900", fontSize:"11px"}}>💰 Buyers ({myFollowersProfiles.length})</button>
 <button onClick={()=>setSearchTab("users")} style={{flex:1, background: searchTab==="users" ? "#D4AF37" : "#111", color: searchTab==="users" ? "black" : "white", padding:"8px", borderRadius:"20px", border:"1px solid #333", fontWeight:"900", fontSize:"11px"}}>💳 Sellers ({myFollowingProfiles.length})</button>
