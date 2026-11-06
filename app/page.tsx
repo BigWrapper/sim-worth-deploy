@@ -804,7 +804,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 </div>
 );
-
+}
 
 return(
 <div style={{minHeight:"100vh", background: theme.bg, color: theme.text, maxWidth:"480px", margin:"0 auto", paddingBottom:"80px"}}>
@@ -1194,7 +1194,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>👤 Edit Profile</button>
 <button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>💰 Pay Me Setup</button>
 <button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔔 Notifications</button>
-onClick={()=>askPinForRoom("privacy", lockSettings)} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔒 Privacy & Safety</button>
+<button onClick={()=>askPinForRoom("privacy", lockSettings)} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔒 Privacy & Safety</button>
 </div>
 
 <div style={{color:"#888", fontSize:"11px", textAlign:"center", marginTop:"20px"}}>SIM-WORTH v1.0 • Made for the Banc</div>
