@@ -1329,6 +1329,14 @@ setWorthPinInput(""); setConfirmPinInput("");
 <div style={{color:"#888", fontSize:"11px"}}>Used only to kick out thieves from another device. Never shown to other users.</div>
 </div>
 
+<button onClick={async()=>{
+  const {error} = await supabase.from("profiles").update({ id_number: idNumberInput, phone_number: phoneNumberInput }).eq("email", email);
+  if(error) return alert("Save failed: "+error.message);
+  alert("ID + Phone Saved ✓ - For WORTH PIN recovery only");
+}} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px", borderRadius:"8px", border:"none", marginTop:"8px"}}>
+  Save ID + Phone ✓
+</button>
+  
 <div style={{border:"2px solid #ff4444", borderRadius:"12px", padding:"14px", background:"#1a0a0a"}}>
 <div style={{color:"#ff4444", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🚨 KICK OUT ALL DEVICES</div>
 <div style={{color:"#888", fontSize:"11px", marginBottom:"10px"}}>Lost your phone? From another phone, enter your WORTH PIN to lock everyone out.</div>
