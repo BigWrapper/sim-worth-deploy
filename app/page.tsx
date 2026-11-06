@@ -44,6 +44,9 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
           <img src="/sim_banc.png" onClick={handlePayMe} style={{width:"85px", height:"85px", objectFit:"contain", cursor:"pointer"}} alt="banc"/>
           <div onClick={handlePayMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: payHandle || payLink ? "#1a1a00" : "black"}}>Pay Me</div>
         </div>
+        <button onClick={onCountClick} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>🧮 Count</button>
+          </div>
+        </div>
         <div style={{textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", position:"relative"}}>
           <div onClick={onSettingsClick} style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px", cursor:"pointer"}}>$IM Worth ⚙️</div>
                     <div style={{position:"relative"}}>
@@ -1385,7 +1388,7 @@ window.location.reload();
 ) : (
 <div>
 <div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div>
-  <button onClick={()=>setShowCalculator(true)} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>🧮 Count</button>
+
 
   
   <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
