@@ -1471,6 +1471,7 @@ window.location.reload();
     <div style={{height:"90px"}}></div>
   </div>
 </div>
+</div>
 )}
 
 {/* DELETE CONFIRM POPUP - Delete this Asset? */}
