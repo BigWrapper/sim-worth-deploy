@@ -170,6 +170,7 @@ const [about, setAbout] = useState("Entrepreneur");
 const [editingBio, setEditingBio] = useState(false);
 const [showPayMe, setShowPayMe] = useState(false);
 const [showVisitMe, setShowVisitMe] = useState(false);
+const [showIdPhone, setShowIdPhone] = useState(false);
 const [showImageModal, setShowImageModal] = useState(false);
 const [showCommentsFull, setShowCommentsFull] = useState(false);
 const [showCalculator, setShowCalculator] = useState(false);
@@ -1317,12 +1318,17 @@ setWorthPinInput(""); setConfirmPinInput("");
   </div>)}
 </div>
 
+<div onClick={()=>setShowIdPhone(!showIdPhone)} style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", cursor:"pointer", display:"flex", justifyContent:"space-between"}}>
+<span>🔒 ID + Phone - Privacy</span><span>{showIdPhone ? "▲" : "▼"}</span>
+</div>
+{showIdPhone && (<div style={{marginTop:"10px"}}>
+  
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🪪 ID NUMBER</div>
 <input value={idNumberInput} onChange={e=>setIdNumberInput(e.target.value)} placeholder="ID Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
 <div style={{color:"#888", fontSize:"11px"}}>Used only to prove it's you if you get kicked out. Never shown to other users.</div>
 </div>
-
+</div>
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📱 PHONE NUMBER</div>
 <input value={phoneNumberInput} onChange={e=>setPhoneNumberInput(e.target.value)} placeholder="Phone Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
@@ -1336,7 +1342,7 @@ setWorthPinInput(""); setConfirmPinInput("");
 }} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px", borderRadius:"8px", border:"none", marginTop:"8px"}}>
   Save ID + Phone ✓
 </button>
-  
+</div>)}  
 <div style={{border:"2px solid #ff4444", borderRadius:"12px", padding:"14px", background:"#1a0a0a"}}>
 <div style={{color:"#ff4444", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🚨 KICK OUT ALL DEVICES</div>
 <div style={{color:"#888", fontSize:"11px", marginBottom:"10px"}}>Lost your phone? From another phone, enter your WORTH PIN to lock everyone out.</div>
