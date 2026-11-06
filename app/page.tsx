@@ -1121,7 +1121,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {view==="settings" && (
 <div style={{padding:"15px"}}>
 <div style={{display:"flex", alignItems:"center", gap:"10px", marginBottom:"15px"}}>
-<button onClick={()=>setView("privacy")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900"}}>← Back</button>
+<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900"}}>← Back</button>
 <h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>⚙️ $ETTING$</h2>
 </div>
 
@@ -1135,7 +1135,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>👤 Edit Profile</button>
 <button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>💰 Pay Me Setup</button>
 <button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔔 Notifications</button>
-<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔒 Privacy & Safety</button>
+<button onClick={()=>setView("privacy")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔒 Privacy & Safety</button>
 </div>
 
 <div style={{color:"#888", fontSize:"11px", textAlign:"center", marginTop:"20px"}}>SIM-WORTH v1.0 • Made for the Banc</div>
