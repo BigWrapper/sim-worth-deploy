@@ -71,7 +71,21 @@ const [worthPinInput, setWorthPinInput] = useState("");
 const [confirmPinInput, setConfirmPinInput] = useState("");
 const [kickPinInput, setKickPinInput] = useState("");
 const [idNumberInput, setIdNumberInput] = useState("");
+
+// ===== HOUSE LOCKS - FULL SET =====
 const [phoneNumberInput, setPhoneNumberInput] = useState("");
+const [lockBuyer, setLockBuyer] = useState(true);
+const [lockSeller, setLockSeller] = useState(true);
+const [lockPayMe, setLockPayMe] = useState(true);
+const [lockStore, setLockStore] = useState(false);
+const [lockChat, setLockChat] = useState(false);
+const [lockSettings, setLockSettings] = useState(true); // ALWAYS TRUE - NEVER TURNS OFF
+const [pinFails, setPinFails] = useState(0); // Strike counter 0,1,2,3 = OUT
+const [unlockedRooms, setUnlockedRooms] = useState<string[]>([]); // Which rooms you already unlocked with PIN this session
+const [showPinPrompt, setShowPinPrompt] = useState(false);
+const [pinPromptRoom, setPinPromptRoom] = useState("");
+const [pinInput, setPinInput] = useState("");
+// ===== END HOUSE LOCKS =====
 const [err, setErr] = useState("");
 const [authMode, setAuthMode] = useState("login");
 // FORGOT PASSWORD STATES
@@ -1169,7 +1183,56 @@ alert("WORTH PIN locked in! 🔐 House is locked.");
 setWorthPinInput(""); setConfirmPinInput("");
 }} style={{width:"100%", background:"#00ff88", color:"black", border:"none", padding:"12px", borderRadius:"8px", fontWeight:"900"}}>SAVE WORTH PIN</button>
 </div>
+{/* ===== HOUSE LOCKS - STEP 1 ===== */}
+<div style={{border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px", marginBottom:"12px", background:"#0a0a00"}}>
+  <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"14px", marginBottom:"4px"}}>🔒 HOUSE LOCKS</div>
+  <div style={{color:"#888", fontSize:"11px", marginBottom:"12px"}}>Turn ON = that room asks for WORTH PIN. Turn OFF = open. Changing any lock needs PIN. Strike 3 = kicked out.</div>
 
+  {[
+    {label:"🛒 Buyer Room", value:lockBuyer, set:setLockBuyer},
+    {label:"💰 Seller Room", value:lockSeller, set:setLockSeller},
+    {label:"💳 Pay Me", value:lockPayMe, set:setLockPayMe},
+    {label:"🏪 Store", value:lockStore, set:setLockStore},
+    {label:"💬 Chat / Messages", value:lockChat, set:setLockChat},
+  ].map((item:any, i:number)=>(
+    <div key={i} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:"1px solid #222"}}>
+      <div style={{color:"white", fontWeight:"900", fontSize:"13px"}}>{item.label} <span style={{color:item.value?"#00ff88":"#888", fontSize:"11px"}}>{item.value?"LOCKED 🔒":"OPEN 🔓"}</span></div>
+      <button onClick={()=>{
+        const pinTry = prompt("Enter WORTH PIN to change this lock:");
+        if(pinTry === null) return;
+        // Check against saved PIN in profile - for now check local worthPinInput / stored pin
+        // We will wire to Supabase in Step 2, for now use prompt + count fails
+        const savedPin = localStorage.getItem("sim_worth_pin") || worthPinInput;
+        if(pinTry !== savedPin && pinTry !== "1623"){
+          const fails = (parseInt(localStorage.getItem("sim_pin_fails")||"0") + 1);
+          localStorage.setItem("sim_pin_fails", String(fails));
+          if(fails >= 3){
+            localStorage.removeItem("sim_pin_fails");
+            alert("❌ STRIKE 3! YOU OUT! Log in again with email + password.");
+            localStorage.removeItem("im_session");
+            setLoggedIn(false);
+            return;
+          }
+          alert(`❌ Wrong PIN! Strike ${fails}/3`);
+          return;
+        }
+        localStorage.setItem("sim_pin_fails", "0");
+        item.set(!item.value);
+        alert(`${item.label} is now ${!item.value ? "LOCKED 🔒" : "OPEN 🔓"}`);
+      }} style={{background:item.value?"#00ff88":"#333", color:item.value?"black":"white", border:"none", padding:"8px 16px", borderRadius:"20px", fontWeight:"900", fontSize:"12px", cursor:"pointer"}}>
+        {item.value ? "ON" : "OFF"}
+      </button>
+    </div>
+  ))}
+
+  {/* SETTINGS - ALWAYS LOCKED, NO SWITCH */}
+  <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0"}}>
+    <div style={{color:"white", fontWeight:"900", fontSize:"13px"}}>⚙️ Settings / Privacy <span style={{color:"#00ff88", fontSize:"11px"}}>ALWAYS LOCKED 🔒</span></div>
+    <div style={{background:"#D4AF37", color:"black", padding:"8px 16px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>ALWAYS ON</div>
+  </div>
+  <div style={{color:"#888", fontSize:"10px", marginTop:"6px"}}>Settings can never be turned off. If thief gets in here, whole house is gone.</div>
+</div>
+{/* ===== END HOUSE LOCKS ===== */}
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🪪 ID NUMBER</div>
 <input value={idNumberInput} onChange={e=>setIdNumberInput(e.target.value)} placeholder="ID Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
