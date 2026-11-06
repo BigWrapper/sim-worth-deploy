@@ -1199,9 +1199,9 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", display:"flex", flexDirection:"column", gap:"10px"}}>
-<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>👤 Edit Profile</button>
-<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>💰 Pay Me Setup</button>
-<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔔 Notifications</button>
+<button onClick={()=>askPinForRoom("Buyers", lockSettings)} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>💰 Buyers</button>
+<button onClick={()=>askPinForRoom("Sellers", lockSettings)} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>💳 Sellers</button>
+<button onClick={()=>askPinForRoom("SIM Chat", lockSettings)} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>💬 SIM Chat</button>
 <button onClick={()=>askPinForRoom("privacy", lockSettings)} style={{background:"#222", color:"white", border:"1px solid #333", padding:"12px", borderRadius:"8px", fontWeight:"900", textAlign:"left"}}>🔒 Privacy & Safety</button>
 </div>
 
