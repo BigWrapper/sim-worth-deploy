@@ -1121,7 +1121,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {view==="settings" && (
 <div style={{padding:"15px"}}>
 <div style={{display:"flex", alignItems:"center", gap:"10px", marginBottom:"15px"}}>
-<button onClick={()=>setView("profile")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900"}}>← Back</button>
+<button onClick={()=>setView("privacy")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900"}}>← Back</button>
 <h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>⚙️ $ETTING$</h2>
 </div>
 
@@ -1139,6 +1139,44 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 
 <div style={{color:"#888", fontSize:"11px", textAlign:"center", marginTop:"20px"}}>SIM-WORTH v1.0 • Made for the Banc</div>
+</div>
+)}
+{view==="privacy" && (
+<div style={{padding:"15px"}}>
+<div style={{display:"flex", alignItems:"center", gap:"10px", marginBottom:"15px"}}>
+<button onClick={()=>setView("settings")} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900"}}>← Back</button>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🔒 PRIVACY & $AFETY</h2>
+</div>
+
+<div style={{color:"#888", fontSize:"12px", marginBottom:"15px"}}>Your house. Your keys. No key = no entry to your rooms.</div>
+
+<div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"14px", marginBottom:"12px", background:"#0a1a0f"}}>
+<div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🔑 WORTH PIN SETUP</div>
+<div style={{color:"#888", fontSize:"11px", marginBottom:"10px"}}>4 digits. Needed to open Buyer room, Seller room & Pay Me. Even if someone has your phone.</div>
+<input placeholder="New WORTH PIN (4 digits)" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
+<input placeholder="Confirm WORTH PIN" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"10px"}} />
+<button onClick={()=>alert("WORTH PIN saved! Next step we will lock the rooms with it.")} style={{width:"100%", background:"#00ff88", color:"black", border:"none", padding:"12px", borderRadius:"8px", fontWeight:"900"}}>SAVE WORTH PIN</button>
+</div>
+
+<div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
+<div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🪪 ID NUMBER</div>
+<input placeholder="ID Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
+<div style={{color:"#888", fontSize:"11px"}}>Used only to prove it's you if you get kicked out. Never shown to other users.</div>
+</div>
+
+<div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
+<div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📱 PHONE NUMBER</div>
+<input placeholder="Phone Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
+<div style={{color:"#888", fontSize:"11px"}}>Used only to kick out thieves from another device. Never shown to other users.</div>
+</div>
+
+<div style={{border:"2px solid #ff4444", borderRadius:"12px", padding:"14px", background:"#1a0a0a"}}>
+<div style={{color:"#ff4444", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🚨 KICK OUT ALL DEVICES</div>
+<div style={{color:"#888", fontSize:"11px", marginBottom:"10px"}}>Lost your phone? From another phone, enter your WORTH PIN to lock everyone out.</div>
+<input placeholder="Enter WORTH PIN to kick out" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"10px"}} />
+<button onClick={()=>alert("Kick Out needs your PIN check. Next step we wire it to real logout.")} style={{width:"100%", background:"#ff4444", color:"white", border:"none", padding:"12px", borderRadius:"8px", fontWeight:"900"}}>KICK OUT EVERYONE</button>
+</div>
+
 </div>
 )}
 {view==="profile" && (
