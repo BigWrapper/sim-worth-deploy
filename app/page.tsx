@@ -17,11 +17,12 @@ type HeaderProps = {
   avatarPreview: string; totalWorth: number; onAvatarClick: () => void; myUserId: string; myHandle: string;
   userLocation?: string; userLat?: string; userLng?: string; streetAddress?: string; suburb?: string; city?: string;
   payLink?: string; payHandle?: string; payMethod?: string; profileStatus?: string;
+  skills?: string[];
   onSettingsClick: () => void;
   onCountClick?: () => void;
 };
 
-function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod, profileStatus, onSettingsClick, onCountClick }: HeaderProps) {
+function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod, profileStatus, skills, onSettingsClick, onCountClick }: HeaderProps) {
   const handlePayMe = () => {
     if (payLink && payLink.startsWith("http")) { window.open(payLink, '_blank'); return; }
     if (payHandle) { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); return; }
@@ -61,8 +62,9 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
           <div onClick={handleVisitMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: userLocation || streetAddress ? "#1a1a00" : "black"}}>Visit Me</div>
         </div>
       </div>
-      <div style={{textAlign:"center", marginTop:"16px"}}><div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div>
-      {(streetAddress || userLocation) && <div style={{color:"#888", fontSize:"10px", marginTop:"2px"}}>📍 {streetAddress ? `${streetAddress}, ${suburb}` : userLocation}</div>}
+      <div style={{textAlign:"center", marginTop:"4px"}}>
+        <div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div>
+        {skills && skills.length > 0 && <div style={{display:"flex", gap:"5px", justifyContent:"center", flexWrap:"wrap", marginTop:"5px"}}>{skills.map((s,i)=>(<span key={i} style={{background:"#1a1a00", border:"1px solid #D4AF37", color:"#D4AF37", fontSize:"9px", fontWeight:"700", padding:"3px 8px", borderRadius:"12px"}}>{s}</span>))}</div>}
       </div>
       <div style={{marginTop:"12px", border:"1px solid gold", borderRadius:"14px", padding:"10px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
         <div style={{flex:1, textAlign:"center"}}><div style={{color:"#888", fontSize:"10px"}}>$IM WORTH</div><div style={{color:"gold", fontWeight:"900", fontSize:"26px"}}>$ {totalWorth.toFixed(2)}</div></div>
@@ -1365,7 +1367,7 @@ window.location.reload();
 )}
 {view==="profile" && (
 <div>
-<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} onCountClick={()=>setShowCalculator(true)} />
+<WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} onCountClick={()=>setShowCalculator(true)} skills={["Entrepreneur", "CEO", "Builder"]} />
 <div style={{margin:"0 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
 {editingBio ? (
 <div>
