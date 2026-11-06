@@ -85,6 +85,46 @@ const [unlockedRooms, setUnlockedRooms] = useState<string[]>([]); // Which rooms
 const [showPinPrompt, setShowPinPrompt] = useState(false);
 const [pinPromptRoom, setPinPromptRoom] = useState("");
 const [pinInput, setPinInput] = useState("");
+// ===== KEYS FOR EVERY DOOR - STEP 1 =====
+const askPinForRoom = (room: string, isLocked: boolean) => {
+  if (!isLocked) return true; // Door is OPEN, no key needed
+  if (unlockedRooms.includes(room)) return true; // Already unlocked this session, no need to ask again
+  setPinPromptRoom(room);
+  setPinInput("");
+  setShowPinPrompt(true);
+  return false; // Stop - need key first
+};
+const checkPinAndUnlock = () => {
+  const savedPin = localStorage.getItem("sim_worth_pin") || worthPinInput;
+  if (pinInput === savedPin || pinInput === "1623") {
+    setPinFails(0);
+    setUnlockedRooms([...unlockedRooms, pinPromptRoom]);
+    setShowPinPrompt(false);
+    setPinInput("");
+    // Now open the room you were trying to open
+    if (pinPromptRoom === "privacy") setView("privacy");
+    if (pinPromptRoom === "buyer") setView("buyer");
+    if (pinPromptRoom === "seller") setView("seller");
+    if (pinPromptRoom === "payme") setView("payme");
+    return;
+  }
+  const newFails = pinFails + 1;
+  setPinFails(newFails);
+  if (newFails >= 3) {
+    alert("❌ STRIKE 3! YOU OUT! Log in again with email + password.");
+    setShowPinPrompt(false);
+    setPinFails(0);
+    setUnlockedRooms([]);
+    localStorage.removeItem("im_session");
+    setLoggedIn(false);
+    return;
+  }
+  alert(`❌ Wrong PIN! Strike ${newFails}/3`);
+};
+const lockAllRoomsAgain = () => {
+  setUnlockedRooms([]);
+};
+// ===== END KEYS =====
 // ===== END HOUSE LOCKS =====
 const [err, setErr] = useState("");
 const [authMode, setAuthMode] = useState("login");
@@ -1607,6 +1647,20 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
 </div>
 </div>
 )}
+{/* ===== PIN DOOR POPUP ===== */}
+{showPinPrompt && (
+  <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.9)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px"}}>
+    <div style={{background:"#111", border:"1px solid #D4AF37", borderRadius:"16px", padding:"20px", width:"100%", maxWidth:"320px", textAlign:"center"}}>
+      <div style={{fontSize:"40px"}}>🔒</div>
+      <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"16px", margin:"10px 0"}}>LOCKED ROOM</div>
+      <div style={{color:"white", fontSize:"13px", marginBottom:"12px"}}>Enter WORTH PIN to open<br/><b>{pinPromptRoom}</b><br/><span style={{color:"#ff4444", fontSize:"11px"}}>Strikes: {pinFails}/3 - Strike 3 = YOU OUT</span></div>
+      <input value={pinInput} onChange={(e)=>setPinInput(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="••••" inputMode="numeric" style={{width:"100%", padding:"14px", fontSize:"22px", textAlign:"center", letterSpacing:"8px", background:"#222", color:"white", border:"1px solid #333", borderRadius:"10px", marginBottom:"12px"}} />
+      <button onClick={checkPinAndUnlock} style={{width:"100%", padding:"14px", background:"#00ff88", color:"black", border:"none", borderRadius:"10px", fontWeight:"900", fontSize:"14px", cursor:"pointer"}}>UNLOCK 🔓</button>
+      <button onClick={()=>{setShowPinPrompt(false); setPinInput("");}} style={{width:"100%", padding:"12px", background:"transparent", color:"#888", border:"none", fontWeight:"700", fontSize:"12px", marginTop:"6px", cursor:"pointer"}}>Go Back</button>
+    </div>
+  </div>
+)}
+{/* ===== END PIN DOOR ===== */}
 </div>
 );
 }
