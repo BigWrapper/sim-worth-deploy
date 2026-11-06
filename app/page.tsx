@@ -22,6 +22,11 @@ type HeaderProps = {
 };
 
 function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod, profileStatus, onSettingsClick, onCountClick }: HeaderProps) {
+  const handlePayMe = () => {
+    if (payLink && payLink.startsWith("http")) { window.open(payLink, '_blank'); return; }
+    if (payHandle) { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); return; }
+    alert("Go to Edit Profile > Setup Pay Me!");
+  };
   const handleVisitMe = () => {
     const finalAddress = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
     if (userLat && userLng) { window.location.href = `geo:${userLat},${userLng}?q=${userLat},${userLng}(${encodeURIComponent(finalAddress || myHandle)})`; }
@@ -31,7 +36,7 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
     if (status === "sold") return { text: "$earching ♥️", color: "white", bg: "#ff4444" };
     if (status === "not_for_sale") return { text: "Taken 💍", color: "white", bg: "#555" };
     return { text: "FREE! 💚", color: "black", bg: "#00ff88" };
-};
+  };
   const badge = getProfileBadge(profileStatus);
   return (
     <div style={{background:"black", padding:"10px"}}>
@@ -41,6 +46,14 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
           <div onClick={handlePayMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: payHandle || payLink ? "#1a1a00" : "black"}}>Pay Me</div>
           <div style={{marginTop:"14px"}}>
             <button onClick={onCountClick} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>🧮 Count</button>
+          </div>
+        </div>
+        <div style={{textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", position:"relative"}}>
+          <div onClick={onSettingsClick} style={{background:"black", border:"1px solid gold", color:"gold", fontSize:"8px", padding:"3px 8px", borderRadius:"20px", fontWeight:"900", marginBottom:"6px", cursor:"pointer"}}>$IM Worth ⚙️</div>
+          <div style={{position:"relative"}}>
+            <img src={avatarPreview} onClick={onAvatarClick} style={{width:"95px", height:"95px", borderRadius:"50%", border:"3px solid gold", objectFit:"cover", cursor:"pointer", filter: profileStatus==="sold" ? "grayscale(60%)" : "none"}} alt="avatar"/>
+            <div style={{position:"absolute", bottom:"-8px", left:"50%", transform:"translateX(-50%)", background: badge.bg, color: badge.color, fontSize:"7px", fontWeight:"900", padding:"3px 8px", borderRadius:"12px", whiteSpace:"nowrap", border:"1px solid #222"}}>{badge.text}</div>
+            <div onClick={(e)=>{ e.stopPropagation(); document.querySelectorAll('input[type=file]')[0]?.click(); }} style={{position:"absolute", top:"-6px", right:"-6px", background:"#D4AF37", width:"30px", height:"30px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", border:"2px solid black", fontSize:"14px", cursor:"pointer", zIndex:20}}>🖊️</div>
           </div>
         </div>
         <div style={{textAlign:"center"}}>
@@ -1376,7 +1389,7 @@ window.location.reload();
 ) : (
 <div>
 <div style={{display:"flex", justifyContent:"space-between"}}><div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div><div style={{display:"flex", gap:"8px"}}><div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div><div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div></div></div>
-  
+  <button onClick={()=>setShowCalculator(true)} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>🧮 Count</button>
 
   
   <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
