@@ -168,6 +168,8 @@ const [activeProductId, setActiveProductId] = useState<string | null>(null);
 const [bio, setBio] = useState("Im Totally Worthed!");
 const [about, setAbout] = useState("Entrepreneur");
 const [editingBio, setEditingBio] = useState(false);
+const [showPayMe, setShowPayMe] = useState(false);
+const [showVisitMe, setShowVisitMe] = useState(false);
 const [showImageModal, setShowImageModal] = useState(false);
 const [showCommentsFull, setShowCommentsFull] = useState(false);
 const [showCalculator, setShowCalculator] = useState(false);
@@ -1281,6 +1283,40 @@ setWorthPinInput(""); setConfirmPinInput("");
   <div style={{color:"#888", fontSize:"10px", marginTop:"6px"}}>Settings can never be turned off. If thief gets in here, whole house is gone.</div>
 </div>
 {/* ===== END HOUSE LOCKS ===== */}
+
+{/* ===== PAY ME - COLLAPSE ===== */}
+<div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
+  <div onClick={()=>setShowPayMe(!showPayMe)} style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", cursor:"pointer", display:"flex", justifyContent:"space-between"}}>
+    <span>💰 Pay Me Setup - $IM ₿anc</span><span>{showPayMe ? "^" : "v"}</span>
+  </div>
+  {showPayMe && (<div style={{marginTop:"8px"}}>
+    <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
+      <option value="capitec">Capitec</option><option value="payshap">PayShap</option><option value="bank">EFT</option><option value="fnb">FNB</option><option value="custom">Custom Link</option>
+    </select>
+    <input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="Enter PayShap 082..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
+    <input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+    <button onClick={saveBio} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none", marginTop:"8px"}}>Save Pay Me ✓</button>
+  </div>)}
+</div>
+
+{/* ===== VISIT ME - COLLAPSE ===== */}
+<div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
+  <div onClick={()=>setShowVisitMe(!showVisitMe)} style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", cursor:"pointer", display:"flex", justifyContent:"space-between"}}>
+    <span>📍 Visit Me Setup - SIM MAPS</span><span>{showVisitMe ? "^" : "v"}</span>
+  </div>
+  {showVisitMe && (<div style={{marginTop:"10px"}}>
+    <input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+    <input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+    <input value={city} onChange={e=>setCity(e.target.value)} placeholder="City" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+    <div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
+      <input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+      <input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
+    </div>
+    <button onClick={()=>{ navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured!`); }); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
+    <button onClick={saveBio} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px", borderRadius:"8px", border:"none"}}>Save Location ✓</button>
+  </div>)}
+</div>
+
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🪪 ID NUMBER</div>
 <input value={idNumberInput} onChange={e=>setIdNumberInput(e.target.value)} placeholder="ID Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
@@ -1327,23 +1363,7 @@ window.location.reload();
 </div>
 </div>
 
-<div style={{border:"1px solid #333", borderRadius:"10px", padding:"10px", marginBottom:"10px", background:"#0a0a0a"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"8px"}}>💰 Pay Me Setup - $IM ₿anc</div>
-<select value={payMethod} onChange={e=>setPayMethod(e.target.value)} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}>
-<option value="capitec">Capitec</option><option value="payshap">PayShap</option><option value="bank">EFT</option><option value="fnb">FNB</option><option value="custom">Custom Link</option>
-</select>
-<input value={payHandle} onChange={e=>setPayHandle(e.target.value)} placeholder="Enter PayShap 082..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={payLink} onChange={e=>setPayLink(e.target.value)} placeholder="Direct link https://..." style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
-</div>
-  <div style={{border:"2px solid #D4AF37", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#111"}}>
-<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📍 Visit Me Setup - SIM MAPS</div>
-<input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<input value={city} onChange={e=>setCity(e.target.value)} placeholder="City" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-<div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
-<input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
-<input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
-</div>
+
 <button onClick={()=>{ navigator.geolocation.getCurrentPosition(p=>{ setUserLat(p.coords.latitude.toString()); setUserLng(p.coords.longitude.toString()); alert(`Location captured!`); }); }} style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"#D4AF37", padding:"10px", borderRadius:"8px", fontWeight:"900", marginBottom:"8px"}}>📍 Get Current Location (GPS)</button>
 </div>
 <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
