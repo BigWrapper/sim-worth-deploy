@@ -67,8 +67,12 @@ const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [worthPin, setWorthPin] = useState("");
 const [worthPinConfirm, setWorthPinConfirm] = useState("");
+const [worthPinInput, setWorthPinInput] = useState("");
+const [confirmPinInput, setConfirmPinInput] = useState("");
+const [kickPinInput, setKickPinInput] = useState("");
+const [idNumberInput, setIdNumberInput] = useState("");
+const [phoneNumberInput, setPhoneNumberInput] = useState("");
 const [authMode, setAuthMode] = useState("login");
-const [err, setErr] = useState("");
 // FORGOT PASSWORD STATES
 const [showForgot, setShowForgot] = useState(false);
 const [forgotEmail, setForgotEmail] = useState("");
@@ -1153,28 +1157,42 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"14px", marginBottom:"12px", background:"#0a1a0f"}}>
 <div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🔑 WORTH PIN SETUP</div>
 <div style={{color:"#888", fontSize:"11px", marginBottom:"10px"}}>4 digits. Needed to open Buyer room, Seller room & Pay Me. Even if someone has your phone.</div>
-<input placeholder="New WORTH PIN (4 digits)" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
-<input placeholder="Confirm WORTH PIN" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"10px"}} />
-<button onClick={()=>alert("WORTH PIN saved! Next step we will lock the rooms with it.")} style={{width:"100%", background:"#00ff88", color:"black", border:"none", padding:"12px", borderRadius:"8px", fontWeight:"900"}}>SAVE WORTH PIN</button>
+<input value={worthPinInput} onChange={e=>setWorthPinInput(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="New WORTH PIN (4 digits)" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
+<input value={confirmPinInput} onChange={e=>setConfirmPinInput(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="Confirm WORTH PIN" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"10px"}} />
+<button onClick={async()=>{
+if(worthPinInput.length!==4) return alert("PIN must be 4 digits bro");
+if(worthPinInput!==confirmPinInput) return alert("PINs don't match bro");
+const {error} = await supabase.from("profiles").update({worth_pin: worthPinInput, id_number: idNumberInput, phone_number: phoneNumberInput}).eq("email", email);
+if(error) return alert("Save failed: "+error.message);
+alert("WORTH PIN locked in! 🔐 House is locked.");
+setWorthPinInput(""); setConfirmPinInput("");
+}} style={{width:"100%", background:"#00ff88", color:"black", border:"none", padding:"12px", borderRadius:"8px", fontWeight:"900"}}>SAVE WORTH PIN</button>
 </div>
 
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🪪 ID NUMBER</div>
-<input placeholder="ID Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
+<input value={idNumberInput} onChange={e=>setIdNumberInput(e.target.value)} placeholder="ID Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
 <div style={{color:"#888", fontSize:"11px"}}>Used only to prove it's you if you get kicked out. Never shown to other users.</div>
 </div>
 
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📱 PHONE NUMBER</div>
-<input placeholder="Phone Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
+<input value={phoneNumberInput} onChange={e=>setPhoneNumberInput(e.target.value)} placeholder="Phone Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
 <div style={{color:"#888", fontSize:"11px"}}>Used only to kick out thieves from another device. Never shown to other users.</div>
 </div>
 
 <div style={{border:"2px solid #ff4444", borderRadius:"12px", padding:"14px", background:"#1a0a0a"}}>
 <div style={{color:"#ff4444", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🚨 KICK OUT ALL DEVICES</div>
 <div style={{color:"#888", fontSize:"11px", marginBottom:"10px"}}>Lost your phone? From another phone, enter your WORTH PIN to lock everyone out.</div>
-<input placeholder="Enter WORTH PIN to kick out" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"10px"}} />
-<button onClick={()=>alert("Kick Out needs your PIN check. Next step we wire it to real logout.")} style={{width:"100%", background:"#ff4444", color:"white", border:"none", padding:"12px", borderRadius:"8px", fontWeight:"900"}}>KICK OUT EVERYONE</button>
+<input value={kickPinInput} onChange={e=>setKickPinInput(e.target.value.replace(/[^0-9]/g,"").slice(0,4))} placeholder="Enter WORTH PIN to kick out" maxLength={4} inputMode="numeric" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"10px"}} />
+<button onClick={async()=>{
+if(!kickPinInput) return alert("Enter your PIN bro");
+const {data} = await supabase.from("profiles").select("worth_pin").eq("email", email).single();
+if(!data || data.worth_pin !== kickPinInput) return alert("Wrong PIN. Can't kick out.");
+await supabase.auth.signOut();
+alert("Everyone kicked out. House locked. 🔒");
+window.location.reload();
+}} style={{width:"100%", background:"#ff4444", color:"white", border:"none", padding:"12px", borderRadius:"8px", fontWeight:"900"}}>KICK OUT EVERYONE</button>
 </div>
 
 </div>
