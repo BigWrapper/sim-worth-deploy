@@ -72,6 +72,7 @@ const [confirmPinInput, setConfirmPinInput] = useState("");
 const [kickPinInput, setKickPinInput] = useState("");
 const [idNumberInput, setIdNumberInput] = useState("");
 const [phoneNumberInput, setPhoneNumberInput] = useState("");
+const [err, setErr] = useState("");
 const [authMode, setAuthMode] = useState("login");
 // FORGOT PASSWORD STATES
 const [showForgot, setShowForgot] = useState(false);
