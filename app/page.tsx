@@ -1162,8 +1162,8 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <button onClick={async()=>{
 if(worthPinInput.length!==4) return alert("PIN must be 4 digits bro");
 if(worthPinInput!==confirmPinInput) return alert("PINs don't match bro");
-const {error} = await supabase.from("profiles").update({worth_pin: worthPinInput, id_number: idNumberInput, phone_number: phoneNumberInput}).eq("email", email);
-if(error) return alert("Save failed: "+error.message);
+const {error: saveError} = await supabase.from("profiles").update({worth_pin: worthPinInput, id_number: idNumberInput, phone_number: phoneNumberInput}).eq("email", email);
+if(saveError) return alert("Save failed: "+saveError.message);
 alert("WORTH PIN locked in! 🔐 House is locked.");
 setWorthPinInput(""); setConfirmPinInput("");
 }} style={{width:"100%", background:"#00ff88", color:"black", border:"none", padding:"12px", borderRadius:"8px", fontWeight:"900"}}>SAVE WORTH PIN</button>
