@@ -1232,16 +1232,16 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 )}
 {view==="publicProfile" && selectedUser && (
-<div style={{display:"flex", flexDirection:"column", height:"100vh", overflow:"hidden"}}>
+<div style={{display:"flex", flexDirection:"column"}}>
 {/* FROZEN HEADER - handle + pic only, never scrolls */}
-<div style={{display:"flex", alignItems:"center", gap:"10px", padding:"12px 15px", borderBottom:"1px solid #222", flexShrink:0, background:"#000"}}>
+<div style={{display:"flex", alignItems:"center", gap:"10px", padding:"12px 15px", borderBottom:"1px solid #222", flexShrink:0, background:"#000", position:"sticky", top:0, zIndex:30}}>
 <div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div>
 <img src={selectedUser.avatar} onClick={()=>openImageModal(selectedUser.avatar, {...selectedUser, isMine:false})} style={{width:"40px", height:"40px", borderRadius:"50%", border:"2px solid #D4AF37", objectFit:"cover", cursor:"pointer", filter: selectedUser.profile_status==="sold" ? "grayscale(80%)" : "none"}}/>
 <div style={{color:"#D4AF37", fontWeight:"bold"}}>{selectedUser.handle}</div>
 <div style={{marginLeft:"8px", background: getStatusBadge(selectedUser.profile_status).bg, color: getStatusBadge(selectedUser.profile_status).color, fontSize:"9px", fontWeight:"900", padding:"4px 8px", borderRadius:"12px"}}>{getStatusBadge(selectedUser.profile_status).text}</div>
 </div>
 {/* COLLAPSIBLE - SELLER INFO - same style as your ABOUT ME box */}
-<div style={{flexShrink:0, background:"#0a0a0a", borderBottom:"1px solid #222"}}>
+<div style={{flexShrink:0, background:"#0a0a0a", borderBottom:"1px solid #222", position:"sticky", top:"64px", zIndex:20}}>
 <div onClick={()=>setShowPublicAbout(!showPublicAbout)} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 15px", cursor:"pointer"}}>
 <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px"}}>👤 SELLER INFO - About, Skills & Contact</div>
 <div style={{color:"#D4AF37", fontSize:"12px"}}>{showPublicAbout ? "▲" : "▼"}</div>
@@ -1272,7 +1272,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 )}
 </div>
 {/* ITEMS - ONLY THIS SCROLLS */}
-<div style={{flex:1, overflowY:"auto", padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
+<div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
 <div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:selectedUser.email, owner_handle:selectedUser.handle, isMine:false, status:p.status})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #444" : "1px solid #2a2a2a", cursor:"pointer", position:"relative", opacity: p.status==="sold" || p.status==="not_for_sale" ? 0.7 : 1}}>
 <div style={{position:"relative"}}>
