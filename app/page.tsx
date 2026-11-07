@@ -1688,6 +1688,7 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
 )}
 
 </div>
+)}
 {view==="feed" && (
 <div>
 {/* STICKY HEADER - title + refresh + search NEVER scroll */}
@@ -1717,7 +1718,7 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
 </div>
 </div>
 )}
-)}
+  
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background: theme.navBg, borderTop:"2px solid #0a84ff", display:"flex", justifyContent:"space-around", padding:"10px", zIndex:5000}}>
 <div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#0a84ff" : "#888", cursor:"pointer", position:"relative", fontWeight: view==="offers" ? "900" : "400", background: view==="offers" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="offers" ? "1px solid #0a84ff" : "none"}}>💬 $IM {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>} {isOfflineMode && <span style={{position:"absolute", top:"-6px", left:"-8px", background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 4px", borderRadius:"10px"}}>BT</span>}</div>
 <div onClick={()=>setView("feed")} style={{color: view==="feed" ? "#0a84ff" : "#888", cursor:"pointer", fontWeight: view==="feed" ? "900" : "400", background: view==="feed" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="feed" ? "1px solid #0a84ff" : "none"}}>👑 Worth</div>
