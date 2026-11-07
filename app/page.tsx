@@ -102,7 +102,7 @@ function WorthNotepad({ myUserId, onClose }: { myUserId: string; onClose: () => 
       else { const tempId = "local_" + Date.now(); newNotes = [{ id: tempId, ...payload }, ...notes]; setActiveId(tempId); }
     }
     setNotes(newNotes); localStorage.setItem("worth_notes_offline", JSON.stringify(newNotes));
-    alert("💾 Saved to Supabase + Offline");
+    alert("💾 Saved to Worth Cloud + Offline");
   }
   async function deleteNote(id: any) {
     setNotes(notes.filter(n => n.id !== id)); localStorage.setItem("worth_notes_offline", JSON.stringify(notes.filter(n => n.id !== id)));
@@ -110,10 +110,23 @@ function WorthNotepad({ myUserId, onClose }: { myUserId: string; onClose: () => 
     if (activeId === id) { setActiveId(null); setTitle(""); setContent(""); }
   }
   function speak() {
-    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return; }
-    const utter = new SpeechSynthesisUtterance(`${title}. ${content}`);
-    utter.onend = () => setIsSpeaking(false); setIsSpeaking(true); window.speechSynthesis.speak(utter);
-  }
+  if (!("speechSynthesis" in window)) return alert("This browser has no speaker");
+  if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return; }
+  const text = `${title}. ${content}`.trim();
+  if (!text || text === ".") return alert("Type something first bro, nothing to read!");
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US"; utter.rate = 1; utter.pitch = 1; utter.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const english = voices.find(v => v.lang.startsWith("en")) || voices[0];
+  if (english) utter.voice = english;
+  utter.onend = () => setIsSpeaking(false);
+  utter.onerror = () => setIsSpeaking(false);
+  setIsSpeaking(true);
+  window.speechSynthesis.speak(utter);
+  // Mobile Chrome unlock hack
+  setTimeout(() => { if (!window.speechSynthesis.speaking) window.speechSynthesis.speak(utter); }, 250);
+}
   function toggleListen() {
     const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return alert("Use Chrome for Speak to Text");
@@ -377,7 +390,7 @@ const loadFeed = async ()=>{
   setIsLiveRefreshing(true);
   try{
     const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
-    if(profs) setProfiles(profs.map((p:any)=>({ id: p.id, email: p.email || p.handle, handle: p.handle, name: p.display_name || p.handle?.replace('@',''), avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12", total_worth: p.net_worth || 0, bio: p.bio, about: p.about, location: p.location, latitude: p.latitude, longitude: p.longitude, pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link, profile_status: p.profile_status || "for_sale" })));
+    if(profs) setProfiles(profs.map((p:any)=>({ id: p.id, email: p.email || p.handle, handle: p.handle, name: p.display_name || p.handle?.replace('@',''), avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12", total_worth: p.net_worth || 0, bio: p.bio, about: p.about, skills: p.skills, location: p.location, latitude: p.latitude, longitude: p.longitude, pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link, profile_status: p.profile_status || "for_sale" })));
     const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
     if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item", status: p.status || "for_sale", views: p.views || 0, likes: p.likes || 0})));
     const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
@@ -453,8 +466,9 @@ const syncProfile = async (em:string, worth:number, av:string, pin?:string)=>{
 
 const saveBio = async ()=>{
   const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
-  const { error } = await supabase.from("profiles").update({ bio: bio, about: about, skills: skillsInput, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus }).eq("handle", myHandle);
-  if(error){ alert("Run SQL: ALTER TABLE profiles ADD COLUMN profile_status TEXT DEFAULT 'for_sale'; Error:"+error.message); }
+  const handle = "@" + email.split("@")[0].toLowerCase().trim();
+  const { error } = await supabase.from("profiles").update({ bio: bio, about: about, skills: skillsInput, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus }).eq("handle", handle);
+  if(error){ alert("Save FAILED: " + error.message); return; }
   setEditingBio(false); loadFeed(); alert("Profile Saved Successfully ✓");
 };
 const handleForgotPassword = async ()=>{
