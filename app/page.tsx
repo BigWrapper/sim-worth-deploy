@@ -147,8 +147,6 @@ const [showSplash, setShowSplash] = useState(true);
 const [loggedIn, setLoggedIn] = useState(false);
 const [view, setView] = useState("accounts");
 const [showNotes, setShowNotes] = useState(false);
-const [skills, setSkills] = useState<string[]>(["Entrepreneur", "CEO", "Builder"]);
-const [skillsInput, setSkillsInput] = useState("Entrepreneur, CEO, Builder");
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [worthPin, setWorthPin] = useState("");
@@ -248,6 +246,8 @@ const [showAboutBox, setShowAboutBox] = useState(true);
 const [hideWorth, setHideWorth] = useState(false);
 const [bio, setBio] = useState("Im Totally Worthed!");
 const [about, setAbout] = useState("Entrepreneur");
+const [skills, setSkills] = useState<string[]>(["Entrepreneur", "CEO", "Builder"]);
+const [skillsInput, setSkillsInput] = useState("Entrepreneur, CEO, Builder");
 const [editingBio, setEditingBio] = useState(false);
 const [showPayMe, setShowPayMe] = useState(false);
 const [showVisitMe, setShowVisitMe] = useState(false);
@@ -431,7 +431,7 @@ const loadMyData = async (em:string)=>{
   if(data) setProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, title:p.title || "My Item", status: p.status || "for_sale"})));
   const handle = "@" + em.split("@")[0].toLowerCase().trim();
   const { data: prof } = await supabase.from("profiles").select("*").eq("handle", handle).maybeSingle();
-  if(prof){ if(prof.avatar_url) setAvatarPreview(prof.avatar_url); if(prof.bio) setBio(prof.bio); if(prof.about) setAbout(prof.about); if(prof.pay_method) setPayMethod(prof.pay_method); if(prof.pay_handle) setPayHandle(prof.pay_handle); if(prof.pay_link) setPayLink(prof.pay_link); if(prof.location) { setUserLocation(prof.location); const parts = prof.location.split(','); if(parts.length >= 2){ setStreetAddress(parts[0].trim()); setSuburb(parts[1].trim()); if(parts[2]) setCity(parts[2].trim()); } } if(prof.latitude) setUserLat(prof.latitude.toString()); if(prof.longitude) setUserLng(prof.longitude.toString()); if(prof.id) setMyId(prof.id); if(prof.id_number) setIdNumberInput(prof.id_number); if(prof.phone_number) setPhoneNumberInput(prof.phone_number); if(prof.profile_status) setProfileStatus(prof.profile_status); }
+  if(prof){ if(prof.avatar_url) setAvatarPreview(prof.avatar_url); if(prof.bio) setBio(prof.bio); if(prof.about) setAbout(prof.about); if(prof.skills){ setSkillsInput(prof.skills); setSkills(prof.skills.split(",").map((s:string)=>s.trim()).filter(Boolean)); } if(prof.pay_method) setPayMethod(prof.pay_method); if(prof.pay_handle) setPayHandle(prof.pay_handle); if(prof.pay_link) setPayLink(prof.pay_link); if(prof.location) { setUserLocation(prof.location); const parts = prof.location.split(','); if(parts.length >= 2){ setStreetAddress(parts[0].trim()); setSuburb(parts[1].trim()); if(parts[2]) setCity(parts[2].trim()); } } if(prof.latitude) setUserLat(prof.latitude.toString()); if(prof.longitude) setUserLng(prof.longitude.toString()); if(prof.id) setMyId(prof.id); if(prof.id_number) setIdNumberInput(prof.id_number); if(prof.phone_number) setPhoneNumberInput(prof.phone_number); if(prof.profile_status) setProfileStatus(prof.profile_status); }
 };
 
 const loadPublicUser = async (user:any)=>{
@@ -443,7 +443,7 @@ const loadPublicUser = async (user:any)=>{
 
 const syncProfile = async (em:string, worth:number, av:string, pin?:string)=>{
   if(!em || !em.includes("@")) return; const handle = "@" + em.split("@")[0].toLowerCase().trim(); if(handle === "@" || handle.length < 3) return; const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation; const pinHash = pin ? btoa(pin) : undefined; const { data: existing } = await supabase.from("profiles").select("id").eq("handle", handle).maybeSingle(); if(existing){ 
-    const updateData:any = { avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus };
+    const updateData:any = { avatar_url: av, net_worth: worth, email: em, bio: bio, about: about, skills: skillsInput, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus };
     if(pinHash) updateData.worth_pin_hash = pinHash;
     await supabase.from("profiles").update(updateData).eq("id", existing.id); 
   } else { 
@@ -453,7 +453,7 @@ const syncProfile = async (em:string, worth:number, av:string, pin?:string)=>{
 
 const saveBio = async ()=>{
   const fullAddr = streetAddress && suburb ? `${streetAddress}, ${suburb}, ${city}` : userLocation;
-  const { error } = await supabase.from("profiles").update({ bio: bio, about: about, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus }).eq("handle", myHandle);
+  const { error } = await supabase.from("profiles").update({ bio: bio, about: about, skills: skillsInput, pay_method: payMethod, pay_handle: payHandle, pay_link: payLink, location: fullAddr, latitude: userLat ? parseFloat(userLat) : null, longitude: userLng ? parseFloat(userLng) : null, profile_status: profileStatus }).eq("handle", myHandle);
   if(error){ alert("Run SQL: ALTER TABLE profiles ADD COLUMN profile_status TEXT DEFAULT 'for_sale'; Error:"+error.message); }
   setEditingBio(false); loadFeed(); alert("Profile Saved Successfully ✓");
 };
@@ -862,7 +862,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   <>
     <input placeholder="WORTH PIN (4 digits e.g. 1999)" type="password" inputMode="numeric" maxLength={4} value={worthPin} onChange={e=>setWorthPin(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
     <input placeholder="Confirm WORTH PIN" type="password" inputMode="numeric" maxLength={4} value={worthPinConfirm} onChange={e=>setWorthPinConfirm(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
-    <div style={{fontSize:"10px", color:"#D4AF37", marginBottom:"14px", textAlign:"center", border:"1px solid #222", padding:"6px", borderRadius:"8px"}}>🔐 WORTH PIN = Your House LOCK if Gate is OPEN</div>
+    <div style={{fontSize:"10px", color:"#D4AF37", marginBottom:"14px", textAlign:"center", border:"1px solid #222", padding:"6px", borderRadius:"8px"}}>🔐 WORTH PIN = Bank PIN for recovery. Don't lose! 4 digits only.</div>
   </>
 )}
 <button onClick={doLogin} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"14px", borderRadius:"12px", border:"none", cursor:"pointer"}}>{authMode==="signup"?"SIGN UP →":"LOGIN →"}</button>
@@ -1407,13 +1407,13 @@ setWorthPinInput(""); setConfirmPinInput("");
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🪪 ID NUMBER</div>
 <input value={idNumberInput} onChange={e=>setIdNumberInput(e.target.value)} placeholder="ID Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
-<div style={{color:"#888", fontSize:"11px"}}>Used only to prove it's you if you got locked out. Never shown to others.</div>
+<div style={{color:"#888", fontSize:"11px"}}>Used only to prove it's you if you get kicked out. Never shown to other users.</div>
 </div>
 
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📱 PHONE NUMBER</div>
 <input value={phoneNumberInput} onChange={e=>setPhoneNumberInput(e.target.value)} placeholder="Phone Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
-<div style={{color:"#888", fontSize:"11px"}}>Used only to kick out thieves from another device. Never shown to others.</div>
+<div style={{color:"#888", fontSize:"11px"}}>Used only to kick out thieves from another device. Never shown to other users.</div>
 </div>
 
 <button onClick={async()=>{
@@ -1445,7 +1445,7 @@ window.location.reload();
 
   {/* ===== STICKY TOP - NEVER SCROLLS ===== */}
   <div style={{flexShrink:0, background:"black", zIndex:20, borderBottom:"1px solid #222"}}>
-    <WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} onCountClick={()=>setShowCalculator(true)} onNotesClick={()=>setShowNotes(true)} skills={skills}["Entrepreneur", "CEO", "Builder"]} />
+    <WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} onCountClick={()=>setShowCalculator(true)} onNotesClick={()=>setShowNotes(true)} skills={skills} />
 
     {/* --- COLLAPSIBLE WORTH BAR --- */}
     <div style={{padding:"0 15px 8px 15px"}}>
@@ -1465,7 +1465,7 @@ window.location.reload();
     <div style={{marginTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
       <div><div style={{color:"#E8E8E8", fontSize:"10px", fontWeight:"700", letterSpacing:"1.5px"}}>NET W0RTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>{hideWorth ? "$ ****" : `$ ${totalWorth.toFixed(2)}`}</div></div>
       <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
-        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFER$ {myOffersCount>0 && "💰"}</div>
+        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
         <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
       </div>
     </div>
@@ -1489,6 +1489,13 @@ window.location.reload();
             <div style={{marginTop:"10px"}}>
               <input value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
               <input value={about} onChange={e=>setAbout(e.target.value)} placeholder="About" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"12px"}}/>
+              <div style={{marginBottom:"12px"}}>
+  <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"6px"}}>🏷️ MY SKILLS - comma separated</div>
+  <input value={skillsInput} onChange={e=>{ setSkillsInput(e.target.value); setSkills(e.target.value.split(",").map(s=>s.trim()).filter(Boolean)); }} placeholder="e.g. Barber, CEO, DJ, Builder" style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/>
+  <div style={{display:"flex", gap:"5px", flexWrap:"wrap", marginTop:"8px"}}>
+    {skills.map((s,i)=>(<span key={i} style={{background:"#1a1a00", border:"1px solid #D4AF37", color:"#D4AF37", fontSize:"10px", fontWeight:"700", padding:"3px 8px", borderRadius:"12px"}}>{s}</span>))}
+  </div>
+</div>
               <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#0a1a0f"}}>
                 <div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>PROFILE $TATU$</div>
                 <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
@@ -1817,3 +1824,4 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
 </div>
 );
 }
+
