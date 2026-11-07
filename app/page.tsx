@@ -274,6 +274,7 @@ const [zarRate, setZarRate] = useState(18.72);
 const [convertedZAR, setConvertedZAR] = useState("");
 const [cmCycle, setCmCycle] = useState(0);
 const [modalImage, setModalImage] = useState("");
+const [imageZoom, setImageZoom] = useState(1);
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
 const [comments, setComments] = useState<any[]>([]);
@@ -683,7 +684,7 @@ const openImageModal = async (img:string, info:any=null)=>{
   } else {
     setReactions([]); setComments([]);
   }
-  setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || "");
+  setModalImage(img); setModalInfo(info); setShowImageModal(true); setOfferAmount(""); setModalEditingTitle(false); setTempTitle(info?.title || ""); setImageZoom(1);
 };
 const handleReaction = async (type: 'like'|'love'|'dislike')=>{
   if(!modalInfo?.id) return;
@@ -1034,7 +1035,10 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
-<img src={modalImage} style={{maxWidth:"100%", maxHeight:"50vh", borderRadius:"12px", objectFit:"contain"}}/>
+<div style={{overflow:"auto", maxHeight:"70vh", width:"100%", touchAction:"pan-x pan-y pinch-zoom", textAlign:"center"}} onClick={()=>setImageZoom((z:any)=>(z===1?2:1))}>
+<img src={modalImage} style={{maxWidth:"100%", maxHeight:"70vh", borderRadius:"12px", objectFit:"contain", cursor:"zoom-in", transform:`scale(${imageZoom||1})`, transformOrigin:"center", transition:"transform 0.2s"}}/>
+</div>
+<div style={{color:"#888", fontSize:"11px", textAlign:"center", marginTop:"6px"}}>Pinch to zoom or tap image to zoom 🔍</div>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
 <>
@@ -1274,19 +1278,20 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 {/* ITEMS - ONLY THIS SCROLLS */}
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
-<div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:selectedUser.email, owner_handle:selectedUser.handle, isMine:false, status:p.status})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #444" : "1px solid #2a2a2a", cursor:"pointer", position:"relative", opacity: p.status==="sold" || p.status==="not_for_sale" ? 0.7 : 1}}>
-<div style={{position:"relative"}}>
-<img src={p.img} style={{width:"100%", height:"120px", objectFit:"cover", filter: p.status==="sold" ? "grayscale(80%)" : "none"}}/>
-<div style={{position:"absolute", top:"6px", left:"6px", background: getStatusBadge(p.status).bg, color: getStatusBadge(p.status).color, fontSize:"8px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px", border:"1px solid currentColor"}}>{getStatusBadge(p.status).text}</div>
-{p.status==="sold" && <div style={{position:"absolute", inset:0, background:"rgba(255,0,0,0.15)", display:"flex", alignItems:"center", justifyContent:"center"}}><div style={{background:"#ff4444", color:"white", fontWeight:"900", padding:"4px 10px", borderRadius:"20px", fontSize:"12px", transform:"rotate(-15deg)"}}>SOLD</div></div>}
-{p.status==="not_for_sale" && <div style={{position:"absolute", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center"}}><div style={{background:"#222", color:"#888", border:"1px solid #555", fontWeight:"900", padding:"4px 10px", borderRadius:"20px", fontSize:"10px"}}>NOT FOR SALE</div></div>}
+<div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:selectedUser.email, owner_handle:selectedUser.handle, isMine:false, status:p.status})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #444" : "1px solid #2a2a2a", cursor:"pointer", position:"relative", height:"220px", opacity: p.status==="sold" || p.status==="not_for_sale" ? 0.7 : 1}}>
+<img src={p.img} style={{position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", filter: p.status==="sold" ? "grayscale(80%)" : "none"}}/>
+<div style={{position:"absolute", inset:0, background:"linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 35%, transparent 55%)"}}/>
+<div style={{position:"absolute", top:"6px", left:"6px", background: getStatusBadge(p.status).bg, color: getStatusBadge(p.status).color, fontSize:"8px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px", border:"1px solid currentColor", zIndex:2}}>{getStatusBadge(p.status).text}</div>
+{p.status==="sold" && <div style={{position:"absolute", inset:0, background:"rgba(255,0,0,0.15)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:2}}><div style={{background:"#ff4444", color:"white", fontWeight:"900", padding:"4px 10px", borderRadius:"20px", fontSize:"12px", transform:"rotate(-15deg)"}}>SOLD</div></div>}
+{p.status==="not_for_sale" && <div style={{position:"absolute", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:2}}><div style={{background:"#222", color:"#888", border:"1px solid #555", fontWeight:"900", padding:"4px 10px", borderRadius:"20px", fontSize:"10px"}}>NOT FOR SALE</div></div>}
+<div style={{position:"absolute", bottom:0, left:0, right:0, padding:"10px 8px 8px", zIndex:3}}>
+<div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"white", textShadow:"0 1px 3px black"}}>{p.title}</div>
+<div style={{fontWeight:"900", color: p.status==="sold" ? "#ff4444" : p.status==="not_for_sale" ? "#ccc" : "#D4AF37", fontSize:"14px", textShadow:"0 1px 3px black"}}>${Number(p.price).toFixed(2)}</div>
+<div style={{fontSize:"9px", color:"#ccc", marginTop:"2px"}}>Tap to zoom + make offer 🔍</div>
 </div>
-<div style={{padding:"8px"}}><div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div><div style={{fontWeight:"900", color: p.status==="sold" ? "#ff4444" : p.status==="not_for_sale" ? "#888" : "#D4AF37"}}>${Number(p.price).toFixed(2)}</div></div>
 </div>
 ))}
 </div>
-</div>
-)}
 
 {view==="feed" && (
 <div>
