@@ -1374,27 +1374,28 @@ window.location.reload();
 
     {/* --- COLLAPSIBLE WORTH BAR --- */}
     <div style={{padding:"0 15px 8px 15px"}}>
-      <div style={{border:"1px solid #D4AF37", borderRadius:"12px", padding:"10px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-        <div onClick={()=>setShowWorthBox(!showWorthBox)} style={{flex:1, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-          <div style={{textAlign:"center", flex:1}}>
-            <div style={{color:"#888", fontSize:"10px"}}>$IM WORTH</div>
-            <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"26px"}}>{hideWorth ? "$ ****.**" : `$ ${totalWorth.toFixed(2)}`}</div>
-          </div>
-          <span style={{color:"#D4AF37", fontSize:"14px", marginLeft:"10px"}}>{showWorthBox ? "▲" : "▼"}</span>
-        </div>
-        <span onClick={()=>setHideWorth(!hideWorth)} style={{fontSize:"18px", cursor:"pointer", marginLeft:"10px"}}>{hideWorth ? "🙈" : "👁️"}</span>
-      </div>
-
-      {showWorthBox && (
-        <div style={{marginTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-          <div><div style={{color:"#888", fontSize:"10px"}}>NET W0RTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>{hideWorth ? "$ ****" : `$ ${totalWorth.toFixed(2)}`}</div></div>
-          <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
-            <div style={{color:"#888", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
-            <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
-          </div>
-        </div>
-      )}
+  <div style={{border:"1px solid #D4AF37", borderRadius:"12px", padding:"10px", display:"flex", alignItems:"center"}}>
+    <div style={{width:"28px", flexShrink:0}}></div>
+    <div onClick={()=>setShowWorthBox(!showWorthBox)} style={{flex:1, cursor:"pointer", textAlign:"center"}}>
+      <div style={{color:"#E8E8E8", fontSize:"10px", fontWeight:"700", letterSpacing:"1.5px"}}>$IM WORTH</div>
+      <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"26px"}}>{hideWorth ? "$ ****.**" : `$ ${totalWorth.toFixed(2)}`}</div>
     </div>
+    <div style={{width:"28px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"0px", flexShrink:0}}>
+      <span onClick={()=>setHideWorth(!hideWorth)} style={{fontSize:"16px", lineHeight:"1", cursor:"pointer", display:"block", transform:"translateY(-3px)"}}>{hideWorth ? "✊" : "✋"}</span>
+      <span onClick={()=>setShowWorthBox(!showWorthBox)} style={{color:"#D4AF37", fontSize:"12px", lineHeight:"1", cursor:"pointer", display:"block", transform:"translateY(-1px)"}}>{showWorthBox ? "▲" : "▼"}</span>
+    </div>
+  </div>
+
+  {showWorthBox && (
+    <div style={{marginTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+      <div><div style={{color:"#E8E8E8", fontSize:"10px", fontWeight:"700", letterSpacing:"1.5px"}}>NET W0RTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>{hideWorth ? "$ ****" : `$ ${totalWorth.toFixed(2)}`}</div></div>
+      <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
+        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
+        <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
+      </div>
+    </div>
+  )}
+</div>
 
     {/* --- COLLAPSIBLE ABOUT ME BAR --- */}
     <div style={{margin:"0 15px 10px 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
