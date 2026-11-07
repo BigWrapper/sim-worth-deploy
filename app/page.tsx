@@ -1036,10 +1036,15 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
-<div style={{overflow:"auto", maxHeight:"70vh", width:"100%", touchAction:"pan-x pan-y pinch-zoom", textAlign:"center"}} onClick={()=>setImageZoom((z:any)=>(z===1?2:1))}>
-<img src={modalImage} style={{maxWidth:"100%", maxHeight:"70vh", borderRadius:"12px", objectFit:"contain", cursor:"zoom-in", transform:`scale(${imageZoom||1})`, transformOrigin:"center", transition:"transform 0.2s"}}/>
+<div style={{flex:1, overflow:"auto", display:"flex", alignItems:"center", justifyContent:"center", background:"black", touchAction:"pan-x pan-y", width:"100%"}} onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
+<img src={modalImage} style={{width: imageZoom===1 ? "100%" : "200%", maxHeight: imageZoom===1 ? "70vh" : "none", borderRadius:"12px", objectFit:"contain", cursor:"zoom-in", transform:`scale(${imageZoom})`, transformOrigin:"center center", transition:"transform 0.2s"}}/>
 </div>
-<div style={{color:"#888", fontSize:"11px", textAlign:"center", marginTop:"6px"}}>Pinch to zoom or tap image to zoom 🔍</div>
+<div style={{display:"flex", gap:"10px", justifyContent:"center", alignItems:"center", padding:"12px", background:"#111", width:"100%"}}>
+<button onClick={()=>setImageZoom(Math.max(1, imageZoom-0.5))} style={{background:"#222", color:"white", border:"1px solid #333", padding:"10px 18px", borderRadius:"20px", fontWeight:"900", fontSize:"18px"}}>➖</button>
+<div style={{color:"#D4AF37", fontWeight:"900"}}>{Math.round(imageZoom*100)}% • Tap image to zoom</div>
+<button onClick={()=>setImageZoom(Math.min(3, imageZoom+0.5))} style={{background:"#D4AF37", color:"black", border:"none", padding:"10px 18px", borderRadius:"20px", fontWeight:"900", fontSize:"18px"}}>➕</button>
+<button onClick={()=>setImageZoom(1)} style={{background:"#222", color:"white", border:"1px solid #333", padding:"10px 14px", borderRadius:"20px", fontWeight:"900"}}>Reset</button>
+</div>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
 <>
