@@ -184,6 +184,7 @@ const [calcDisplay, setCalcDisplay] = useState("0");
 const [zarRate, setZarRate] = useState(18.72);
 const [convertedZAR, setConvertedZAR] = useState("");
 const [cmCycle, setCmCycle] = useState(0);
+import WorthNotepad from "./WorthNotepad";
 const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
@@ -1390,7 +1391,7 @@ window.location.reload();
     <div style={{marginTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
       <div><div style={{color:"#E8E8E8", fontSize:"10px", fontWeight:"700", letterSpacing:"1.5px"}}>NET W0RTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>{hideWorth ? "$ ****" : `$ ${totalWorth.toFixed(2)}`}</div></div>
       <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
-        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
+        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFER$$ {myOffersCount>0 && "💰"}</div>
         <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
       </div>
     </div>
@@ -1422,7 +1423,7 @@ window.location.reload();
                   <button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💍 Taken</button>
                 </div>
               </div>
-              <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
+              <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save</button>
               <button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
             </div>
           ) : (
