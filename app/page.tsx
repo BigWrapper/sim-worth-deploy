@@ -60,12 +60,12 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
     </div>
     <div style={{textAlign:"center"}}>
       <img src="/sim_maps.png" onClick={handleVisitMe} style={{width:"85px", height:"85px", objectFit:"contain", cursor:"pointer"}} alt="maps"/>
-      <div onClick={handleVisitMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: userLocation || streetAddress ? "#1a1a00" : "black"}}>Visit Me</div>
-    </div>
-  </div>
-  <div style={{marginTop:"14px"}}>
+<div onClick={handleVisitMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: userLocation || streetAddress ? "#1a1a00" : "black"}}>Visit Me</div>
+<div style={{marginTop:"14px"}}>
   <button onClick={onNotesClick} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>📝 Notes</button>
 </div>
+    </div>
+  </div>
      <div style={{textAlign:"center", marginTop:"4px"}}>
     <div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div>
     {skills && skills.length > 0 && <div style={{display:"flex", gap:"5px", justifyContent:"center", flexWrap:"wrap", marginTop:"5px"}}>{skills.map((s,i)=>(<span key={i} style={{background:"#1a1a00", border:"1px solid #D4AF37", color:"#D4AF37", fontSize:"9px", fontWeight:"700", padding:"3px 8px", borderRadius:"12px"}}>{s}</span>))}</div>}
@@ -1443,7 +1443,7 @@ window.location.reload();
 
   {/* ===== STICKY TOP - NEVER SCROLLS ===== */}
   <div style={{flexShrink:0, background:"black", zIndex:20, borderBottom:"1px solid #222"}}>
-    <WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} onCountClick={()=>setShowCalculator(true)} skills={["Entrepreneur", "CEO", "Builder"]} />
+    <WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} onCountClick={()=>setShowCalculator(true)} onNotesClick={()=>setShowNotes(true)} skills={["Entrepreneur", "CEO", "Builder"]} />
 
     {/* --- COLLAPSIBLE WORTH BAR --- */}
     <div style={{padding:"0 15px 8px 15px"}}>
@@ -1811,6 +1811,7 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
   </div>
 )}
 {/* ===== END PIN DOOR ===== */}
+{showNotes && <WorthNotepad myUserId={myId} onClose={() => setShowNotes(false)} />}
 </div>
 );
 }
