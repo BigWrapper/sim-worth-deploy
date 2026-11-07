@@ -1047,7 +1047,7 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 <div style={{position:"absolute", top:"12px", right:"12px", background:"rgba(0,0,0,0.7)", color:"white", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", pointerEvents:"none"}}>{Math.round(imageZoom*100)}% • {imageRotate}°</div>
 </div>
 {/* FLOATING TINY ICONS - LEFT SIDE, ON THE SCROLL LINE, NEVER PUSHED DOWN */}
-<div style={{position:"fixed", left:"8px", top:"45%", zIndex:10000, display:"flex", flexDirection:"column", gap:"8px"}}>
+<div style={{position:"fixed", right:"8px", top:"45%", zIndex:10000, display:"flex", flexDirection:"column", gap:"8px"}}>
 <button onClick={(e)=>{ e.stopPropagation(); setImageCollapsed(!imageCollapsed); }} style={{width:"36px", height:"36px", borderRadius:"50%", background:"rgba(0,0,0,0.7)", color:"white", border:"1px solid #555", fontSize:"16px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:0}}>{imageCollapsed ? "🔼" : "🔽"}</button>
 <button onClick={(e)=>{ e.stopPropagation(); const nr=(imageRotate+90)%360; setImageRotate(nr); setImageZoom(1); }} style={{width:"36px", height:"36px", borderRadius:"50%", background:"rgba(0,0,0,0.7)", color:"#D4AF37", border:"1px solid #D4AF37", fontSize:"16px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:0}}>🔄</button>
 </div>
@@ -1080,19 +1080,7 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
     <span>💬 Comments ({comments.length})</span>
     <span style={{fontSize:"10px", background:"#1a1a00", padding:"4px 8px", borderRadius:"10px", border:"1px solid #D4AF37"}}>View All →</span>
   </div>
-  <div style={{maxHeight:"50px", overflow:"hidden", marginBottom:"10px", opacity:0.8}}>
-    {comments.slice(0,1).map((c:any)=>(
-      <div key={c.id} style={{background:"#111", padding:"8px 10px", borderRadius:"10px", border:"1px solid #222"}}>
-        <div style={{fontSize:"11px", color:"#D4AF37", fontWeight:"900"}}>{c.commenter_handle}</div>
-        <div style={{fontSize:"12px", color:"white", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{c.text}</div>
-      </div>
-    ))}
-    {comments.length===0 && <div style={{fontSize:"11px", color:"#666"}}>No comments yet - tap View All!</div>}
-  </div>
-  <div style={{display:"flex", gap:"6px"}}>
-    <input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment..." style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"20px", fontSize:"13px"}} onKeyDown={(e:any)=> e.key==='Enter' && handleAddComment()} />
-    <button onClick={handleAddComment} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 16px", borderRadius:"20px", border:"none"}}>Post</button>
-  </div>
+  
 </div>
   {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
 <div style={{marginTop:"10px"}}>
