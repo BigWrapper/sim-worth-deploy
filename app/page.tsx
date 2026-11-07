@@ -1035,15 +1035,14 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 )}
 
 {showImageModal && (
-<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", overflowY:"auto"}}>
-<div style={{flex:1, overflow:"auto", display:"flex", alignItems:"center", justifyContent:"center", background:"black", touchAction:"pan-x pan-y", width:"100%"}} onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
-<img src={modalImage} style={{width: imageZoom===1 ? "100%" : "200%", maxHeight: imageZoom===1 ? "70vh" : "none", borderRadius:"12px", objectFit:"contain", cursor:"zoom-in", transform:`scale(${imageZoom})`, transformOrigin:"center center", transition:"transform 0.2s"}}/>
-</div>
-<div style={{display:"flex", gap:"10px", justifyContent:"center", alignItems:"center", padding:"12px", background:"#111", width:"100%"}}>
-<button onClick={()=>setImageZoom(Math.max(1, imageZoom-0.5))} style={{background:"#222", color:"white", border:"1px solid #333", padding:"10px 18px", borderRadius:"20px", fontWeight:"900", fontSize:"18px"}}>➖</button>
-<div style={{color:"#D4AF37", fontWeight:"900"}}>{Math.round(imageZoom*100)}% • Tap image to zoom</div>
-<button onClick={()=>setImageZoom(Math.min(3, imageZoom+0.5))} style={{background:"#D4AF37", color:"black", border:"none", padding:"10px 18px", borderRadius:"20px", fontWeight:"900", fontSize:"18px"}}>➕</button>
-<button onClick={()=>setImageZoom(1)} style={{background:"#222", color:"white", border:"1px solid #333", padding:"10px 14px", borderRadius:"20px", fontWeight:"900"}}>Reset</button>
+<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-start", padding:"0", overflowY:"auto"}}>
+<div style={{flex:"none", width:"100%", minHeight:"100vh", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", background:"black", touchAction:"none", position:"relative"}}
+onTouchStart={(e:any)=>{ if(e.touches.length===2){ (e.currentTarget as any)._pinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); (e.currentTarget as any)._zoom = imageZoom; } }}
+onTouchMove={(e:any)=>{ if(e.touches.length===2 && (e.currentTarget as any)._pinch){ const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); const nz = Math.max(1, Math.min(4, (e.currentTarget as any)._zoom * (d / (e.currentTarget as any)._pinch))); setImageZoom(nz); } }}
+onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
+<img src={modalImage} style={{width:"100%", maxHeight:"100vh", objectFit:"contain", borderRadius:"0px", cursor:"zoom-in", transform:`scale(${imageZoom})`, transformOrigin:"center center", transition: imageZoom===1 ? "transform 0.2s" : "none", touchAction:"none"}}/>
+<div style={{position:"absolute", top:"12px", right:"12px", background:"rgba(0,0,0,0.7)", color:"white", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", pointerEvents:"none"}}>{Math.round(imageZoom*100)}% • Pinch to zoom</div>
+<div style={{position:"absolute", bottom:"12px", left:0, right:0, textAlign:"center", color:"#888", fontSize:"11px", pointerEvents:"none"}}>Pinch thumb + index to zoom • Tap to zoom • Scroll down for details</div>
 </div>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
@@ -1148,7 +1147,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
     alert("✅ Image opened - Long press to Save to Gallery! 📥");
   }
 }} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
-<button onClick={()=>setShowImageModal(false)} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
+<button onClick={()=>{ setShowImageModal(false); setImageZoom(1); }} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
 </div>
 </div>
 )}
