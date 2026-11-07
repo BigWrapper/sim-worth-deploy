@@ -276,7 +276,6 @@ const [zarRate, setZarRate] = useState(18.72);
 const [convertedZAR, setConvertedZAR] = useState("");
 const [cmCycle, setCmCycle] = useState(0);
 const [modalImage, setModalImage] = useState("");
-const [imageZoom, setImageZoom] = useState(1);
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
 const [comments, setComments] = useState<any[]>([]);
@@ -1672,24 +1671,23 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
   const owner = profiles.find(pr=> pr.email===p.owner_email);
   const isMine = p.owner_email===email;
   return (
-  <div key={p.id} onClick={()=>{ const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="perfect" ? "1.5px solid #D4AF37" : "1px solid #2a2a2a", cursor:"pointer"}}>
-    <div style={{position:"relative"}}>
-      <img src={p.img} style={{width:"100%", height:"130px", objectFit:"cover"}}/>
-      <div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>${Number(p.price).toFixed(2)}</div>
-      <div style={{position:"absolute", top:"6px", right:"6px", background:"rgba(0,0,0,0.7)", color:"white", fontSize:"9px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>👁️ {p.views || 0}</div>
-      {p.status==="perfect" && <div style={{position:"absolute", top:"6px", left:"6px", background:"#D4AF37", color:"black", fontSize:"8px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px"}}>⭐ PERFECT</div>}
-    </div>
-    <div style={{padding:"8px"}}>
-      <div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title}</div>
-      <div style={{fontSize:"10px", color:"#888", marginBottom: isMine ? "6px" : "0"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]}</div>
-      {isMine && (
-        <div style={{display:"flex", gap:"4px", marginTop:"4px"}}>
-          <button onClick={(e)=>{ e.stopPropagation(); handleRenameProduct(p); }} style={{flex:1, background:"#222", color:"white", border:"1px solid #333", padding:"5px 0", borderRadius:"8px", fontSize:"9px", fontWeight:"900", cursor:"pointer"}}>✏️ Rename</button>
-          <button onClick={(e)=>{ e.stopPropagation(); handleTogglePerfect(p); }} style={{flex:1, background: p.status==="perfect" ? "#D4AF37" : "#111", color: p.status==="perfect" ? "black" : "#D4AF37", border: p.status==="perfect" ? "1px solid #D4AF37" : "1px solid #D4AF37", padding:"5px 0", borderRadius:"8px", fontSize:"9px", fontWeight:"900", cursor:"pointer"}}>{p.status==="perfect" ? "✅ Perfect" : "⭐ Perfect?"}</button>
-        </div>
-      )}
-    </div>
-  </div>
+  <div key={p.id} onClick={()=>{ setImageZoom(1); const ownerProfile = profiles.find(pr=> pr.email===p.owner_email); const ownerHandle = ownerProfile?.handle || p.owner_email; openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:p.owner_email, owner_handle: ownerHandle, isMine: p.owner_email===email, status:p.status}); }} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="perfect" ? "1.5px solid #D4AF37" : "1px solid #2a2a2a", cursor:"pointer", position:"relative", height:"220px"}}>
+<img src={p.img} style={{position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover"}}/>
+<div style={{position:"absolute", inset:0, background:"linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 35%, transparent 55%)"}}/>
+<div style={{position:"absolute", bottom:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"#D4AF37", fontSize:"10px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px", zIndex:2}}>${Number(p.price).toFixed(2)}</div>
+<div style={{position:"absolute", top:"6px", right:"6px", background:"rgba(0,0,0,0.7)", color:"white", fontSize:"9px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px", zIndex:2}}>👁️ {p.views || 0}</div>
+{p.status==="perfect" && <div style={{position:"absolute", top:"6px", left:"6px", background:"#D4AF37", color:"black", fontSize:"8px", fontWeight:"900", padding:"3px 6px", borderRadius:"10px", zIndex:2}}>⭐ PERFECT</div>}
+<div style={{position:"absolute", bottom:0, left:0, right:0, padding:"10px 8px 8px", zIndex:3}}>
+<div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"white", textShadow:"0 1px 3px black"}}>{p.title}</div>
+<div style={{fontSize:"10px", color:"#ccc"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]} • Tap to zoom 🔍</div>
+{isMine && (
+<div style={{display:"flex", gap:"4px", marginTop:"6px"}}>
+<button onClick={(e)=>{ e.stopPropagation(); handleRenameProduct(p); }} style={{flex:1, background:"#222", color:"white", border:"1px solid #333", padding:"5px 0", borderRadius:"8px", fontSize:"9px", fontWeight:"900", cursor:"pointer"}}>✏️ Rename</button>
+<button onClick={(e)=>{ e.stopPropagation(); handleTogglePerfect(p); }} style={{flex:1, background: p.status==="perfect" ? "#D4AF37" : "#111", color: p.status==="perfect" ? "black" : "#D4AF37", border:"1px solid #D4AF37", padding:"5px 0", borderRadius:"8px", fontSize:"9px", fontWeight:"900", cursor:"pointer"}}>{p.status==="perfect" ? "✅ Perfect" : "⭐ Perfect?"}</button>
+</div>
+)}
+</div>
+</div>
   );
 })}
 </div>
