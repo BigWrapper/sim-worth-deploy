@@ -1275,7 +1275,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 )}
 </div>
-{/* ITEMS - ONLY THIS SCROLLS */}
+{/* ITEMS - FULL IMAGE BACKGROUND */}
 <div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
 <div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:selectedUser.email, owner_handle:selectedUser.handle, isMine:false, status:p.status})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #444" : "1px solid #2a2a2a", cursor:"pointer", position:"relative", height:"220px", opacity: p.status==="sold" || p.status==="not_for_sale" ? 0.7 : 1}}>
@@ -1289,23 +1289,6 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{fontWeight:"900", color: p.status==="sold" ? "#ff4444" : p.status==="not_for_sale" ? "#ccc" : "#D4AF37", fontSize:"14px", textShadow:"0 1px 3px black"}}>${Number(p.price).toFixed(2)}</div>
 <div style={{fontSize:"9px", color:"#ccc", marginTop:"2px"}}>Tap to zoom + make offer 🔍</div>
 </div>
-</div>
-))}
-</div>
-
-{view==="feed" && (
-<div>
-<div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a"}}>
-<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 W0RTH 👑 LI$T 🏆</h2>
-<div onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", color: isMarketRefreshing ? "white" : "black", fontWeight:"900", cursor:"pointer", display:"inline-block", marginTop:"8px"}}>{isMarketRefreshing ? "↻ Syncing Live..." : "↻ Refresh Real-Time"}</div>
-</div>
-<div style={{padding:"12px"}}>
-{profiles.map(p=>({ ...p, followersCount: follows.filter(f=> f.following_handle===p.handle).length })).sort((a:any,b:any)=> b.followersCount - a.followersCount).map((u:any, i:number)=>(
-<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{ display:"flex", gap:"12px", background:"#0f0f0f", padding:"14px", borderRadius:"14px", marginBottom:"10px", border:"1px solid #222", cursor:"pointer", alignItems:"center"}}>
-<div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: i===0 ? "#D4AF37" : "#222", color: i===0 ? "black" : "white", fontWeight:"900"}}>{i===0 ? "👑" : `#${i+1}`}</div>
-<img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%"}}/>
-<div style={{flex:1}}><div style={{fontWeight:"900", display:"flex", gap:"6px", alignItems:"center"}}>{u.name} <span style={{background: getStatusBadge(u.profile_status).bg, color: getStatusBadge(u.profile_status).color, fontSize:"7px", padding:"2px 5px", borderRadius:"10px"}}>{getStatusBadge(u.profile_status).text}</span></div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers</div></div>
-<div style={{color:"#D4AF37", fontWeight:"900"}}>${Number(u.total_worth||0).toFixed(0)}</div>
 </div>
 ))}
 </div>
