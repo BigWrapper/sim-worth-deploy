@@ -20,9 +20,10 @@ type HeaderProps = {
   skills?: string[];
   onSettingsClick: () => void;
   onCountClick?: () => void;
+  onNotesClick?: () => void;
 };
 
-function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod, profileStatus, skills, onSettingsClick, onCountClick }: HeaderProps) {
+function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, userLocation, userLat, userLng, streetAddress, suburb, city, payLink, payHandle, payMethod, profileStatus, skills, onSettingsClick, onCountClick, onNotesClick }: HeaderProps) {
   const handlePayMe = () => {
     if (payLink && payLink.startsWith("http")) { window.open(payLink, '_blank'); return; }
     if (payHandle) { window.open(`https://pay.capitecbank.co.za/${payHandle}`, '_blank'); return; }
@@ -62,7 +63,10 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
       <div onClick={handleVisitMe} style={{marginTop:"5px", border:"1px solid gold", color:"gold", padding:"4px 10px", borderRadius:"20px", fontSize:"10px", cursor:"pointer", background: userLocation || streetAddress ? "#1a1a00" : "black"}}>Visit Me</div>
     </div>
   </div>
-  <div style={{textAlign:"center", marginTop:"4px"}}>
+  <div style={{marginTop:"14px"}}>
+  <button onClick={onNotesClick} style={{background:"#111", border:"1px solid #D4AF37", color:"#D4AF37", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", cursor:"pointer"}}>📝 Notes</button>
+</div>
+     <div style={{textAlign:"center", marginTop:"4px"}}>
     <div style={{color:"gold", fontWeight:"900", fontSize:"16px"}}>@{myHandle}</div>
     {skills && skills.length > 0 && <div style={{display:"flex", gap:"5px", justifyContent:"center", flexWrap:"wrap", marginTop:"5px"}}>{skills.map((s,i)=>(<span key={i} style={{background:"#1a1a00", border:"1px solid #D4AF37", color:"#D4AF37", fontSize:"9px", fontWeight:"700", padding:"3px 8px", borderRadius:"12px"}}>{s}</span>))}</div>}
   </div>
@@ -70,10 +74,79 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
   );
 }
 
+function WorthNotepad({ myUserId, onClose }: { myUserId: string; onClose: () => void }) {
+  const [notes, setNotes] = useState<any[]>([]);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [activeId, setActiveId] = useState<any>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => { loadNotes(); }, []);
+  async function loadNotes() {
+    const { data } = await supabase.from("worth_notes").select("*").eq("user_id", myUserId).order("updated_at", { ascending: false });
+    if (data && data.length > 0) { setNotes(data); localStorage.setItem("worth_notes_offline", JSON.stringify(data)); }
+    else { setNotes(JSON.parse(localStorage.getItem("worth_notes_offline") || "[]")); }
+  }
+  async function saveNote() {
+    if (!content.trim() && !title.trim()) return;
+    const payload: any = { title: title || "Untitled Note", content, user_id: myUserId, updated_at: new Date().toISOString() };
+    let newNotes: any[] = notes;
+    if (activeId && !String(activeId).startsWith("local_")) {
+      newNotes = notes.map(n => n.id === activeId ? { ...n, ...payload } : n);
+      await supabase.from("worth_notes").update(payload).eq("id", activeId);
+    } else {
+      const { data } = await supabase.from("worth_notes").insert(payload).select().single();
+      if (data) { newNotes = [data, ...notes]; setActiveId(data.id); }
+      else { const tempId = "local_" + Date.now(); newNotes = [{ id: tempId, ...payload }, ...notes]; setActiveId(tempId); }
+    }
+    setNotes(newNotes); localStorage.setItem("worth_notes_offline", JSON.stringify(newNotes));
+    alert("💾 Saved to Supabase + Offline");
+  }
+  async function deleteNote(id: any) {
+    setNotes(notes.filter(n => n.id !== id)); localStorage.setItem("worth_notes_offline", JSON.stringify(notes.filter(n => n.id !== id)));
+    if (!String(id).startsWith("local_")) await supabase.from("worth_notes").delete().eq("id", id);
+    if (activeId === id) { setActiveId(null); setTitle(""); setContent(""); }
+  }
+  function speak() {
+    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return; }
+    const utter = new SpeechSynthesisUtterance(`${title}. ${content}`);
+    utter.onend = () => setIsSpeaking(false); setIsSpeaking(true); window.speechSynthesis.speak(utter);
+  }
+  function toggleListen() {
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return alert("Use Chrome for Speak to Text");
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+    const rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
+    rec.onresult = (e: any) => { let t = ""; for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript; setContent((prev: string) => prev + t); };
+    rec.onend = () => setIsListening(false); recognitionRef.current = rec; rec.start(); setIsListening(true);
+  }
+  return (
+    <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:9999, padding:"15px", overflowY:"auto"}}>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37"}}>📝 WORTH NOTEPAD</h2><button onClick={onClose} style={{background:"#222", color:"#fff", border:"1px solid #D4AF37", padding:"8px 14px", borderRadius:"20px"}}>❌ Close</button></div>
+      <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Title..." style={{width:"100%", padding:"12px", borderRadius:"10px", background:"#111", border:"1px solid #333", color:"#fff", marginBottom:"8px"}} />
+      <textarea value={content} onChange={(e)=>setContent(e.target.value)} placeholder="Speak or type your idea..." rows={8} style={{width:"100%", padding:"12px", borderRadius:"12px", background:"#111", border:"1px solid #333", color:"#fff", fontSize:"16px"}} />
+      <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
+        <button onClick={toggleListen} style={{flex:1, padding:"12px", borderRadius:"10px", background: isListening ? "#ff0000" : "#D4AF37", color:"#000", fontWeight:"900", border:"none"}}>{isListening ? "⏹️ STOP" : "🎤 SPEAK"}</button>
+        <button onClick={speak} style={{flex:1, padding:"12px", borderRadius:"10px", background:"#222", color:"#fff", fontWeight:"900", border:"1px solid #D4AF37"}}>{isSpeaking ? "⏹️ STOP" : "🔊 READ ALOUD"}</button>
+      </div>
+      <div style={{display:"flex", gap:"8px", marginTop:"8px"}}><button onClick={saveNote} style={{flex:1, padding:"12px", borderRadius:"10px", background:"#D4AF37", color:"#000", fontWeight:"900", border:"none"}}>💾 SAVE TO SUPABASE</button><button onClick={()=>{setActiveId(null); setTitle(""); setContent("");}} style={{padding:"12px", borderRadius:"10px", background:"#111", color:"#fff", border:"1px solid #333"}}>+ NEW</button></div>
+      <div style={{marginTop:"16px"}}>{notes.map((n:any)=>(
+        <div key={n.id} onClick={()=>{setActiveId(n.id); setTitle(n.title); setContent(n.content);}} style={{border:"1px solid #333", borderRadius:"12px", padding:"12px", marginBottom:"8px", background:"#111", cursor:"pointer"}}>
+          <div style={{display:"flex", justifyContent:"space-between"}}><b style={{color:"#fff"}}>{n.title}</b><span onClick={(e)=>{e.stopPropagation(); deleteNote(n.id);}}>🗑️</span></div>
+          <div style={{color:"#888", fontSize:"13px"}}>{n.content?.slice(0,80)}...</div>
+        </div>))}
+      </div>
+    </div>
+  );
+}
+
 export default function FullApp(){
 const [showSplash, setShowSplash] = useState(true);
 const [loggedIn, setLoggedIn] = useState(false);
 const [view, setView] = useState("accounts");
+const [showNotes, setShowNotes] = useState(false);
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [worthPin, setWorthPin] = useState("");
@@ -184,7 +257,6 @@ const [calcDisplay, setCalcDisplay] = useState("0");
 const [zarRate, setZarRate] = useState(18.72);
 const [convertedZAR, setConvertedZAR] = useState("");
 const [cmCycle, setCmCycle] = useState(0);
-import WorthNotepad from "./WorthNotepad";
 const [modalImage, setModalImage] = useState("");
 const [modalInfo, setModalInfo] = useState<any>(null);
 const [reactions, setReactions] = useState<any[]>([]);
@@ -1391,7 +1463,7 @@ window.location.reload();
     <div style={{marginTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
       <div><div style={{color:"#E8E8E8", fontSize:"10px", fontWeight:"700", letterSpacing:"1.5px"}}>NET W0RTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>{hideWorth ? "$ ****" : `$ ${totalWorth.toFixed(2)}`}</div></div>
       <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
-        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFER$$ {myOffersCount>0 && "💰"}</div>
+        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
         <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
       </div>
     </div>
@@ -1423,7 +1495,7 @@ window.location.reload();
                   <button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💍 Taken</button>
                 </div>
               </div>
-              <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save</button>
+              <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
               <button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
             </div>
           ) : (
