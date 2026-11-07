@@ -1038,19 +1038,18 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-start", padding:"0", overflowY:"auto"}}>
-{/* IMAGE - FULL OR HALF, PINCH TO ZOOM, ROTATE TO FILL */}
+{/* IMAGE - FULL OR HALF, PINCH TO ZOOM, ROTATE AUTO-SNAPS FULL LIKE MOVIE */}
 <div style={{flex:"none", width:"100%", minHeight: imageCollapsed ? "50vh" : "100vh", maxHeight: imageCollapsed ? "50vh" : "100vh", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", background:"black", touchAction:"none", position:"relative", transition:"min-height 0.3s, max-height 0.3s"}}
 onTouchStart={(e:any)=>{ if(e.touches.length===2){ (e.currentTarget as any)._pinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); (e.currentTarget as any)._zoom = imageZoom; } }}
 onTouchMove={(e:any)=>{ if(e.touches.length===2 && (e.currentTarget as any)._pinch){ const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); const nz = Math.max(1, Math.min(4, (e.currentTarget as any)._zoom * (d / (e.currentTarget as any)._pinch))); setImageZoom(nz); } }}
 onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
-<img src={modalImage} style={{width:"100%", maxHeight: imageCollapsed ? "50vh" : "100vh", objectFit:"contain", borderRadius:"0px", cursor:"zoom-in", transform:`rotate(${imageRotate}deg) scale(${imageZoom})`, transformOrigin:"center center", transition: imageZoom===1 ? "transform 0.2s" : "none", touchAction:"none"}}/>
+<img src={modalImage} style={{width: imageRotate%180!==0 ? "100vh" : "100%", height: imageRotate%180!==0 ? "100vw" : "auto", maxHeight: imageRotate%180!==0 ? "none" : (imageCollapsed ? "50vh" : "100vh"), objectFit: imageRotate%180!==0 ? "cover" : "contain", borderRadius:"0px", cursor:"zoom-in", transform:`rotate(${imageRotate}deg) scale(${imageZoom})`, transformOrigin:"center center", transition: imageZoom===1 ? "transform 0.2s" : "none", touchAction:"none"}}/>
 <div style={{position:"absolute", top:"12px", right:"12px", background:"rgba(0,0,0,0.7)", color:"white", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", pointerEvents:"none"}}>{Math.round(imageZoom*100)}% • {imageRotate}°</div>
 </div>
-{/* COLLAPSE + ROTATE BAR - PULLS INFO UP */}
-<div style={{display:"flex", gap:"8px", justifyContent:"center", alignItems:"center", padding:"8px 12px", background:"#111", width:"100%", borderBottom:"1px solid #222", position:"sticky", top:0, zIndex:10}}>
-<button onClick={()=>setImageCollapsed(!imageCollapsed)} style={{background: imageCollapsed ? "#D4AF37" : "#222", color: imageCollapsed ? "black" : "white", border:"1px solid #333", padding:"8px 16px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>{imageCollapsed ? "▲ Expand Image" : "▼ Collapse to Half"}</button>
-<button onClick={()=>setImageRotate((imageRotate+90)%360)} style={{background:"#222", color:"#D4AF37", border:"1px solid #D4AF37", padding:"8px 16px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>↻ Rotate {imageRotate}°</button>
-<div style={{color:"#888", fontSize:"11px"}}>Pinch to zoom • Tap to zoom</div>
+{/* FLOATING TINY ICONS - LEFT SIDE, ON THE SCROLL LINE, NEVER PUSHED DOWN */}
+<div style={{position:"fixed", left:"8px", top:"45%", zIndex:10000, display:"flex", flexDirection:"column", gap:"8px"}}>
+<button onClick={(e)=>{ e.stopPropagation(); setImageCollapsed(!imageCollapsed); }} style={{width:"36px", height:"36px", borderRadius:"50%", background:"rgba(0,0,0,0.7)", color:"white", border:"1px solid #555", fontSize:"16px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:0}}>{imageCollapsed ? "🔼" : "🔽"}</button>
+<button onClick={(e)=>{ e.stopPropagation(); const nr=(imageRotate+90)%360; setImageRotate(nr); setImageZoom(1); }} style={{width:"36px", height:"36px", borderRadius:"50%", background:"rgba(0,0,0,0.7)", color:"#D4AF37", border:"1px solid #D4AF37", fontSize:"16px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:0}}>🔄</button>
 </div>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
@@ -1063,23 +1062,19 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 </div>
 ) : (
 <>
-{/* TOP ROW - FOR SALE | PRICE | HANDLE - matches 3 reactions */}
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"6px", alignItems:"center", marginBottom:"12px"}}>
   <div style={{background: getStatusBadge(modalInfo?.status).bg, color: getStatusBadge(modalInfo?.status).color, fontSize:"9px", fontWeight:"900", padding:"6px 8px", borderRadius:"12px", border:"1px solid currentColor", textAlign:"center"}}>{getStatusBadge(modalInfo?.status).text}</div>
   <div style={{textAlign:"center", fontWeight:"900", color:"#D4AF37", fontSize:"14px"}}>${modalInfo?.price || ""}</div>
   <div onClick={()=>{ const h=modalInfo?.owner_handle||modalInfo?.handle; const u=profiles.find((x:any)=>x.handle===h); if(u){ setShowImageModal(false); loadPublicUser(u); } }} style={{textAlign:"right", fontSize:"10px", color:"#D4AF37", fontWeight:"900", cursor:"pointer", textDecoration:"underline", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>@{modalInfo?.owner_handle||modalInfo?.handle||""}</div>
 </div>
-{/* MIDDLE - DESCRIPTION FULL WIDTH */}
 <div style={{fontWeight:"600", color:"#f5f2e8", wordBreak:"break-all", overflowWrap:"anywhere", whiteSpace:"normal", fontSize:"13px", lineHeight:"1.4", padding:"10px 0", borderTop:"1px solid #222", borderBottom:"1px solid #222", marginBottom:"12px", maxHeight:"100px", overflowY:"auto"}}>{modalInfo?.title || "Item"}</div>
 </>
 )}
-{/* BOTTOM ROW - 3 REACTIONS MATCHING TOP */}
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px", alignItems:"center"}}>
 <button onClick={()=>handleReaction('love')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>❤️ {reactions.filter((r:any)=>r.type==='love').length}</button>
 <button onClick={()=>handleReaction('dislike')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>😂 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
 <button onClick={()=>handleReaction('like')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>💪 {reactions.filter((r:any)=>r.type==='like').length}</button>
 </div>
-{/* COMMENTS */}
 <div style={{marginTop:"16px", borderTop:"1px solid #222", paddingTop:"12px"}}>
   <div onClick={()=>setShowCommentsFull(true)} style={{fontWeight:"900", fontSize:"13px", marginBottom:"8px", color:"#D4AF37", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
     <span>💬 Comments ({comments.length})</span>
