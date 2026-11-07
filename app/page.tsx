@@ -237,6 +237,7 @@ const [products, setProducts] = useState<Product[]>([]);
 const [profiles, setProfiles] = useState<any[]>([]);
 const [feedProducts, setFeedProducts] = useState<Product[]>([]);
 const [search, setSearch] = useState("");
+const [worthSearch, setWorthSearch] = useState("");
 const [marketSearch, setMarketSearch] = useState("");
 const [searchTab, setSearchTab] = useState("market");
 const [marketView, setMarketView] = useState("new"); // new or trending
@@ -1687,6 +1688,35 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
 )}
 
 </div>
+{view==="feed" && (
+<div>
+{/* STICKY HEADER - title + refresh + search NEVER scroll */}
+<div style={{padding:"15px", borderBottom:"1px solid #222", background:"#0a0a0a", position:"sticky", top:0, zIndex:30}}>
+<h2 style={{color:"#D4AF37", margin:0, fontWeight:"900"}}>🏆 W0RTH 👑 LI$T 🏆</h2>
+<div style={{display:"flex", gap:"8px", marginTop:"8px", alignItems:"center"}}>
+<div onClick={loadFeed} style={{background: isMarketRefreshing ? "#0a84ff" : "#D4AF37", padding:"8px 12px", borderRadius:"20px", fontSize:"11px", color: isMarketRefreshing ? "white" : "black", fontWeight:"900", cursor:"pointer", whiteSpace:"nowrap"}}>{isMarketRefreshing ? "↻ Syncing Live..." : "↻ Refresh Real-Time"}</div>
+<input placeholder="🔍 Search name or @handle..." value={worthSearch} onChange={e=>setWorthSearch(e.target.value)} style={{flex:1, background:"#111", border:"1px solid #D4AF37", color:"white", padding:"10px 12px", borderRadius:"20px", fontSize:"13px"}}/>
+{worthSearch && <div onClick={()=>setWorthSearch("")} style={{color:"#D4AF37", fontWeight:"900", cursor:"pointer", fontSize:"16px"}}>✕</div>}
+</div>
+</div>
+<div style={{padding:"12px", paddingBottom:"90px"}}>
+{profiles.map((p:any)=>({ ...p, followersCount: follows.filter((f:any)=> f.following_handle===p.handle).length })).sort((a:any,b:any)=> b.followersCount - a.followersCount).map((u:any, idx:number)=>({ ...u, rank: idx+1 })).filter((u:any)=> worthSearch==="" || (u.name||"").toLowerCase().includes(worthSearch.toLowerCase()) || (u.handle||"").toLowerCase().includes(worthSearch.toLowerCase())).map((u:any)=>(
+<div key={u.handle} onClick={()=>{ if(u.handle===myHandle){ setView("profile"); } else { loadPublicUser(u); } }} style={{ display:"flex", gap:"12px", background:"#0f0f0f", padding:"14px", borderRadius:"14px", marginBottom:"10px", border:"1px solid #222", cursor:"pointer", alignItems:"center"}}>
+<div style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background: u.rank===1 ? "#D4AF37" : "#222", color: u.rank===1 ? "black" : "white", fontWeight:"900"}}>{u.rank===1 ? "👑" : `#${u.rank}`}</div>
+<img src={u.avatar} style={{width:"48px", height:"48px", borderRadius:"50%", objectFit:"cover"}}/>
+<div style={{flex:1, minWidth:0}}><div style={{fontWeight:"900", display:"flex", gap:"6px", alignItems:"center", flexWrap:"wrap"}}>{u.name} <span style={{background: getStatusBadge(u.profile_status).bg, color: getStatusBadge(u.profile_status).color, fontSize:"7px", padding:"2px 5px", borderRadius:"10px"}}>{getStatusBadge(u.profile_status).text}</span></div><div style={{fontSize:"11px", color:"#888"}}>{u.handle} • {u.followersCount} followers</div></div>
+<div style={{textAlign:"right", minWidth:"78px"}}>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"13px"}}>${Number(feedProducts.filter((p:any)=> p.owner_email===u.email && p.status!=="sold" && p.status!=="not_for_sale").reduce((s:any,p:any)=> s+Number(p.price||0),0)).toFixed(2)} $IM</div>
+<div style={{color:"#888", fontSize:"10px", fontWeight:"700"}}>Net ${Number(u.total_worth||0).toFixed(2)}</div>
+<div style={{color:"#00ff88", fontSize:"9px", fontWeight:"700"}}>● LIVE</div>
+</div>
+</div>
+))}
+{profiles.filter((u:any)=> worthSearch==="" || (u.name||"").toLowerCase().includes(worthSearch.toLowerCase()) || (u.handle||"").toLowerCase().includes(worthSearch.toLowerCase())).length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"30px", background:"#111", padding:"20px", borderRadius:"12px"}}>No user found for "{worthSearch}"</div>}
+{profiles.length===0 && <div style={{textAlign:"center", color:"#666", marginTop:"30px"}}>No profiles yet - tap Refresh</div>}
+</div>
+</div>
+)}
 )}
 <div style={{position:"fixed", bottom:0, left:0, right:0, maxWidth:"480px", margin:"0 auto", background: theme.navBg, borderTop:"2px solid #0a84ff", display:"flex", justifyContent:"space-around", padding:"10px", zIndex:5000}}>
 <div onClick={()=>setView("offers")} style={{color: view==="offers" ? "#0a84ff" : "#888", cursor:"pointer", position:"relative", fontWeight: view==="offers" ? "900" : "400", background: view==="offers" ? (isLightMode ? "#e3f2fd" : "#0a1a2a") : "transparent", padding:"6px 12px", borderRadius:"20px", border: view==="offers" ? "1px solid #0a84ff" : "none"}}>💬 $IM {myOffersCount>0 && <span style={{position:"absolute", top:"-6px", right:"-8px", background:"red", color:"white", fontSize:"9px", padding:"2px 5px", borderRadius:"10px"}}>{myOffersCount}</span>} {isOfflineMode && <span style={{position:"absolute", top:"-6px", left:"-8px", background:"#0a84ff", color:"white", fontSize:"8px", padding:"2px 4px", borderRadius:"10px"}}>BT</span>}</div>
