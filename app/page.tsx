@@ -238,6 +238,8 @@ const [profiles, setProfiles] = useState<any[]>([]);
 const [feedProducts, setFeedProducts] = useState<Product[]>([]);
 const [search, setSearch] = useState("");
 const [imageZoom, setImageZoom] = useState(1);
+const [imageCollapsed, setImageCollapsed] = useState(false);
+const [imageRotate, setImageRotate] = useState(0);
 const [worthSearch, setWorthSearch] = useState("");
 const [marketSearch, setMarketSearch] = useState("");
 const [searchTab, setSearchTab] = useState("market");
@@ -1036,13 +1038,19 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 
 {showImageModal && (
 <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-start", padding:"0", overflowY:"auto"}}>
-<div style={{flex:"none", width:"100%", minHeight:"100vh", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", background:"black", touchAction:"none", position:"relative"}}
+{/* IMAGE - FULL OR HALF, PINCH TO ZOOM, ROTATE TO FILL */}
+<div style={{flex:"none", width:"100%", minHeight: imageCollapsed ? "50vh" : "100vh", maxHeight: imageCollapsed ? "50vh" : "100vh", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", background:"black", touchAction:"none", position:"relative", transition:"min-height 0.3s, max-height 0.3s"}}
 onTouchStart={(e:any)=>{ if(e.touches.length===2){ (e.currentTarget as any)._pinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); (e.currentTarget as any)._zoom = imageZoom; } }}
 onTouchMove={(e:any)=>{ if(e.touches.length===2 && (e.currentTarget as any)._pinch){ const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); const nz = Math.max(1, Math.min(4, (e.currentTarget as any)._zoom * (d / (e.currentTarget as any)._pinch))); setImageZoom(nz); } }}
 onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
-<img src={modalImage} style={{width:"100%", maxHeight:"100vh", objectFit:"contain", borderRadius:"0px", cursor:"zoom-in", transform:`scale(${imageZoom})`, transformOrigin:"center center", transition: imageZoom===1 ? "transform 0.2s" : "none", touchAction:"none"}}/>
-<div style={{position:"absolute", top:"12px", right:"12px", background:"rgba(0,0,0,0.7)", color:"white", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", pointerEvents:"none"}}>{Math.round(imageZoom*100)}% • Pinch to zoom</div>
-<div style={{position:"absolute", bottom:"12px", left:0, right:0, textAlign:"center", color:"#888", fontSize:"11px", pointerEvents:"none"}}>Pinch thumb + index to zoom • Tap to zoom • Scroll down for details</div>
+<img src={modalImage} style={{width:"100%", maxHeight: imageCollapsed ? "50vh" : "100vh", objectFit:"contain", borderRadius:"0px", cursor:"zoom-in", transform:`rotate(${imageRotate}deg) scale(${imageZoom})`, transformOrigin:"center center", transition: imageZoom===1 ? "transform 0.2s" : "none", touchAction:"none"}}/>
+<div style={{position:"absolute", top:"12px", right:"12px", background:"rgba(0,0,0,0.7)", color:"white", padding:"6px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"900", pointerEvents:"none"}}>{Math.round(imageZoom*100)}% • {imageRotate}°</div>
+</div>
+{/* COLLAPSE + ROTATE BAR - PULLS INFO UP */}
+<div style={{display:"flex", gap:"8px", justifyContent:"center", alignItems:"center", padding:"8px 12px", background:"#111", width:"100%", borderBottom:"1px solid #222", position:"sticky", top:0, zIndex:10}}>
+<button onClick={()=>setImageCollapsed(!imageCollapsed)} style={{background: imageCollapsed ? "#D4AF37" : "#222", color: imageCollapsed ? "black" : "white", border:"1px solid #333", padding:"8px 16px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>{imageCollapsed ? "▲ Expand Image" : "▼ Collapse to Half"}</button>
+<button onClick={()=>setImageRotate((imageRotate+90)%360)} style={{background:"#222", color:"#D4AF37", border:"1px solid #D4AF37", padding:"8px 16px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>↻ Rotate {imageRotate}°</button>
+<div style={{color:"#888", fontSize:"11px"}}>Pinch to zoom • Tap to zoom</div>
 </div>
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
@@ -1068,9 +1076,7 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 {/* BOTTOM ROW - 3 REACTIONS MATCHING TOP */}
 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"8px", alignItems:"center"}}>
 <button onClick={()=>handleReaction('love')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='love') ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>❤️ {reactions.filter((r:any)=>r.type==='love').length}</button>
-  
 <button onClick={()=>handleReaction('dislike')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='dislike') ? "#555" : "#222", color:"white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>😂 {reactions.filter((r:any)=>r.type==='dislike').length}</button>
-
 <button onClick={()=>handleReaction('like')} style={{background: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "#D4AF37" : "#222", color: reactions.find((r:any)=>r.reactor_handle===myHandle && r.type==='like') ? "black" : "white", border:"1px solid #333", padding:"8px", borderRadius:"20px", fontWeight:"900", fontSize:"12px"}}>💪 {reactions.filter((r:any)=>r.type==='like').length}</button>
 </div>
 {/* COMMENTS */}
@@ -1100,12 +1106,10 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ELL</button>
 <button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending</button>
 <button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ $0LD!</button>
-
 </div>
 <div style={{display:"flex", gap:"6px", marginTop:"8px"}}>
 <button onClick={()=>{ setActiveProductId(modalInfo.id); productInputRef.current?.click(); }} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px"}}>📷 Change</button>
 <button onClick={()=>{ setTempTitle(modalInfo.title||""); setModalEditingTitle(true); }} style={{background:"#D4AF37", color:"black", fontWeight:"900", border:"1px solid #D4AF37", padding:"8px 12px", borderRadius:"8px"}}>✏️ Describe</button>
-
 </div>
 </div>
 ) : (
@@ -1123,7 +1127,7 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 </div>
 )}
 </div>
-<div style={{display:"flex", gap:"10px", marginTop:"15px"}}>
+<div style={{display:"flex", gap:"10px", marginTop:"15px", marginBottom:"20px"}}>
 <button onClick={async()=>{
   try{
     const response = await fetch(modalImage, {mode:'cors'});
@@ -1138,7 +1142,6 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
     setTimeout(()=> URL.revokeObjectURL(url), 1000);
     alert("✅ Saved! Check Downloads folder 📁");
   }catch(e){
-    // Fallback for APK WebView
     const link = document.createElement('a');
     link.href = modalImage;
     link.download = `SIM_Worth_${Date.now()}.jpg`;
@@ -1147,7 +1150,7 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
     alert("✅ Image opened - Long press to Save to Gallery! 📥");
   }
 }} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 20px", borderRadius:"20px", border:"none"}}>Download⬇️</button>
-<button onClick={()=>{ setShowImageModal(false); setImageZoom(1); }} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
+<button onClick={()=>{ setShowImageModal(false); setImageZoom(1); setImageCollapsed(false); setImageRotate(0); }} style={{background:"#222", color:"white", padding:"10px 20px", borderRadius:"20px", border:"1px solid #333"}}>Close❌</button>
 </div>
 </div>
 )}
