@@ -256,6 +256,7 @@ const chatImageRef = useRef<HTMLInputElement>(null);
 const [activeProductId, setActiveProductId] = useState<string | null>(null);
 const [showWorthBox, setShowWorthBox] = useState(true);
 const [showAboutBox, setShowAboutBox] = useState(true);
+const [showPublicAbout, setShowPublicAbout] = useState(false);
 const [hideWorth, setHideWorth] = useState(false);
 const [bio, setBio] = useState("Im Totally Worthed!");
 const [about, setAbout] = useState("Entrepreneur");
@@ -1231,14 +1232,23 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 </div>
 )}
 {view==="publicProfile" && selectedUser && (
-<div>
-<div style={{display:"flex", alignItems:"center", gap:"10px", padding:"15px", borderBottom:"1px solid #222"}}><div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div><div style={{color:"#D4AF37", fontWeight:"bold"}}>{selectedUser.handle}</div><div style={{marginLeft:"8px", background: getStatusBadge(selectedUser.profile_status).bg, color: getStatusBadge(selectedUser.profile_status).color, fontSize:"9px", fontWeight:"900", padding:"4px 8px", borderRadius:"12px"}}>{getStatusBadge(selectedUser.profile_status).text}</div></div>
-<div style={{padding:"20px", textAlign:"center"}}>
-<div style={{position:"relative", display:"inline-block"}}>
-<img src={selectedUser.avatar} onClick={()=>openImageModal(selectedUser.avatar, {...selectedUser, isMine:false})} style={{width:"90px", height:"90px", borderRadius:"50%", border:"2px solid #D4AF37", objectFit:"cover", cursor:"pointer", filter: selectedUser.profile_status==="sold" ? "grayscale(80%)" : "none"}}/>
-<div style={{position:"absolute", bottom:"-6px", left:"50%", transform:"translateX(-50%)", background: getStatusBadge(selectedUser.profile_status).bg, color: getStatusBadge(selectedUser.profile_status).color, fontSize:"7px", fontWeight:"900", padding:"3px 8px", borderRadius:"12px", whiteSpace:"nowrap"}}>{getStatusBadge(selectedUser.profile_status).text}</div>
+<div style={{display:"flex", flexDirection:"column", height:"100vh", overflow:"hidden"}}>
+{/* FROZEN HEADER - handle + pic only, never scrolls */}
+<div style={{display:"flex", alignItems:"center", gap:"10px", padding:"12px 15px", borderBottom:"1px solid #222", flexShrink:0, background:"#000"}}>
+<div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div>
+<img src={selectedUser.avatar} onClick={()=>openImageModal(selectedUser.avatar, {...selectedUser, isMine:false})} style={{width:"40px", height:"40px", borderRadius:"50%", border:"2px solid #D4AF37", objectFit:"cover", cursor:"pointer", filter: selectedUser.profile_status==="sold" ? "grayscale(80%)" : "none"}}/>
+<div style={{color:"#D4AF37", fontWeight:"bold"}}>{selectedUser.handle}</div>
+<div style={{marginLeft:"8px", background: getStatusBadge(selectedUser.profile_status).bg, color: getStatusBadge(selectedUser.profile_status).color, fontSize:"9px", fontWeight:"900", padding:"4px 8px", borderRadius:"12px"}}>{getStatusBadge(selectedUser.profile_status).text}</div>
 </div>
-<div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"12px"}}>{selectedUser.name}</div>
+{/* COLLAPSIBLE - SELLER INFO - same style as your ABOUT ME box */}
+<div style={{flexShrink:0, background:"#0a0a0a", borderBottom:"1px solid #222"}}>
+<div onClick={()=>setShowPublicAbout(!showPublicAbout)} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 15px", cursor:"pointer"}}>
+<div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px"}}>👤 SELLER INFO - About, Skills & Contact</div>
+<div style={{color:"#D4AF37", fontSize:"12px"}}>{showPublicAbout ? "▲" : "▼"}</div>
+</div>
+{showPublicAbout && (
+<div style={{padding:"0 15px 15px", textAlign:"center"}}>
+<div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"6px"}}>{selectedUser.name}</div>
 {selectedUser.bio && <div style={{color:"white", fontSize:"13px", marginTop:"8px", padding:"0 20px"}}>{selectedUser.bio}</div>}
 {selectedUser.about && <div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>{selectedUser.about}</div>}
 {selectedUser.skills && (
@@ -1252,14 +1262,17 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.following_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Followers</span></div>
 <div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.follower_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Following</span></div>
 </div>
-<button onClick={(e)=>{ e.stopPropagation(); handleFollow(selectedUser.handle); }} style={{marginTop:"12px", background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "white" : "black", fontWeight:"900", padding:"10px 24px", borderRadius:"20px", border: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "1px solid #333" : "none", cursor:"pointer"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "Following ✓" : "Follow + 🚀"}</button>
+<button onClick={(e)=>{ e.stopPropagation(); handleFollow(selectedUser.handle); }} style={{marginTop:"12px", background: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "#222" : "#D4AF37", color: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "white" : "black", fontWeight:"900", padding:"10px 24px", borderRadius:"20px", border: follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "1px solid #333" : "none", cursor:"pointer"}}>{follows.some(f=> f.follower_handle===myHandle && f.following_handle===selectedUser.handle) ? "Following ✓ - In Your Buyers List" : "Follow + 🚀 - Add To Buyers List"}</button>
 <div style={{display:"flex", gap:"10px", justifyContent:"center", marginTop:"14px", flexWrap:"wrap"}}>
 {(selectedUser.pay_link || selectedUser.pay_handle) && (<button onClick={()=> window.open(selectedUser.pay_link || `https://pay.capitecbank.co.za/${selectedUser.pay_handle}`, '_blank')} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>💰 Pay Me</button>)}
 {(selectedUser.location || selectedUser.latitude) && (<button onClick={()=> openInSimMaps(selectedUser.latitude?.toString(), selectedUser.longitude?.toString(), selectedUser.location)} style={{background:"#0a84ff", color:"white", fontWeight:"900", padding:"10px 18px", borderRadius:"20px", border:"none"}}>🗺️ Visit Me</button>)}
 </div>
 {selectedUser.location && <div style={{color:"#888", fontSize:"11px", marginTop:"8px"}}>📍 {selectedUser.location}</div>}
 </div>
-<div style={{padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
+)}
+</div>
+{/* ITEMS - ONLY THIS SCROLLS */}
+<div style={{flex:1, overflowY:"auto", padding:"12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
 {selectedUserProducts.map((p)=>(
 <div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:selectedUser.email, owner_handle:selectedUser.handle, isMine:false, status:p.status})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #444" : "1px solid #2a2a2a", cursor:"pointer", position:"relative", opacity: p.status==="sold" || p.status==="not_for_sale" ? 0.7 : 1}}>
 <div style={{position:"relative"}}>
