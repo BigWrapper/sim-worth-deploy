@@ -1753,7 +1753,7 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
   );
 })}
 </div>
-<div style={{padding:"12px", borderTop:"1px solid #222", background: theme.cardBg, display:"flex", gap:"8px"}}>
+<div style={{flex:"none", padding:"12px", paddingBottom:"20px", borderTop:"1px solid #222", background: theme.cardBg, display:"flex", gap:"8px"}}>
 <input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add a comment... @handle" style={{flex:1, background:"#111", border:"1px solid #333", color:"white", padding:"12px", borderRadius:"20px"}} onKeyDown={(e:any)=> e.key==='Enter' && handleAddComment()} />
 <button onClick={handleAddComment} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 20px", borderRadius:"20px", border:"none"}}>Post</button>
 </div>
