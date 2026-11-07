@@ -147,6 +147,8 @@ const [showSplash, setShowSplash] = useState(true);
 const [loggedIn, setLoggedIn] = useState(false);
 const [view, setView] = useState("accounts");
 const [showNotes, setShowNotes] = useState(false);
+const [skills, setSkills] = useState<string[]>(["Entrepreneur", "CEO", "Builder"]);
+const [skillsInput, setSkillsInput] = useState("Entrepreneur, CEO, Builder");
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 const [worthPin, setWorthPin] = useState("");
@@ -860,7 +862,7 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
   <>
     <input placeholder="WORTH PIN (4 digits e.g. 1999)" type="password" inputMode="numeric" maxLength={4} value={worthPin} onChange={e=>setWorthPin(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
     <input placeholder="Confirm WORTH PIN" type="password" inputMode="numeric" maxLength={4} value={worthPinConfirm} onChange={e=>setWorthPinConfirm(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
-    <div style={{fontSize:"10px", color:"#D4AF37", marginBottom:"14px", textAlign:"center", border:"1px solid #222", padding:"6px", borderRadius:"8px"}}>🔐 WORTH PIN = Bank PIN for recovery. Don't lose! 4 digits only.</div>
+    <div style={{fontSize:"10px", color:"#D4AF37", marginBottom:"14px", textAlign:"center", border:"1px solid #222", padding:"6px", borderRadius:"8px"}}>🔐 WORTH PIN = Your House LOCK if Gate is OPEN</div>
   </>
 )}
 <button onClick={doLogin} style={{width:"100%", background:"#D4AF37", color:"black", fontWeight:"900", padding:"14px", borderRadius:"12px", border:"none", cursor:"pointer"}}>{authMode==="signup"?"SIGN UP →":"LOGIN →"}</button>
@@ -1405,13 +1407,13 @@ setWorthPinInput(""); setConfirmPinInput("");
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>🪪 ID NUMBER</div>
 <input value={idNumberInput} onChange={e=>setIdNumberInput(e.target.value)} placeholder="ID Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
-<div style={{color:"#888", fontSize:"11px"}}>Used only to prove it's you if you get kicked out. Never shown to other users.</div>
+<div style={{color:"#888", fontSize:"11px"}}>Used only to prove it's you if you got locked out. Never shown to others.</div>
 </div>
 
 <div style={{border:"1px solid #333", borderRadius:"12px", padding:"14px", marginBottom:"12px"}}>
 <div style={{color:"white", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>📱 PHONE NUMBER</div>
 <input value={phoneNumberInput} onChange={e=>setPhoneNumberInput(e.target.value)} placeholder="Phone Number (only you see this)" style={{width:"100%", background:"#222", border:"1px solid #333", color:"white", padding:"10px", borderRadius:"8px", marginBottom:"8px"}} />
-<div style={{color:"#888", fontSize:"11px"}}>Used only to kick out thieves from another device. Never shown to other users.</div>
+<div style={{color:"#888", fontSize:"11px"}}>Used only to kick out thieves from another device. Never shown to others.</div>
 </div>
 
 <button onClick={async()=>{
@@ -1443,7 +1445,7 @@ window.location.reload();
 
   {/* ===== STICKY TOP - NEVER SCROLLS ===== */}
   <div style={{flexShrink:0, background:"black", zIndex:20, borderBottom:"1px solid #222"}}>
-    <WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} onCountClick={()=>setShowCalculator(true)} onNotesClick={()=>setShowNotes(true)} skills={["Entrepreneur", "CEO", "Builder"]} />
+    <WatermarkHeader avatarPreview={avatarPreview} totalWorth={totalWorth} myUserId={myId} myHandle={email?.split("@")[0] || "user"} userLocation={userLocation} userLat={userLat} userLng={userLng} streetAddress={streetAddress} suburb={suburb} city={city} payLink={payLink} payHandle={payHandle} payMethod={payMethod} profileStatus={profileStatus} onAvatarClick={()=>openImageModal(avatarPreview, {handle: email?.split("@")[0] || "user", bio: bio, isMine:true, profile_status: profileStatus})} onSettingsClick={()=>setView("settings")} onCountClick={()=>setShowCalculator(true)} onNotesClick={()=>setShowNotes(true)} skills={skills}["Entrepreneur", "CEO", "Builder"]} />
 
     {/* --- COLLAPSIBLE WORTH BAR --- */}
     <div style={{padding:"0 15px 8px 15px"}}>
@@ -1463,7 +1465,7 @@ window.location.reload();
     <div style={{marginTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
       <div><div style={{color:"#E8E8E8", fontSize:"10px", fontWeight:"700", letterSpacing:"1.5px"}}>NET W0RTH</div><div style={{color:"#D4AF37", fontWeight:"900", fontSize:"20px"}}>{hideWorth ? "$ ****" : `$ ${totalWorth.toFixed(2)}`}</div></div>
       <div onClick={()=>setView("offers")} style={{cursor:"pointer", textAlign:"right", background: myOffersCount>0 ? "#1a1a00" : "transparent", border:"1px solid #D4AF37", padding:"6px 12px", borderRadius:"10px"}}>
-        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFERS RECEIVED {myOffersCount>0 && "🟢"}</div>
+        <div style={{color:"#E8E8E8", fontSize:"10px"}}>OFFER$ {myOffersCount>0 && "💰"}</div>
         <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"18px"}}>{myOffersCount}</div>
       </div>
     </div>
