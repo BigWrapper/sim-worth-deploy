@@ -449,6 +449,8 @@ const loadMyData = async (em:string)=>{
 
 const loadPublicUser = async (user:any)=>{
   setSelectedUser(user);
+  const { data: fresh } = await supabase.from("profiles").select("*").eq("handle", user.handle).maybeSingle();
+  if(fresh) setSelectedUser((prev:any)=>({...prev, bio: fresh.bio, about: fresh.about, skills: fresh.skills, location: fresh.location, latitude: fresh.latitude, longitude: fresh.longitude, pay_link: fresh.pay_link, pay_handle: fresh.pay_handle, profile_status: fresh.profile_status}));
   const { data } = await supabase.from("products").select("*").eq("owner_email", user.email).order("created_at",{ascending:false});
   if(data) setSelectedUserProducts(data.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, title:p.title || "My Item", status: p.status || "for_sale"})));
   setView("publicProfile");
@@ -1237,6 +1239,15 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <div style={{position:"absolute", bottom:"-6px", left:"50%", transform:"translateX(-50%)", background: getStatusBadge(selectedUser.profile_status).bg, color: getStatusBadge(selectedUser.profile_status).color, fontSize:"7px", fontWeight:"900", padding:"3px 8px", borderRadius:"12px", whiteSpace:"nowrap"}}>{getStatusBadge(selectedUser.profile_status).text}</div>
 </div>
 <div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"20px", marginTop:"12px"}}>{selectedUser.name}</div>
+{selectedUser.bio && <div style={{color:"white", fontSize:"13px", marginTop:"8px", padding:"0 20px"}}>{selectedUser.bio}</div>}
+{selectedUser.about && <div style={{color:"#888", fontSize:"11px", marginTop:"4px"}}>{selectedUser.about}</div>}
+{selectedUser.skills && (
+  <div style={{display:"flex", gap:"5px", flexWrap:"wrap", justifyContent:"center", marginTop:"10px", padding:"0 20px"}}>
+    {(typeof selectedUser.skills === "string" ? selectedUser.skills.split(",") : selectedUser.skills).map((s:string,i:number)=> s.trim() && (
+      <span key={i} style={{background:"#1a1a00", border:"1px solid #D4AF37", color:"#D4AF37", fontSize:"10px", fontWeight:"700", padding:"4px 10px", borderRadius:"12px"}}>{s.trim()}</span>
+    ))}
+  </div>
+)}
 <div style={{display:"flex", justifyContent:"center", gap:"20px", marginTop:"12px"}}>
 <div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.following_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Followers</span></div>
 <div><span style={{fontWeight:"900"}}>{follows.filter(f=>f.follower_handle===selectedUser.handle).length}</span><span style={{color:"#888", fontSize:"12px"}}> Following</span></div>
