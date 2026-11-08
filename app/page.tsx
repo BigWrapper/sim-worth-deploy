@@ -1539,7 +1539,7 @@ window.location.reload();
                   <button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💍 Taken</button>
                 </div>
               </div>
-              
+            </div>
           ) : (
             <div>
               <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
