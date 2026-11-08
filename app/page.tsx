@@ -1506,11 +1506,18 @@ window.location.reload();
     <div style={{margin:"0 15px 10px 15px", border:"1px solid #D4AF37", borderRadius:"12px", padding:"14px"}}>
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
         <div style={{color:"#D4AF37", fontWeight:"bold", fontSize:"12px"}}>ABOUT ME</div>
-        <div style={{display:"flex", gap:"8px", alignItems:"center"}}>
-          <div onClick={()=>setEditingBio(true)} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div>
+              <div style={{display:"flex", gap:"8px", alignItems:"center"}}>
+          {editingBio ? (
+            <>
+              <div onClick={saveBio} style={{color:"black", background:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px", fontWeight:"900"}}>Save ✓</div>
+              <div onClick={()=>setEditingBio(false)} style={{color:"white", fontSize:"12px", cursor:"pointer", border:"1px solid #333", padding:"4px 10px", borderRadius:"12px"}}>Cancel</div>
+            </>
+          ) : (
+            <div onClick={()=>{ setShowAboutBox(true); setEditingBio(true); }} style={{color:"#D4AF37", fontSize:"12px", cursor:"pointer", border:"1px solid #D4AF37", padding:"4px 10px", borderRadius:"12px"}}>Edit Profile ✏️</div>
+          )}
           <div onClick={handleLogout} style={{color:"#ff4444", fontSize:"12px", cursor:"pointer", border:"1px solid #ff4444", padding:"4px 10px", borderRadius:"12px"}}>Logout ⎋</div>
           <div onClick={()=>setShowAboutBox(!showAboutBox)} style={{color:"#D4AF37", fontSize:"14px", cursor:"pointer", fontWeight:"900"}}>{showAboutBox ? "▲" : "▼"}</div>
-        </div>
+        </div>  
       </div>
 
       {showAboutBox && (
@@ -1522,9 +1529,7 @@ window.location.reload();
               <div style={{marginBottom:"12px"}}>
   <div style={{color:"#D4AF37", fontWeight:"900", fontSize:"12px", marginBottom:"6px"}}>🏷️ MY SKILLS - comma separated</div>
   <input value={skillsInput} onChange={e=>{ setSkillsInput(e.target.value); setSkills(e.target.value.split(",").map(s=>s.trim()).filter(Boolean)); }} placeholder="e.g. Barber, CEO, DJ, Builder" style={{width:"100%", background:"#222", border:"1px solid #D4AF37", color:"white", padding:"10px", borderRadius:"8px"}}/>
-  <div style={{display:"flex", gap:"5px", flexWrap:"wrap", marginTop:"8px"}}>
-    {skills.map((s,i)=>(<span key={i} style={{background:"#1a1a00", border:"1px solid #D4AF37", color:"#D4AF37", fontSize:"10px", fontWeight:"700", padding:"3px 8px", borderRadius:"12px"}}>{s}</span>))}
-  </div>
+  
 </div>
               <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#0a1a0f"}}>
                 <div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>PROFILE $TATU$</div>
@@ -1534,9 +1539,7 @@ window.location.reload();
                   <button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💍 Taken</button>
                 </div>
               </div>
-              <button onClick={saveBio} style={{background:"#D4AF37", color:"black", fontWeight:"900", padding:"12px 16px", borderRadius:"8px", border:"none", width:"100%"}}>Save All ✓</button>
-              <button onClick={()=>setEditingBio(false)} style={{background:"#222", color:"white", padding:"8px 16px", borderRadius:"8px", border:"1px solid #333", width:"100%", marginTop:"8px"}}>Cancel</button>
-            </div>
+              
           ) : (
             <div>
               <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
