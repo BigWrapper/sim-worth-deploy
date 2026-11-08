@@ -1106,7 +1106,7 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 </div>
 {modalInfo?.status==="draft" && <div style={{color:"#D4AF37", fontSize:"10px", marginTop:"6px"}}>📝 DRAFT - only you see this. Set price + description, then hit ✅ POST.</div>}
 {isLocked && <div style={{color:"#888", fontSize:"10px", marginTop:"6px"}}>🔒 Locked - 1 reaction / comment / offer. Can only delete whole post.</div>}
-{isMineModal && <button onClick={()=>{ setDeleteTargetId(modalInfo.id); setShowDeleteConfirm(true); setShowImageModal(false); }} style={{background:"#FF3B30", color:"white", border:"none", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px", marginTop:"8px"}}>🗑️ Delete Post</button>}
+{isMineModal && <button onClick={()=>{ setDeleteTargetId(modalInfo.id); setShowDeleteConfirm(true); setShowImageModal(false); }} style={{background:"#3a1111", color:"#ff6b6b", border:"1px solid #ff4444", padding:"8px 10px", borderRadius:"8px", fontWeight:"900", fontSize:"14px", cursor:"pointer"}}>🗑️</button>}
 </div>
 ) : (
 <div style={{marginTop:"10px"}}>
@@ -1552,32 +1552,30 @@ window.location.reload();
       )}
     </div>
   </div>
-
-  {/* ===== SCROLL AREA - ONLY ITEMS SCROLL ===== */}
+    {/* ===== SCROLL AREA - ONLY ITEMS SCROLL ===== */}
   <div style={{flex:1, overflowY:"auto", padding:"12px"}}>
     <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
       {products.map((p)=>(
-        <div key={p.id} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #555" : "1px solid #2a2a2a", position:"relative"}}>
-          <div style={{position:"relative"}}>
-            <img src={p.img} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true, status:p.status})} style={{width:"100%", height:"100px", objectFit:"cover", cursor:"pointer", filter: p.status==="pending.." ? "grayscale(60%)" : "none"}}/>
-            <div style={{position:"absolute", top:"6px", left:"6px", background: getStatusBadge(p.status).bg, color: getStatusBadge(p.status).color, fontSize:"7px", fontWeight:"900", padding:"2px 5px", borderRadius:"10px", border:"1px solid currentColor"}}>{getStatusBadge(p.status).text}</div>
+        <div key={p.id} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #555" : "1px solid #2a2a2a", position:"relative", height:"220px"}}>
+          <img src={p.img} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true, status:p.status})} style={{position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", cursor:"pointer", filter: p.status==="pending.." ? "grayscale(60%)" : "none"}}/>
+          <div style={{position:"absolute", inset:0, background:"linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 35%, transparent 55%)"}}/>
+          <div style={{position:"absolute", top:"6px", left:"6px", background: getStatusBadge(p.status).bg, color: getStatusBadge(p.status).color, fontSize:"7px", fontWeight:"900", padding:"2px 5px", borderRadius:"10px", border:"1px solid currentColor", zIndex:2}}>{getStatusBadge(p.status).text}</div>
+          <div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px", zIndex:4}}>
+            <button onClick={()=>{ setDeleteTargetId(p.id); setShowDeleteConfirm(true); }} style={{background:"rgba(255,0,0,0.8)", border:"none", color:"white", borderRadius:"50%", width:"20px", height:"20px", fontWeight:"900", cursor:"pointer"}}>×</button>
+            <button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px"}}>📷</button>
           </div>
-          <div style={{padding:"6px"}}>
-            {editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"11px", fontWeight:"bold", cursor:"pointer"}}>{p.title} ✏️</div>)}
-            {editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color: p.status==="pending.." ? "#FFA500" : p.status==="not_for_sale" ? "#888" : "#D4AF37", cursor:"pointer"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
+          <div style={{position:"absolute", bottom:0, left:0, right:0, padding:"10px 8px 8px", zIndex:3}}>
+            {editingTitleId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempTitle} onChange={e=>setTempTitle(e.target.value)} autoFocus style={{width:"90px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updateTitle(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingTitleId(p.id); setTempTitle(p.title||"");}} style={{fontSize:"12px", fontWeight:"bold", cursor:"pointer", color:"white", textShadow:"0 1px 3px black", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{p.title} ✏️</div>)}
+            {editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px"}}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={()=>{setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color: p.status==="pending.." ? "#FFA500" : p.status==="not_for_sale" ? "#888" : "#D4AF37", cursor:"pointer", textShadow:"0 1px 3px black"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
             <div style={{display:"flex", gap:"3px", marginTop:"6px"}}>
               <button onClick={()=>setProductStatus(p.id, "for_sale")} style={{flex:1, background: p.status==="for_sale" || !p.status ? "#00ff88" : "#222", color: p.status==="for_sale" || !p.status ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$ELL</button>
               <button onClick={()=>setProductStatus(p.id, "pending")} style={{flex:1, background: p.status==="pending" ? "#FFA500" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Pending</button>
               <button onClick={()=>setProductStatus(p.id, "not_for_sale")} style={{flex:1, background: p.status==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$OLD!</button>
             </div>
           </div>
-          <div style={{position:"absolute", top:"6px", right:"6px", display:"flex", gap:"4px"}}>
-            <button onClick={()=>{ setDeleteTargetId(p.id); setShowDeleteConfirm(true); }} style={{background:"rgba(255,0,0,0.8)", border:"none", color:"white", borderRadius:"50%", width:"20px", height:"20px", fontWeight:"900", cursor:"pointer"}}>×</button>
-            <button onClick={()=>{setActiveProductId(p.id); productInputRef.current?.click();}} style={{background:"rgba(0,0,0,0.7)", border:"none", color:"white", borderRadius:"50%", width:"24px", height:"24px"}}>📷</button>
-          </div>
         </div>
       ))}
-      <div onClick={addProduct} style={{background:"#0a0a0a", border:"2px dashed #D4AF37", borderRadius:"14px", height:"150px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer"}}>+ Add</div>
+      <div onClick={addProduct} style={{background:"#0a0a0a", border:"2px dashed #D4AF37", borderRadius:"14px", height:"220px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer"}}>+ Add</div>
     </div>
     <div style={{height:"90px"}}></div>
   </div>
