@@ -1041,9 +1041,9 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <input ref={chatImageRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleChatImage}/>
 </div>
 )}
-
+<style>{`::-webkit-scrollbar{display:none} *{scrollbar-width:none}`}</style>
 {showImageModal && (
-<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-start", padding:"0", overflowY:"auto"}}>
+<div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.97)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-start", padding:"0", overflowY:"auto", scrollbarWidth:"none", msOverflowStyle:"none"}}>
 {/* IMAGE - FULL OR HALF, PINCH TO ZOOM, ROTATE AUTO-SNAPS FULL LIKE MOVIE */}
 <div style={{flex:"none", width:"100%", minHeight: imageCollapsed ? "50vh" : "100vh", maxHeight: imageCollapsed ? "50vh" : "100vh", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", background:"black", touchAction:"none", position:"relative", transition:"min-height 0.3s, max-height 0.3s"}}
 onTouchStart={(e:any)=>{ if(e.touches.length===2){ (e.currentTarget as any)._pinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); (e.currentTarget as any)._zoom = imageZoom; } }}
@@ -1096,19 +1096,19 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
   
 </div>
   {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
-<div style={{marginTop:"10px"}}>
-<div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>A$$ET $TATU$</div>
-<div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap"}}>
-<button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ELL</button>
-<button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending</button>
-<button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ $0LD!</button>
-{modalInfo?.status==="draft" && <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background:"#00FF88", color:"black", border:"none", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ POST</button>}
-</div>
-{modalInfo?.status==="draft" && <div style={{color:"#D4AF37", fontSize:"10px", marginTop:"6px"}}>📝 DRAFT - only you see this. Set price + description, then hit ✅ POST.</div>}
-{isLocked && <div style={{color:"#888", fontSize:"10px", marginTop:"6px"}}>🔒 Locked - 1 reaction / comment / offer. Can only delete whole post.</div>}
-{isMineModal && <button onClick={()=>{ setDeleteTargetId(modalInfo.id); setShowDeleteConfirm(true); setShowImageModal(false); }} style={{background:"#3a1111", color:"#ff6b6b", border:"1px solid #ff4444", padding:"8px 10px", borderRadius:"8px", fontWeight:"900", fontSize:"14px", cursor:"pointer"}}>🗑️</button>}
-</div>
-) : (
+  <div style={{marginTop:"10px"}}>
+  <div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>A$$ET $TATU$</div>
+  <div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap", alignItems:"center"}}>
+  <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ELL</button>
+  <button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending</button>
+  <button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ $0LD!</button>
+  {modalInfo?.status==="draft" && <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background:"#00FF88", color:"black", border:"none", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ POST</button>}
+  {isMineModal && <button onClick={()=>{ setDeleteTargetId(modalInfo.id); setShowDeleteConfirm(true); setShowImageModal(false); }} style={{background:"#3a1111", color:"#ff6b6b", border:"1px solid #ff4444", padding:"8px 10px", borderRadius:"8px", fontWeight:"900", fontSize:"14px", cursor:"pointer", marginLeft:"auto"}}>🗑️</button>}
+  </div>
+  {modalInfo?.status==="draft" && <div style={{color:"#D4AF37", fontSize:"10px", marginTop:"6px"}}>📝 DRAFT - only you see this. Set price + description, then hit ✅ POST.</div>}
+  {isLocked && <div style={{color:"#888", fontSize:"10px", marginTop:"6px"}}>🔒 Locked - 1 reaction / comment / offer. Can only delete whole post.</div>}
+  </div>
+  ) : (
 <div style={{marginTop:"10px"}}>
 {modalInfo?.status==="sold" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 PENDING</div>
 : modalInfo?.status==="not_for_sale" ? <div style={{background:"#333", color:"#888", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>💎 NOT FOR SALE</div>
@@ -1553,7 +1553,7 @@ window.location.reload();
     </div>
   </div>
       {/* ===== SCROLL AREA - ONLY ITEMS SCROLL ===== */}
-  <div style={{flex:1, overflowY:"auto", padding:"12px"}}>
+  <div style={{flex:1, overflowY:"auto", padding:"12px", scrollbarWidth:"none", msOverflowStyle:"none"}}>
     <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px"}}>
       {products.map((p)=>(
         <div key={p.id} onClick={()=>openImageModal(p.img, {id:p.id, img:p.img, price:p.price, title:p.title, owner_email:email, isMine:true, status:p.status})} style={{background:"#111", borderRadius:"14px", overflow:"hidden", border: p.status==="sold" ? "1px solid #ff4444" : p.status==="not_for_sale" ? "1px solid #555" : "1px solid #2a2a2a", position:"relative", height:"220px", cursor:"pointer"}}>
