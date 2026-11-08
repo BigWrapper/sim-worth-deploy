@@ -1095,20 +1095,20 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
   </div>
   
 </div>
-  {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
+   {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
   <div style={{marginTop:"10px"}}>
   <div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>A$$ET $TATU$</div>
-  <div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap", alignItems:"center"}}>
-  <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ELL</button>
-  <button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending</button>
-  <button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ $0LD!</button>
-  {modalInfo?.status==="draft" && <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background:"#00FF88", color:"black", border:"none", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ POST</button>}
-  {isMineModal && <button onClick={()=>{ setDeleteTargetId(modalInfo.id); setShowDeleteConfirm(true); setShowImageModal(false); }} style={{background:"#3a1111", color:"#ff6b6b", border:"1px solid #ff4444", padding:"8px 10px", borderRadius:"8px", fontWeight:"900", fontSize:"14px", cursor:"pointer", marginLeft:"auto"}}>🗑️</button>}
+  <div style={{display:"flex", gap:"5px", marginTop:"8px", flexWrap:"nowrap", alignItems:"center"}}>
+  <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{flex:1, background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 4px", borderRadius:"8px", fontWeight:"900", fontSize:"10px", whiteSpace:"nowrap"}}>💰 $ELL</button>
+  <button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{flex:1, background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 4px", borderRadius:"8px", fontWeight:"900", fontSize:"10px", whiteSpace:"nowrap"}}>🔴 Pending</button>
+  <button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{flex:1, background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 4px", borderRadius:"8px", fontWeight:"900", fontSize:"10px", whiteSpace:"nowrap"}}>✅ $0LD!</button>
+  {modalInfo?.status==="draft" && <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{flex:1, background:"#00FF88", color:"black", border:"none", padding:"8px 4px", borderRadius:"8px", fontWeight:"900", fontSize:"10px", whiteSpace:"nowrap"}}>✅ POST</button>}
+  {isMineModal && <button onClick={()=>{ setDeleteTargetId(modalInfo.id); setShowDeleteConfirm(true); setShowImageModal(false); }} style={{flex:"none", width:"34px", height:"34px", background:"#3a1111", color:"#ff6b6b", border:"1px solid #ff4444", borderRadius:"8px", fontWeight:"900", fontSize:"14px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>🗑️</button>}
   </div>
   {modalInfo?.status==="draft" && <div style={{color:"#D4AF37", fontSize:"10px", marginTop:"6px"}}>📝 DRAFT - only you see this. Set price + description, then hit ✅ POST.</div>}
   {isLocked && <div style={{color:"#888", fontSize:"10px", marginTop:"6px"}}>🔒 Locked - 1 reaction / comment / offer. Can only delete whole post.</div>}
   </div>
-  ) : (
+  ) : ( 
 <div style={{marginTop:"10px"}}>
 {modalInfo?.status==="sold" ? <div style={{background:"#ff4444", color:"white", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>🔴 PENDING</div>
 : modalInfo?.status==="not_for_sale" ? <div style={{background:"#333", color:"#888", padding:"10px", borderRadius:"8px", textAlign:"center", fontWeight:"900"}}>💎 NOT FOR SALE</div>
