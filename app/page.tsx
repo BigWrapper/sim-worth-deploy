@@ -81,14 +81,26 @@ function WorthNotepad({ myUserId, onClose }: { myUserId: string; onClose: () => 
   const [activeId, setActiveId] = useState<any>(null);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const [search, setSearch] = useState("");
   const recognitionRef = useRef<any>(null);
+  const baseRef = useRef("");
 
   useEffect(() => { loadNotes(); }, []);
+  // APK: preload voices, Android loads them late
+  useEffect(() => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+  }, []);
+
   async function loadNotes() {
     const { data } = await supabase.from("worth_notes").select("*").eq("user_id", myUserId).order("updated_at", { ascending: false });
     if (data && data.length > 0) { setNotes(data); localStorage.setItem("worth_notes_offline", JSON.stringify(data)); }
     else { setNotes(JSON.parse(localStorage.getItem("worth_notes_offline") || "[]")); }
   }
+
   async function saveNote() {
     if (!content.trim() && !title.trim()) return;
     const payload: any = { title: title || "Untitled Note", content, user_id: myUserId, updated_at: new Date().toISOString() };
@@ -104,52 +116,143 @@ function WorthNotepad({ myUserId, onClose }: { myUserId: string; onClose: () => 
     setNotes(newNotes); localStorage.setItem("worth_notes_offline", JSON.stringify(newNotes));
     alert("💾 Saved to Worth Cloud + Offline");
   }
+
   async function deleteNote(id: any) {
     setNotes(notes.filter(n => n.id !== id)); localStorage.setItem("worth_notes_offline", JSON.stringify(notes.filter(n => n.id !== id)));
     if (!String(id).startsWith("local_")) await supabase.from("worth_notes").delete().eq("id", id);
     if (activeId === id) { setActiveId(null); setTitle(""); setContent(""); }
   }
-  function speak() {
-  if (!("speechSynthesis" in window)) return alert("This browser has no speaker");
-  if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); return; }
-  const text = `${title}. ${content}`.trim();
-  if (!text || text === ".") return alert("Type something first bro, nothing to read!");
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-US"; utter.rate = 1; utter.pitch = 1; utter.volume = 1;
-  const voices = window.speechSynthesis.getVoices();
-  const english = voices.find(v => v.lang.startsWith("en")) || voices[0];
-  if (english) utter.voice = english;
-  utter.onend = () => setIsSpeaking(false);
-  utter.onerror = () => setIsSpeaking(false);
-  setIsSpeaking(true);
-  window.speechSynthesis.speak(utter);
-  // Mobile Chrome unlock hack
-  setTimeout(() => { if (!window.speechSynthesis.speaking) window.speechSynthesis.speak(utter); }, 250);
-}
-  function toggleListen() {
-    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) return alert("Use Chrome for Speak to Text");
-    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
-    const rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
-    rec.onresult = (e: any) => { let t = ""; for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript; setContent((prev: string) => prev + t); };
-    rec.onend = () => setIsListening(false); recognitionRef.current = rec; rec.start(); setIsListening(true);
+
+  // ===== READ ALOUD - APK + WEB =====
+  async function speak() {
+    if (isSpeaking) {
+      try { (window as any).Capacitor?.Plugins?.TextToSpeech?.stop(); } catch {}
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      setIsSpeaking(false); return;
+    }
+    const text = `${title}. ${content}`.trim();
+    if (!text || text === ".") return alert("Type something first bro, nothing to read!");
+    setIsSpeaking(true);
+
+    // 1) APK NATIVE - Capacitor TextToSpeech
+    try {
+      const TTS = (window as any).Capacitor?.Plugins?.TextToSpeech;
+      if (TTS) { await TTS.speak({ text, lang: "en-US", rate: 1.0, pitch: 1.0, volume: 1.0 }); setIsSpeaking(false); return; }
+    } catch {}
+
+    // 2) WEB FALLBACK - never block on voices
+    if (!("speechSynthesis" in window)) { setIsSpeaking(false); return alert("Read Aloud needs Capacitor TTS in APK - see step 2 below"); }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "en-US"; utter.rate = 1; utter.pitch = 1; utter.volume = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const english = voices.find(v => v.lang.startsWith("en")) || voices[0];
+    if (english) utter.voice = english;
+    utter.onend = () => setIsSpeaking(false);
+    utter.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utter);
   }
+
+  // ===== SPEAK TO TEXT - APK + WEB =====
+  async function toggleListen() {
+    // STOP
+    if (isListening) {
+      try { await (window as any).Capacitor?.Plugins?.SpeechRecognition?.stopListening(); } catch {}
+      try { recognitionRef.current?.stop(); } catch {}
+      setIsListening(false); return;
+    }
+
+    // 1) APK NATIVE - Capacitor SpeechRecognition
+    try {
+      const SR = (window as any).Capacitor?.Plugins?.SpeechRecognition;
+      if (SR) {
+        const perm = await SR.requestPermissions();
+        if (perm?.speechRecognition !== "granted") return alert("Allow Mic permission in Settings > Apps > SIM Worth > Permissions");
+        await SR.removeAllListeners();
+        baseRef.current = content;
+        SR.addListener("partialResults", (d: any) => {
+          const heard = (d.matches || []).join(" ");
+          setContent(baseRef.current + (baseRef.current && !baseRef.current.endsWith(" ") ? " " : "") + heard);
+        });
+        await SR.startListening({ language: "en-US", maxResults: 5, prompt: "Speak your idea...", partialResults: true, popup: false });
+        setIsListening(true); return;
+      }
+    } catch (e: any) { console.log("Native STT failed, trying web", e); }
+
+    // 2) WEB FALLBACK - Chrome only
+    const WebSR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!WebSR) return alert("Speak needs Chrome or APK with SpeechRecognition plugin");
+    try {
+      // APK/WebView: ask mic first, else it records nothing
+      if (navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+      }
+    } catch { return alert("Allow Mic permission bro, then try again"); }
+
+    const rec = new WebSR(); rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
+    const base = content;
+    rec.onresult = (e: any) => {
+      let t = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+      // Don't duplicate: rebuild from base + all results
+      let full = "";
+      for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript;
+      setContent(base + (base && !base.endsWith(" ") ? " " : "") + full);
+    };
+    rec.onend = () => setIsListening(false);
+    rec.onerror = () => setIsListening(false);
+    recognitionRef.current = rec; rec.start(); setIsListening(true);
+  }
+
+  const filtered = notes.filter((n: any) =>
+    (n.title || "").toLowerCase().includes(search.toLowerCase()) ||
+    (n.content || "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  // ===== SAVED NOTES PAGE - OWN PAGE, STICKY SEARCH =====
+  if (showSaved) {
+    return (
+      <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:9999, display:"flex", flexDirection:"column"}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"15px", flexShrink:0}}>
+          <h2 style={{color:"#D4AF37", margin:0}}>📝 SAVED NOTES</h2>
+          <button onClick={()=>setShowSaved(false)} style={{background:"#222", color:"#fff", border:"1px solid #D4AF37", padding:"8px 14px", borderRadius:"20px"}}>← Back</button>
+        </div>
+        {/* STICKY SEARCH - never scrolls away */}
+        <div style={{position:"sticky", top:0, zIndex:10, background:"black", padding:"0 15px 10px 15px", flexShrink:0}}>
+          <input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="🔍 Search note by name..." style={{width:"100%", padding:"12px", borderRadius:"10px", background:"#111", border:"1px solid #D4AF37", color:"#fff", fontSize:"16px"}} />
+          <div style={{color:"#888", fontSize:"12px", marginTop:"6px"}}>{filtered.length} note(s)</div>
+        </div>
+        <div style={{flex:1, overflowY:"auto", padding:"0 15px 20px 15px"}}>
+          {filtered.map((n:any)=>(
+            <div key={n.id} onClick={()=>{setActiveId(n.id); setTitle(n.title); setContent(n.content); setShowSaved(false);}} style={{border:"1px solid #333", borderRadius:"12px", padding:"12px", marginBottom:"8px", background:"#111", cursor:"pointer"}}>
+              <div style={{display:"flex", justifyContent:"space-between"}}><b style={{color:"#fff"}}>{n.title}</b><span onClick={(e)=>{e.stopPropagation(); deleteNote(n.id);}}>🗑️</span></div>
+              <div style={{color:"#888", fontSize:"13px"}}>{n.content?.slice(0,80)}...</div>
+            </div>
+          ))}
+          {filtered.length===0 && <div style={{color:"#888", textAlign:"center", marginTop:"40px"}}>No notes found bro</div>}
+        </div>
+      </div>
+    );
+  }
+
+  // ===== EDITOR - FULL SCREEN =====
   return (
-    <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:9999, padding:"15px", overflowY:"auto"}}>
-      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}><h2 style={{color:"#D4AF37"}}>📝 WORTH NOTEPAD</h2><button onClick={onClose} style={{background:"#222", color:"#fff", border:"1px solid #D4AF37", padding:"8px 14px", borderRadius:"20px"}}>❌ Close</button></div>
-      <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Title..." style={{width:"100%", padding:"12px", borderRadius:"10px", background:"#111", border:"1px solid #333", color:"#fff", marginBottom:"8px"}} />
-      <textarea value={content} onChange={(e)=>setContent(e.target.value)} placeholder="Speak or type your idea..." rows={8} style={{width:"100%", padding:"12px", borderRadius:"12px", background:"#111", border:"1px solid #333", color:"#fff", fontSize:"16px"}} />
-      <div style={{display:"flex", gap:"8px", marginTop:"10px"}}>
-        <button onClick={toggleListen} style={{flex:1, padding:"12px", borderRadius:"10px", background: isListening ? "#ff0000" : "#D4AF37", color:"#000", fontWeight:"900", border:"none"}}>{isListening ? "⏹️ STOP" : "🎤 SPEAK"}</button>
+    <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"black", zIndex:9999, display:"flex", flexDirection:"column", padding:"15px", paddingBottom:"90px", boxSizing:"border-box"}}>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:"8px", flexShrink:0}}>
+        <button onClick={()=>setShowSaved(true)} style={{background:"#D4AF37", color:"#000", fontWeight:"900", border:"none", padding:"8px 12px", borderRadius:"20px"}}>☰ Saved</button>
+        <h2 style={{color:"#D4AF37", margin:0, fontSize:"18px", flex:1, textAlign:"center"}}>📝 WORTH NOTEPAD</h2>
+        <button onClick={onClose} style={{background:"#222", color:"#fff", border:"1px solid #D4AF37", padding:"8px 14px", borderRadius:"20px"}}>❌ Close</button>
+      </div>
+      <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Title..." style={{width:"100%", padding:"12px", borderRadius:"10px", background:"#111", border:"1px solid #333", color:"#fff", margin:"12px 0 8px 0", boxSizing:"border-box"}} />
+      <textarea value={content} onChange={(e)=>setContent(e.target.value)} placeholder="Speak or type your idea..." style={{width:"100%", flex:1, minHeight:"200px", padding:"12px", borderRadius:"12px", background:"#111", border:"1px solid #333", color:"#fff", fontSize:"16px", boxSizing:"border-box", resize:"none"}} />
+      <div style={{display:"flex", gap:"8px", marginTop:"10px", flexShrink:0}}>
+        <button onClick={toggleListen} style={{flex:1, padding:"12px", borderRadius:"10px", background: isListening ? "#ff0000" : "#D4AF37", color:"#000", fontWeight:"900", border:"none"}}>{isListening ? "⏹️ STOP - Listening..." : "🎤 SPEAK"}</button>
         <button onClick={speak} style={{flex:1, padding:"12px", borderRadius:"10px", background:"#222", color:"#fff", fontWeight:"900", border:"1px solid #D4AF37"}}>{isSpeaking ? "⏹️ STOP" : "🔊 READ ALOUD"}</button>
       </div>
-      <div style={{display:"flex", gap:"8px", marginTop:"8px"}}><button onClick={saveNote} style={{flex:1, padding:"12px", borderRadius:"10px", background:"#D4AF37", color:"#000", fontWeight:"900", border:"none"}}>💾 SAVE TO SUPABASE</button><button onClick={()=>{setActiveId(null); setTitle(""); setContent("");}} style={{padding:"12px", borderRadius:"10px", background:"#111", color:"#fff", border:"1px solid #333"}}>+ NEW</button></div>
-      <div style={{marginTop:"16px"}}>{notes.map((n:any)=>(
-        <div key={n.id} onClick={()=>{setActiveId(n.id); setTitle(n.title); setContent(n.content);}} style={{border:"1px solid #333", borderRadius:"12px", padding:"12px", marginBottom:"8px", background:"#111", cursor:"pointer"}}>
-          <div style={{display:"flex", justifyContent:"space-between"}}><b style={{color:"#fff"}}>{n.title}</b><span onClick={(e)=>{e.stopPropagation(); deleteNote(n.id);}}>🗑️</span></div>
-          <div style={{color:"#888", fontSize:"13px"}}>{n.content?.slice(0,80)}...</div>
-        </div>))}
+      <div style={{display:"flex", gap:"8px", marginTop:"8px", flexShrink:0}}>
+        <button onClick={saveNote} style={{flex:1, padding:"12px", borderRadius:"10px", background:"#D4AF37", color:"#000", fontWeight:"900", border:"none"}}>💾 SAVE TO SUPABASE</button>
+        <button onClick={()=>{setActiveId(null); setTitle(""); setContent("");}} style={{padding:"12px", borderRadius:"10px", background:"#111", color:"#fff", border:"1px solid #333"}}>+ NEW</button>
       </div>
     </div>
   );
