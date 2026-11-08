@@ -397,7 +397,7 @@ const loadFeed = async ()=>{
     const { data: profs } = await supabase.from("profiles").select("*").order("net_worth", {ascending:false}).limit(100);
     if(profs) setProfiles(profs.map((p:any)=>({ id: p.id, email: p.email || p.handle, handle: p.handle, name: p.display_name || p.handle?.replace('@',''), avatar: p.avatar_url || "https://i.pravatar.cc/200?img=12", total_worth: p.net_worth || 0, bio: p.bio, about: p.about, skills: p.skills, location: p.location, latitude: p.latitude, longitude: p.longitude, pay_method: p.pay_method, pay_handle: p.pay_handle, pay_link: p.pay_link, profile_status: p.profile_status || "for_sale" })));
     const { data: allProd } = await supabase.from("products").select("*").order("created_at",{ascending:false}).limit(100);
-    if(allProd) setFeedProducts(allProd.map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item", status: p.status || "for_sale", views: p.views || 0, likes: p.likes || 0})));
+400: if(allProd) setFeedProducts(allProd.filter((p:any)=> p.status!=="draft" || p.owner_email===email).map((p:any)=>({id:p.id, img:p.img, price:p.price, oldPrice:p.old_price, owner_email:p.owner_email, title:p.title || "My Item", status: p.status || "for_sale", views: p.views || 0, likes: p.likes || 0})));
     const { data: fl } = await supabase.from("follows").select("*"); if(fl) setFollows(fl);
     const { data: of } = await supabase.from("offers").select("*").order("created_at",{ascending:false}); if(of) setOffers(of);
     const { data: ms } = await supabase.from("messages").select("*").order("created_at",{ascending:true}).limit(500); 
@@ -600,14 +600,13 @@ const handleProductImageChange = async (e:any)=>{
   try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/product_${activeProductId}_${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; setProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p)); setSelectedUserProducts(prev => prev.map(p=> p.id===activeProductId ? {...p, img:publicUrl} : p)); if(modalInfo) setModalImage(publicUrl); await supabase.from("products").update({ img: publicUrl }).eq("id", activeProductId); await loadFeed(); } catch(err:any){ alert("Product image failed: " + err.message); }
 };
 
-const handleChatImage = async (e:any)=>{
-  const file = e.target.files?.[0]; if(!file || !chatUser) return;
+const handleProductImageChange = async (e:any)=>{
+const file = e.target.files?.[0]; if(!file || !activeProductId) return;
+if(modalInfo?.id===activeProductId && isLocked){ alert("🔒 Locked - 1 reaction / comment / offer received. Can only delete whole post."); return; }
   try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/chat_${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, image_url: publicUrl, text: "📷 Image" }); } catch(err:any){ alert("Image failed: "+err); }
 };
 
-const addProduct = async ()=>{
-  const newId = Date.now().toString(); const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item", status:"for_sale" }; setProducts([newItem, ...products]); const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice, title: newItem.title, status:"for_sale" }).select().single(); if(data) setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p)); await loadFeed();
-};
+const addProduct = async ()=>{ const newId = Date.now().toString(); const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item", status:"draft" }; setProducts([newItem, ...products]); const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice, title: newItem.title, status:"draft" }).select().single(); if(data){ setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p)); openImageModal(newItem.img, {id:data.id, img:newItem.img, price:newItem.price, title:newItem.title, owner_email:email, isMine:true, status:"draft"}); } await loadFeed(); };
 
 const setProductStatus = async (id:string, newStatus:string)=>{
   setProducts(prev => prev.map(p=> p.id===id ? {...p, status:newStatus} : p));
@@ -1055,6 +1054,13 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 <button onClick={(e)=>{ e.stopPropagation(); setImageCollapsed(!imageCollapsed); }} style={{width:"36px", height:"36px", borderRadius:"50%", background:"rgba(0,0,0,0.7)", color:"white", border:"1px solid #555", fontSize:"16px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:0}}>{imageCollapsed ? "🔼" : "🔽"}</button>
 <button onClick={(e)=>{ e.stopPropagation(); const nr=(imageRotate+90)%360; setImageRotate(nr); setImageZoom(1); }} style={{width:"36px", height:"36px", borderRadius:"50%", background:"rgba(0,0,0,0.7)", color:"#D4AF37", border:"1px solid #D4AF37", fontSize:"16px", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:0}}>🔄</button>
 </div>
+{/* FLOATING OWNER ICONS - LEFT SIDE, MIRROR RIGHT */}
+{isMineModal && (
+<div style={{position:"fixed", left:"8px", top:"45%", zIndex:10000, display:"flex", flexDirection:"column", gap:"8px"}}>
+  <button onClick={(e)=>{ e.stopPropagation(); if(isLocked){ alert("🔒 Pic locked"); return; } setActiveProductId(modalInfo.id); productInputRef.current?.click(); }} style={{width:"36px", height:"36px", borderRadius:"50%", background: isLocked ? "#222" : "rgba(0,0,0,0.7)", color: isLocked ? "#888" : "white", border:"1px solid #555", fontSize:"16px", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>{isLocked ? "🔒" : "📷"}</button>
+  <button onClick={(e)=>{ e.stopPropagation(); if(isLocked){ alert("🔒 Description locked"); return; } setTempTitle(modalInfo.title||""); setModalEditingTitle(true); }} style={{width:"36px", height:"36px", borderRadius:"50%", background: isLocked ? "#222" : "rgba(212,175,55,0.9)", color: isLocked ? "#888" : "black", border:"1px solid #D4AF37", fontSize:"16px", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>{isLocked ? "🔒" : "✏️"}</button>
+</div>
+)}
 <div style={{marginTop:"15px", background:"#111", padding:"12px", borderRadius:"12px", width:"100%", maxWidth:"400px", border:"1px solid #333"}}>
 {modalInfo?.id ? (
 <>
@@ -1089,15 +1095,15 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
   {modalInfo && (modalInfo.owner_email===email || modalInfo.isMine) ? (
 <div style={{marginTop:"10px"}}>
 <div style={{color:"#D4AF37", fontSize:"11px", fontWeight:"bold"}}>A$$ET $TATU$</div>
-<div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap"}}>
-<button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ELL</button>
-<button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending</button>
-<button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ $0LD!</button>
-</div>
-<div style={{display:"flex", gap:"6px", marginTop:"8px"}}>
-<button onClick={()=>{ setActiveProductId(modalInfo.id); productInputRef.current?.click(); }} style={{background:"#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px"}}>📷 Change</button>
-<button onClick={()=>{ setTempTitle(modalInfo.title||""); setModalEditingTitle(true); }} style={{background:"#D4AF37", color:"black", fontWeight:"900", border:"1px solid #D4AF37", padding:"8px 12px", borderRadius:"8px"}}>✏️ Describe</button>
-</div>
+1088: <div style={{display:"flex", gap:"6px", marginTop:"8px", flexWrap:"wrap"}}>
+1089:   <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background: (modalInfo.status==="for_sale" || !modalInfo.status) ? "#FFA500" : "#222", color: (modalInfo.status==="for_sale" || !modalInfo.status) ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💰 $ELL</button>
+1090:   <button onClick={()=> setProductStatus(modalInfo.id, "sold")} style={{background: modalInfo.status==="sold" ? "#FF3B30" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>🔴 Pending</button>
+1091:   <button onClick={()=> setProductStatus(modalInfo.id, "not_for_sale")} style={{background: modalInfo.status==="not_for_sale" ? "#00FF88" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ $0LD!</button>
+1092:   {modalInfo?.status==="draft" && <button onClick={()=> setProductStatus(modalInfo.id, "for_sale")} style={{background:"#00FF88", color:"black", border:"none", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ POST</button>}
+1093: </div>
+1094: {modalInfo?.status==="draft" && <div style={{color:"#D4AF37", fontSize:"10px", marginTop:"6px"}}>📝 DRAFT - only you see this. Set price + description, then hit ✅ POST.</div>}
+1095: {isLocked && <div style={{color:"#888", fontSize:"10px", marginTop:"6px"}}>🔒 Locked - 1 reaction / comment / offer. Can only delete whole post.</div>}
+1096: {isMineModal && <button onClick={()=>{ setDeleteTargetId(modalInfo.id); setShowDeleteConfirm(true); setShowImageModal(false); }} style={{background:"#FF3B30", color:"white", border:"none", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px", marginTop:"8px"}}>🗑️ Delete Post</button>}
 </div>
 ) : (
 <div style={{marginTop:"10px"}}>
