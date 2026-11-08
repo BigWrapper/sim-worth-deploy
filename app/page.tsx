@@ -625,10 +625,11 @@ const setProfileStatusDirect = async (newStatus:string)=>{
 const deleteOffer = async (offerId:string)=>{ if(!confirm("Delete this offer bro?")) return; setOffers(prev => prev.filter(o=> o.id!==offerId)); await supabase.from("offers").delete().eq("id", offerId); };
 const deleteChat = async (otherHandle:string)=>{ if(!confirm(`Delete ALL messages with ${otherHandle}?`)) return; setMessages(prev => prev.filter(m=> !((m.from_handle===myHandle && m.to_handle===otherHandle) || (m.from_handle===otherHandle && m.to_handle===myHandle)))); await supabase.from("messages").delete().or(`and(from_handle.eq.${myHandle},to_handle.eq.${otherHandle}),and(from_handle.eq.${otherHandle},to_handle.eq.${myHandle})`); };
 const deleteMessage = async (msgId:string)=>{ if(!confirm("Delete this message?")) return; setMessages(prev => prev.filter(m=> m.id!==msgId)); await supabase.from("messages").delete().eq("id", msgId); };
-const updatePrice = async (id:string)=>{ if(modalInfo?.id===id && isLocked){ alert("🔒 Price locked"); setEditingPriceId(null); return; } const num = parseFloat(tempPrice); ...
-const updatePrice = async (id:string)=>{ const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p)); await supabase.from("products").update({ price: num }).eq("id", id); setEditingPriceId(null); loadFeed(); };
-const updateTitle = async (id:string)=>{ if(modalInfo?.id===id && isLocked){ alert("🔒 Description locked"); setModalEditingTitle(false); setEditingTitleId(null); return; } if(!tempTitle.trim()) ...
+
+const updatePrice = async (id:string)=>{ if(modalInfo?.id===id && isLocked){ alert("🔒 Price locked"); setEditingPriceId(null); return; } const num = parseFloat(tempPrice); if(isNaN(num)) { setEditingPriceId(null); return; } setProducts(prev => prev.map(p=> p.id===id ? {...p, price:num} : p)); await supabase.from("products").update({ price: num }).eq("id", id); setEditingPriceId(null); loadFeed(); };
+
 const updateTitle = async (id:string)=>{
+   if(modalInfo?.id===id && isLocked){ alert("🔒 Description locked"); setModalEditingTitle(false); setEditingTitleId(null); return; } 
   if(!tempTitle.trim()) { setEditingTitleId(null); setModalEditingTitle(false); return; }
   setProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p));
   setSelectedUserProducts(prev => prev.map(p=> p.id===id ? {...p, title:tempTitle} : p));
@@ -726,8 +727,9 @@ const savePhoto = async ()=>{
     window.open(modalImage, '_blank');
   }
 };
-const handleRenameProduct = async (product:any) => { if(modalInfo?.id===product.id && isLocked){ alert("🔒 Description locked"); return; }
+
 const handleRenameProduct = async (product:any) => {
+   if(modalInfo?.id===product.id && isLocked){ alert("🔒 Description locked"); return; } 
   const newTitle = prompt("Rename product:", product.title);
   if(!newTitle || !newTitle.trim()) return;
   const tempTitle = newTitle.trim();
