@@ -773,11 +773,15 @@ const myOffersSent = offers.filter(o=> o.from_handle===myHandle);
 const myOffersCount = myOffersReceived.length;
 const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_handle), ...myOffersSent.map(o=>o.to_handle), ...messages.filter(m=>m.to_handle===myHandle || m.from_handle===myHandle).map(m=> m.from_handle===myHandle ? m.to_handle : m.from_handle)])).filter(h=> h!==myHandle);
 
-const getStatusBadge = (status?:string)=>{
-  if(status==="sold") return { text:"$earching..♥️", color:"#ff4444", bg:"rgba(255,68,68,0.9)" };
-  if(status==="not_for_sale") return { text:"TAKEN 💍", color:"#888", bg:"rgba(0,0,0,0.85)" };
-  return { text:"$ALE! 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
-};
+776: const getStatusBadge = (status?:string)=>{
+777:   if(status==="draft") return { text:"DRAFT 📝", color:"#D4AF37", bg:"rgba(212,175,55,0.15)" };
+778:   if(status==="sold") return { text:"$earching..♥️", color:"#ff4444", bg:"rgba(255,68,68,0.9)" };
+779:   if(status==="not_for_sale") return { text:"TAKEN 💍", color:"#888", bg:"rgba(0,0,0,0.85)" };
+780:   return { text:"$ALE! 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
+781: };
+782: // 🔒 SCAMMER LOCK: after 1 reaction / 1 comment / 1 offer, pic + price + description freeze, only delete whole post
+783: const isLocked = (reactions?.length || 0) > 0 || (comments?.length || 0) > 0 || (offers?.filter((o:any)=>o.product_id===modalInfo?.id)?.length || 0) > 0;
+784: const isMineModal = modalInfo && (modalInfo.owner_email===email || modalInfo.isMine);
 
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
 const trendingMarketItems = [...availableMarketItems].sort((a:any,b:any)=>(b.views||0)-(a.views||0));
