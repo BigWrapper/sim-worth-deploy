@@ -906,7 +906,7 @@ const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_hand
 
 const getStatusBadge = (status?:string)=>{
 if(status==="draft") return { text:"DRAFT 📝", color:"#D4AF37", bg:"rgba(212,175,55,0.15)" };
-if(status==="pending") return { text:"PENDING 🔴", color:"#FF3B30", bg:"rgba(255,59,48,0.9)" };
+if(status==="pending") return { text:"PENDING 🔴", color:"white", bg:"#FF3B30" };
 if(status==="sold") return { text:"NOT FOR SALE", color:"#888", bg:"rgba(0,0,0,0.85)" };
 if(status==="not_for_sale") return { text:"NOT FOR SALE", color:"#888", bg:"rgba(0,0,0,0.85)" };
 return { text:"FOR SALE 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
@@ -1664,9 +1664,9 @@ window.location.reload();
               <div style={{border:"2px solid #00ff88", borderRadius:"12px", padding:"12px", marginBottom:"12px", background:"#0a1a0f"}}>
                 <div style={{color:"#00ff88", fontWeight:"900", fontSize:"13px", marginBottom:"10px"}}>PROFILE $TATU$</div>
                 <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
-                  <button onClick={()=>setProfileStatus("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>✅ FREE!</button>
-                  <button onClick={()=>setProfileStatus("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>♥️ $earching</button>
-                  <button onClick={()=>setProfileStatus("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#888" : "#222", color:"white", border:"1px solid #333", padding:"8px 12px", borderRadius:"8px", fontWeight:"900", fontSize:"11px"}}>💍 Taken</button>
+                  <button onClick={()=>setProfileStatus("free")} style={{background: profileStatus==="free" ? "#00ff88" : "#111", color: profileStatus==="free" ? "black" : "white", padding:"8px 12px", borderRadius:"10px", border:"1px solid #00ff88", fontWeight:"900", fontSize:"11px"}}>✅ FREE!</button>
+<button onClick={()=>setProfileStatus("searching")} style={{background: profileStatus==="searching" ? "#ff4444" : "#111", color: "white", padding:"8px 12px", borderRadius:"10px", border:"1px solid #ff4444", fontWeight:"900", fontSize:"11px"}}>❤️ $earching</button>
+<button onClick={()=>setProfileStatus("taken")} style={{background: profileStatus==="taken" ? "#555" : "#111", color: "white", padding:"8px 12px", borderRadius:"10px", border:"1px solid #555", fontWeight:"900", fontSize:"11px"}}>💍 Taken</button>
                 </div>
               </div>
             </div>
