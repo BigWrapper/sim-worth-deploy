@@ -924,7 +924,6 @@ const isLocked = (reactions?.length || 0) > 0 || (comments?.length || 0) > 0 || 
 const isMineModal = modalInfo && (modalInfo.owner_email===email || modalInfo.isMine);
 const myCityFilter = cityDisplay || city || "";
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())) && (!myCityFilter || !p.city_display || p.city_display === myCityFilter));
-const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
 
 const trendingMarketItems = [...availableMarketItems].sort((a:any,b:any)=>(b.views||0)-(a.views||0));
 const displayMarketItems = marketView==="trending" ? trendingMarketItems : availableMarketItems;
