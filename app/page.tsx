@@ -1675,9 +1675,9 @@ window.location.reload();
               <div style={{color:"white", fontSize:"13px", marginTop:"8px"}}>{bio}</div>
               <div style={{color:"#888", fontSize:"11px"}}>{about}</div>
               <div style={{display:"flex", gap:"6px", marginTop:"10px"}}>
-                <button onClick={()=>setProfileStatusDirect("for_sale")} style={{background: profileStatus==="for_sale" ? "#00ff88" : "#222", color: profileStatus==="for_sale" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>FREE</button>
-                <button onClick={()=>setProfileStatusDirect("sold")} style={{background: profileStatus==="sold" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>$earching</button>
-                <button onClick={()=>setProfileStatusDirect("not_for_sale")} style={{background: profileStatus==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Taken</button>
+                <button onClick={()=>setProfileStatusDirect("free")} style={{background: profileStatus==="free" ? "#00ff88" : "#222", color: profileStatus==="free" ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>FREE</button>
+<button onClick={()=>setProfileStatusDirect("searching")} style={{background: profileStatus==="searching" ? "#ff4444" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>$earching</button>
+<button onClick={()=>setProfileStatusDirect("taken")} style={{background: profileStatus==="taken" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 8px", fontSize:"9px", fontWeight:"900"}}>Taken</button>
               </div>
             </div>
           )}
