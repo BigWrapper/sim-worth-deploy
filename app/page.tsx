@@ -35,10 +35,10 @@ function WatermarkHeader({ avatarPreview, totalWorth, onAvatarClick, myHandle, u
     else if (finalAddress) { window.location.href = `geo:0,0?q=${encodeURIComponent(finalAddress)}`; }
   };
   const getProfileBadge = (status?: string) => {
-    if (status === "sold") return { text: "$earching ♥️", color: "white", bg: "#ff4444" };
-    if (status === "not_for_sale") return { text: "Taken 💍", color: "white", bg: "#555" };
-    return { text: "FREE! 💚", color: "black", bg: "#00ff88" };
-  };
+  if (status === "searching" || status === "sold") return { text: "$earching ♥️", color: "white", bg: "#ff4444" };
+  if (status === "taken" || status === "not_for_sale") return { text: "Taken 💍", color: "white", bg: "#555" };
+  return { text: "FREE! 💚", color: "black", bg: "#00ff88" };
+};
   const badge = getProfileBadge(profileStatus);
   return (
     <div style={{background:"black", padding:"10px"}}>
@@ -401,7 +401,7 @@ const [chatText, setChatText] = useState("");
 const [showChat, setShowChat] = useState(false);
 const [offersTab, setOffersTab] = useState("received");
 const [modalEditingTitle, setModalEditingTitle] = useState(false);
-const [profileStatus, setProfileStatus] = useState("for_sale");
+const [profileStatus, setProfileStatus] = useState("free");
 const [isLightMode, setIsLightMode] = useState(false);
 const [isLiveRefreshing, setIsLiveRefreshing] = useState(false);
 const [isOfflineMode, setIsOfflineMode] = useState(false);
@@ -906,9 +906,10 @@ const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_hand
 
 const getStatusBadge = (status?:string)=>{
 if(status==="draft") return { text:"DRAFT 📝", color:"#D4AF37", bg:"rgba(212,175,55,0.15)" };
-if(status==="sold") return { text:"$earching..♥️", color:"#ff4444", bg:"rgba(255,68,68,0.9)" };
-if(status==="not_for_sale") return { text:"TAKEN 💍", color:"#888", bg:"rgba(0,0,0,0.85)" };
-return { text:"$ALE! 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
+if(status==="pending") return { text:"PENDING 🔴", color:"#FF3B30", bg:"rgba(255,59,48,0.9)" };
+if(status==="sold") return { text:"NOT FOR SALE", color:"#888", bg:"rgba(0,0,0,0.85)" };
+if(status==="not_for_sale") return { text:"NOT FOR SALE", color:"#888", bg:"rgba(0,0,0,0.85)" };
+return { text:"FOR SALE 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
 // 🔒 SCAMMER LOCK: after 1 reaction / 1 comment / 1 offer, pic + price + description freeze, only delete whole post
 const isLocked = (reactions?.length || 0) > 0 || (comments?.length || 0) > 0 || (offers?.filter((o:any)=>o.product_id===modalInfo?.id)?.length || 0) > 0;
