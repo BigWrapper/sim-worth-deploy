@@ -11,7 +11,7 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
   }
 });
 
-type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; status?: string; views?: number; likes?: number; };
+type Product = { id: string; img: string; price: number; oldPrice: number; owner_email?: string; title?: string; status?: string; views?: number; likes?: number; city?: string; city_display?: string; };
 
 type HeaderProps = {
   avatarPreview: string; totalWorth: number; onAvatarClick: () => void; myUserId: string; myHandle: string;
@@ -394,7 +394,10 @@ const [userLat, setUserLat] = useState("");
 const [userLng, setUserLng] = useState("");
 const [streetAddress, setStreetAddress] = useState("");
 const [suburb, setSuburb] = useState("");
-const [city, setCity] = useState("Uptize");
+const [city, setCity] = useState("");
+const [cityDisplay, setCityDisplay] = useState("");
+const [signupCity, setSignupCity] = useState("");
+const SA_CITIES = ["Upington, Northern Cape","Kimberley, Northern Cape","Sandton, Gauteng","Johannesburg, Gauteng","Pretoria, Gauteng","Centurion, Gauteng","Soweto, Gauteng","Cape Town, Western Cape","Stellenbosch, Western Cape","Durban, KwaZulu-Natal","Pietermaritzburg, KwaZulu-Natal","Gqeberha, Eastern Cape","East London, Eastern Cape","Bloemfontein, Free State","Nelspruit, Mpumalanga","Polokwane, Limpopo","Rustenburg, North West","Mahikeng, North West"];
 const [myId, setMyId] = useState("");
 const [chatUser, setChatUser] = useState<any>(null);
 const [chatText, setChatText] = useState("");
@@ -734,7 +737,7 @@ const handleChatImage = async (e:any)=>{
   try { const safeEmail = email.replace(/[^a-z0-9]/gi, '_'); const fileName = `${safeEmail}/chat_${Date.now()}.jpg`; await supabase.storage.from('avatars').upload(fileName, file, { upsert: true, contentType: file.type }); const { data } = supabase.storage.from('avatars').getPublicUrl(fileName); const publicUrl = data.publicUrl + `?t=${Date.now()}`; await supabase.from("messages").insert({ from_handle: myHandle, to_handle: chatUser.handle, image_url: publicUrl, text: "📷 Image" }); } catch(err:any){ alert("Image failed: "+err); }
 };
 
-const addProduct = async ()=>{ const newId = Date.now().toString(); const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item", status:"draft" }; setProducts([newItem, ...products]); const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice, title: newItem.title, status:"draft" }).select().single(); if(data){ setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p)); openImageModal(newItem.img, {id:data.id, img:newItem.img, price:newItem.price, title:newItem.title, owner_email:email, isMine:true, status:"draft"}); } await loadFeed(); };
+const addProduct = async ()=>{ const newId = Date.now().toString(); const newItem:Product = { id: newId, img:"https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=400", price:19.99, oldPrice:59.99, title:"My Item", status:"draft" }; setProducts([newItem, ...products]); const finalCity = cityDisplay || city || signupCity || "Sandton, Gauteng"; const { data } = await supabase.from("products").insert({ owner_email: email, img: newItem.img, price: newItem.price, old_price: newItem.oldPrice, title: newItem.title, status:"draft", city: finalCity.split(",")[0].trim(), city_display: finalCity }).select().single(); if(data){ setProducts(prev => prev.map(p=> p.id===newId ? {...p, id: data.id} : p)); openImageModal(newItem.img, {id:data.id, img:newItem.img, price:newItem.price, title:newItem.title, owner_email:email, isMine:true, status:"draft"}); } await loadFeed(); };
 
 const setProductStatus = async (id:string, newStatus:string)=>{
   setProducts(prev => prev.map(p=> p.id===id ? {...p, status:newStatus} : p));
@@ -919,8 +922,10 @@ return { text: "FREE! 💚", color: "black", bg: "#00ff88" };
 // 🔒 SCAMMER LOCK: after 1 reaction / 1 comment / 1 offer, pic + price + description freeze, only delete whole post
 const isLocked = (reactions?.length || 0) > 0 || (comments?.length || 0) > 0 || (offers?.filter((o:any)=>o.product_id===modalInfo?.id)?.length || 0) > 0;
 const isMineModal = modalInfo && (modalInfo.owner_email===email || modalInfo.isMine);
-
+const myCityFilter = cityDisplay || city || "";
+const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())) && (!myCityFilter || !p.city_display || p.city_display === myCityFilter));
 const availableMarketItems = feedProducts.filter(p=> (p.status==="for_sale" || !p.status) && (marketSearch==="" || (p.title||"").toLowerCase().includes(marketSearch.toLowerCase())));
+
 const trendingMarketItems = [...availableMarketItems].sort((a:any,b:any)=>(b.views||0)-(a.views||0));
 const displayMarketItems = marketView==="trending" ? trendingMarketItems : availableMarketItems;
 if(!loggedIn){
@@ -1022,6 +1027,10 @@ strong,[style*="total_worth"],[style*="fontWeight:900"]{text-shadow:0 0 8px rgba
 <input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:"100%", background:"#141414", border:"1px solid #222", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"12px"}}/>
 {authMode==="signup" && (
   <>
+   <select value={signupCity} onChange={e=>{setSignupCity(e.target.value); setCity(e.target.value.split(",")[0].trim()); setCityDisplay(e.target.value);}} style={{width:"100%", background:"#141414", border:"1px solid #D4AF37", color:"white", padding:"14px", borderRadius:"12px", marginBottom:"12px"}}>
+  <option value="">📍 Pick your city - City first</option>
+  {SA_CITIES.map(c=><option key={c} value={c}>{c}</option>)}
+</select> 
     <input placeholder="WORTH PIN (4 digits e.g. 1999)" type="password" inputMode="numeric" maxLength={4} value={worthPin} onChange={e=>setWorthPin(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
     <input placeholder="Confirm WORTH PIN" type="password" inputMode="numeric" maxLength={4} value={worthPinConfirm} onChange={e=>setWorthPinConfirm(e.target.value.replace(/\D/g,""))} style={{width:"100%", background:"#111a00", border:"1px solid #D4AF37", color:"#D4AF37", padding:"14px", borderRadius:"12px", marginBottom:"12px", fontWeight:"900", letterSpacing:"4px"}}/>
     <div style={{fontSize:"10px", color:"#D4AF37", marginBottom:"14px", textAlign:"center", border:"1px solid #222", padding:"6px", borderRadius:"8px"}}>🔐 WORTH PIN = Bank PIN for recovery. Don't lose! 4 digits only.</div>
@@ -1554,7 +1563,10 @@ setWorthPinInput(""); setConfirmPinInput("");
   {showVisitMe && (<div style={{marginTop:"10px"}}>
     <input value={streetAddress} onChange={e=>setStreetAddress(e.target.value)} placeholder="Street Address" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
     <input value={suburb} onChange={e=>setSuburb(e.target.value)} placeholder="Suburb" style={{width:"100%", background:"black", color:"white", border:"1px solid #D4AF37", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
-    <input value={city} onChange={e=>setCity(e.target.value)} placeholder="City" style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}/>
+    <select value={cityDisplay || city} onChange={e=>{setCityDisplay(e.target.value); setCity(e.target.value.split(",")[0].trim());}} style={{width:"100%", background:"black", color:"white", border:"1px solid #444", padding:"10px", borderRadius:"8px", marginBottom:"8px"}}>
+  <option value="">📍 Pick your city - City first</option>
+  {SA_CITIES.map(c=><option key={c} value={c}>{c}</option>)}
+</select>
     <div style={{display:"flex", gap:"8px", marginBottom:"8px"}}>
       <input value={userLat} onChange={e=>setUserLat(e.target.value)} placeholder="Lat" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
       <input value={userLng} onChange={e=>setUserLng(e.target.value)} placeholder="Lng" style={{flex:1, background:"black", color:"white", border:"1px solid #444", padding:"8px", borderRadius:"8px"}}/>
@@ -1819,6 +1831,7 @@ myFollowersProfiles.filter((u:any)=> (u.handle?.toLowerCase().includes(search.to
 <div style={{position:"absolute", bottom:0, left:0, right:0, padding:"10px 8px 8px", zIndex:3}}>
 <div style={{fontSize:"12px", fontWeight:"bold", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"white", textShadow:"0 1px 3px black"}}>{p.title}</div>
 <div style={{fontSize:"10px", color:"#ccc"}}>{owner ? owner.handle : p.owner_email?.split("@")[0]} • Tap to zoom 🔍</div>
+<div style={{fontSize:"10px", color:"#D4AF37"}}>📍 {p.city_display || owner?.city_display || owner?.location || "No city"}</div>
 {isMine && (
 <div style={{display:"flex", gap:"4px", marginTop:"6px"}}>
 <button onClick={(e)=>{ e.stopPropagation(); handleRenameProduct(p); }} style={{flex:1, background:"#222", color:"white", border:"1px solid #333", padding:"5px 0", borderRadius:"8px", fontSize:"9px", fontWeight:"900", cursor:"pointer"}}>✏️ Rename</button>
