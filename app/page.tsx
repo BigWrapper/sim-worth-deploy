@@ -907,7 +907,7 @@ const conversations = Array.from(new Set([...myOffersReceived.map(o=>o.from_hand
 const getStatusBadge = (status?:string)=>{
 if(status==="draft") return { text:"DRAFT 📝", color:"#D4AF37", bg:"rgba(212,175,55,0.15)" };
 if(status==="pending") return { text:"PENDING 🔴", color:"white", bg:"#FF3B30" };
-if(status==="sold") return { text:"NOT FOR SALE", color:"#888", bg:"rgba(0,0,0,0.85)" };
+if(status==="sold") return { text:"PENDING 🔴", color:"white", bg:"#FF3B30" };
 if(status==="not_for_sale") return { text:"NOT FOR SALE", color:"#888", bg:"rgba(0,0,0,0.85)" };
 return { text:"FOR SALE 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
@@ -1707,7 +1707,7 @@ window.location.reload();
             {editingPriceId===p.id ? (<div style={{display:"flex", gap:"4px"}} onClick={(e)=>e.stopPropagation()}><input value={tempPrice} onChange={e=>setTempPrice(e.target.value)} autoFocus type="number" style={{width:"60px", background:"#222", border:"1px solid #D4AF37", color:"white", borderRadius:"6px", padding:"4px"}}/><button onClick={()=>updatePrice(p.id)} style={{background:"#D4AF37", border:"none", borderRadius:"6px", padding:"4px 6px"}}>OK</button></div>) : (<div onClick={(e)=>{e.stopPropagation(); setEditingPriceId(p.id); setTempPrice(p.price.toString());}} style={{fontWeight:"900", fontSize:"12px", color: p.status==="pending.." ? "#FFA500" : p.status==="not_for_sale" ? "#888" : "#D4AF37", cursor:"pointer", textShadow:"0 1px 3px black"}}>$ {Number(p.price).toFixed(2)} ✏️</div>)}
             <div style={{display:"flex", gap:"3px", marginTop:"6px"}}>
               <button onClick={(e)=>{e.stopPropagation(); setProductStatus(p.id, "for_sale")}} style={{flex:1, background: p.status==="for_sale" || !p.status ? "#00ff88" : "#222", color: p.status==="for_sale" || !p.status ? "black" : "white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$ELL</button>
-              <button onClick={(e)=>{e.stopPropagation(); setProductStatus(p.id, "pending")}} style={{flex:1, background: p.status==="pending" ? "#FFA500" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Pending</button>
+              <button onClick={(e)=>{e.stopPropagation(); setProductStatus(p.id, "pending")}} style={{flex:1, background: p.status==="pending" ? "#FF3B30" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>Pending</button>
               <button onClick={(e)=>{e.stopPropagation(); setProductStatus(p.id, "not_for_sale")}} style={{flex:1, background: p.status==="not_for_sale" ? "#555" : "#222", color:"white", border:"none", borderRadius:"6px", padding:"4px 2px", fontSize:"8px", fontWeight:"900"}}>$OLD!</button>
             </div>
           </div>
