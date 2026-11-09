@@ -911,6 +911,11 @@ if(status==="sold") return { text:"NOT FOR SALE", color:"#888", bg:"rgba(0,0,0,0
 if(status==="not_for_sale") return { text:"NOT FOR SALE", color:"#888", bg:"rgba(0,0,0,0.85)" };
 return { text:"FOR SALE 🟢", color:"#00ff88", bg:"rgba(0,255,136,0.15)" };
 };
+const getProfileBadge = (status?: string) => {
+if (status === "searching" || status === "sold") return { text: "$earching ♥️", color: "white", bg: "#ff4444" };
+if (status === "taken" || status === "not_for_sale") return { text: "Taken 💍", color: "white", bg: "#555" };
+return { text: "FREE! 💚", color: "black", bg: "#00ff88" };
+};
 // 🔒 SCAMMER LOCK: after 1 reaction / 1 comment / 1 offer, pic + price + description freeze, only delete whole post
 const isLocked = (reactions?.length || 0) > 0 || (comments?.length || 0) > 0 || (offers?.filter((o:any)=>o.product_id===modalInfo?.id)?.length || 0) > 0;
 const isMineModal = modalInfo && (modalInfo.owner_email===email || modalInfo.isMine);
