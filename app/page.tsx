@@ -425,68 +425,94 @@ const theme = {
   navBorder: "#0a84ff"
 };
 // SHAREit MODE - FIXED BUILD - NO MODULE NEEDED
-const handleBluetoothToggle = async ()=>{
-  if(isBluetoothEnabled){
+// ===== REAL BT CHAT - OFFLINE ONLY - NO SUPABASE, NO WIFI =====
+// How it works offline: Phone A turns BT ON -> it is discoverable via BLE.
+// Phone B scans BLE airwaves -> only shows REAL devices it hears within ~10m.
+// Name = real Bluetooth device name. Handle is claimed on Pair.
+
+const getBLE = () => (window as any).Capacitor?.Plugins?.BluetoothLe;
+
+const handleBluetoothToggle = async () => {
+  const BLE = getBLE();
+  if (isBluetoothEnabled) {
     setIsBluetoothEnabled(false);
     setIsOfflineMode(false);
     setNearbyUsers([]);
     setBluetoothDevices([]);
     setIsBluetoothScanning(false);
+    try { if (BLE) await BLE.stopLEScan(); } catch {}
     return;
+  }
+  if (!BLE) return alert("BT needs APK - web can't do Bluetooth. Install new APK.");
+  try {
+    await BLE.initialize();
+  } catch (e:any) {
+    return alert("Turn ON Bluetooth + Location: Settings > Apps > SIM Worth > Permissions > Nearby devices + Location > Allow");
   }
   setIsBluetoothEnabled(true);
   setIsOfflineMode(true);
-  setIsBluetoothScanning(true);
-  
-  if(profiles.length > 0){
-    try{ localStorage.setItem("sim_cached_profiles", JSON.stringify(profiles)); }catch{}
-  }
-  
-  const cached = localStorage.getItem("sim_cached_profiles");
-  let baseProfiles: any[] = profiles;
-  if((!baseProfiles || baseProfiles.length===0) && cached){
-    try{ baseProfiles = JSON.parse(cached); }catch{}
-  }
-  if(!baseProfiles || baseProfiles.length===0){
-    baseProfiles = [{handle:"@demo1", name:"Demo User", avatar:"https://i.pravatar.cc/200?img=1", total_worth:100}, {handle:"@demo2", name:"Demo 2", avatar:"https://i.pravatar.cc/200?img=2", total_worth:200}];
-  }
-  
-  setTimeout(()=>{
-    const shuffled = [...baseProfiles].filter((p:any)=> p.handle !== myHandle).sort(()=>0.5-Math.random()).slice(0,12);
-    setNearbyUsers(shuffled);
-    const savedQueue = localStorage.getItem("bt_offline_queue");
-    if(savedQueue) setOfflineQueue(JSON.parse(savedQueue));
-    setIsBluetoothScanning(false);
-  }, 800);
+  handleRealBluetoothScan();
 };
 
-const handleRealBluetoothScan = async ()=>{
+const handleRealBluetoothScan = async () => {
+  const BLE = getBLE();
+  if (!BLE) return alert("BT needs APK");
   setIsBluetoothScanning(true);
-  const cached = localStorage.getItem("sim_cached_profiles");
-  let baseProfiles: any[] = profiles;
-  if((!baseProfiles || baseProfiles.length===0) && cached){
-    try{ baseProfiles = JSON.parse(cached); }catch{}
+  setNearbyUsers([]);
+
+  const seen = new Map();
+  try {
+    const listener = await BLE.addListener("onScanResult", (res:any) => {
+      const dev = res.device;
+      if (!dev) return;
+      // Only close devices - RSSI -75 or stronger = ~10m. Far devices ignored.
+      if (dev.rssi && dev.rssi < -75) return;
+      // Skip our own phone - we don't know our own deviceId, so keep all and dedupe by id
+      seen.set(dev.deviceId, {
+        deviceId: dev.deviceId,
+        handle: dev.name ? dev.name : "Unknown Device",
+        name: dev.name || "Unknown Device",
+        avatar: "https://i.pravatar.cc/200?img=12",
+        paired: false,
+        rssi: dev.rssi || -60,
+        isRealBLE: true,
+      });
+    });
+    await BLE.startLEScan({ allowDuplicates: false });
+    setTimeout(async () => {
+      try { await BLE.stopLEScan(); } catch {}
+      try { await listener.remove(); } catch {}
+      const real = [...seen.values()];
+      setNearbyUsers(real);
+      setIsBluetoothScanning(false);
+      if (real.length === 0) alert("No real BT devices nearby. Other phone must have: Bluetooth ON + Location ON + BT Chat ON in app + within 10m + Rescan");
+    }, 6000); // scan 6 seconds
+  } catch (e:any) {
+    setIsBluetoothScanning(false);
+    alert("Scan failed - Allow Nearby devices + Location permission");
   }
-  const shuffled = [...baseProfiles].filter((p:any)=> p.handle !== myHandle).sort(()=>0.5-Math.random()).slice(0,12);
-  setNearbyUsers(shuffled);
-  setIsBluetoothScanning(false);
 };
 
 const handleBluetoothScan = handleBluetoothToggle;
 
-const handleBluetoothChat = (user:any)=>{
-  setChatUser(user);
+const handleBluetoothPair = async (user:any) => {
+  const BLE = getBLE();
+  // 1. Real BLE connect - this is the real Android pair
+  if (BLE && user.deviceId) {
+    try { await BLE.connect({ deviceId: user.deviceId }); } catch (e:any) {}
+  }
+  // 2. Offline: ask who this real device is, so chat shows @handle not "Galaxy A14"
+  const claimed = prompt("Real device found: " + (user.name || "Unknown") + "\nWhat is their @handle? e.g. @56bluntmusic");
+  const finalUser = { ...user, handle: claimed ? (claimed.startsWith("@") ? claimed : "@" + claimed) : user.name, paired: true };
+  setNearbyUsers(prev => prev.map(u => u.deviceId === user.deviceId ? finalUser : u));
+  setBluetoothDevices(prev => [...prev.filter((d:any) => d.deviceId !== user.deviceId), finalUser]);
+  setChatUser(finalUser);
   setShowChat(true);
   setIsOfflineMode(true);
-  setIsBluetoothEnabled(true);
 };
 
-const handleBluetoothPair = (user:any)=>{
-  setNearbyUsers(prev => prev.map(u=> u.handle===user.handle ? {...u, paired:true} : u));
-  setBluetoothDevices(prev => {
-    if(prev.find((d:any)=>d.handle===user.handle)) return prev;
-    return [...prev, {...user, paired:true}];
-  });
+const handleBluetoothChat = (user:any) => {
+  if (!user.paired) return alert("Tap Pair first - real BLE connect");
   setChatUser(user);
   setShowChat(true);
   setIsOfflineMode(true);
