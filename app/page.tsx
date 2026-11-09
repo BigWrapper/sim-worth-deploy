@@ -1253,7 +1253,7 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 </>
 ) : (
 <div style={{textAlign:"center"}}>
-<div style={{fontWeight:"bold", color:"#D4AF37", fontSize:"16px"}}>{modalInfo?.handle || "Profile Photo"} - <span style={{color: getStatusBadge(modalInfo?.profile_status || profileStatus).color}}>{getStatusBadge(modalInfo?.profile_status || profileStatus).text}</span></div>
+<div style={{fontWeight:"bold", color:"#D4AF37", fontSize:"16px"}}>{modalInfo?.handle || "Profile Photo"} - <span style={{background: getProfileBadge(modalInfo?.profile_status || profileStatus).bg, color: getProfileBadge(modalInfo?.profile_status || profileStatus).color, padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"900"}}>{getProfileBadge(modalInfo?.profile_status || profileStatus).text}</span></div>
 <div style={{fontSize:"11px", color:"#888", marginTop:"4px"}}>{modalInfo?.bio || ""}</div>
 </div>
 )}
@@ -1381,7 +1381,7 @@ onClick={()=>setImageZoom(imageZoom===1 ? 2 : 1)}>
 <div onClick={()=>setView("accounts")} style={{cursor:"pointer"}}>←</div>
 <img src={selectedUser.avatar} onClick={()=>openImageModal(selectedUser.avatar, {...selectedUser, isMine:false})} style={{width:"40px", height:"40px", borderRadius:"50%", border:"2px solid #D4AF37", objectFit:"cover", cursor:"pointer", filter: selectedUser.profile_status==="sold" ? "grayscale(80%)" : "none"}}/>
 <div style={{color:"#D4AF37", fontWeight:"bold"}}>{selectedUser.handle}</div>
-<div style={{marginLeft:"8px", background: getStatusBadge(selectedUser.profile_status).bg, color: getStatusBadge(selectedUser.profile_status).color, fontSize:"9px", fontWeight:"900", padding:"4px 8px", borderRadius:"12px"}}>{getStatusBadge(selectedUser.profile_status).text}</div>
+<div style={{marginLeft:"8px", background: getProfileBadge(selectedUser.profile_status).bg, color: getProfileBadge(selectedUser.profile_status).color, fontSize:"9px", fontWeight:"900", padding:"4px 8px", borderRadius:"12px"}}>{getProfileBadge(selectedUser.profile_status).text}</div>
 </div>
 {/* COLLAPSIBLE - SELLER INFO - same style as your ABOUT ME box */}
 <div style={{flexShrink:0, background:"#0a0a0a", borderBottom:"1px solid #222", position:"sticky", top:"64px", zIndex:20}}>
